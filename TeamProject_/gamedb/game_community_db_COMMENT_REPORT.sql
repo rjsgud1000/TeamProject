@@ -24,37 +24,33 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 --
--- Table structure for table `COMMENT`
+-- Table structure for table `COMMENT_REPORT`
 --
 
-DROP TABLE IF EXISTS `COMMENT`;
+DROP TABLE IF EXISTS `COMMENT_REPORT`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `COMMENT` (
-  `comment_id` int NOT NULL AUTO_INCREMENT,
-  `post_id` int NOT NULL,
-  `member_id` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `content` text COLLATE utf8mb4_general_ci NOT NULL,
+CREATE TABLE `COMMENT_REPORT` (
+  `report_id` int NOT NULL AUTO_INCREMENT,
+  `comment_id` int NOT NULL,
+  `member_id` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
+  `reason` text COLLATE utf8mb4_general_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `is_deleted` tinyint(1) DEFAULT '0',
-  `parent_comment_id` int DEFAULT NULL,
-  PRIMARY KEY (`comment_id`),
-  KEY `post_id` (`post_id`),
+  PRIMARY KEY (`report_id`),
+  KEY `comment_id` (`comment_id`),
   KEY `member_id` (`member_id`),
-  CONSTRAINT `COMMENT_ibfk_1` FOREIGN KEY (`post_id`) REFERENCES `BOARD_POST` (`post_id`),
-  CONSTRAINT `COMMENT_ibfk_2` FOREIGN KEY (`member_id`) REFERENCES `MEMBER` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+  CONSTRAINT `COMMENT_REPORT_ibfk_1` FOREIGN KEY (`comment_id`) REFERENCES `COMMENT` (`comment_id`),
+  CONSTRAINT `COMMENT_REPORT_ibfk_2` FOREIGN KEY (`member_id`) REFERENCES `MEMBER` (`member_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `COMMENT`
+-- Dumping data for table `COMMENT_REPORT`
 --
 
-LOCK TABLES `COMMENT` WRITE;
-/*!40000 ALTER TABLE `COMMENT` DISABLE KEYS */;
-INSERT INTO `COMMENT` VALUES (1,1,'M001','Defauly Comment','2026-03-04 03:26:43','2026-03-04 03:26:43',0,NULL),(2,1,'M001','Default Comment','2026-03-04 03:26:43','2026-03-04 03:26:43',0,NULL),(3,1,'M002','Default Comment','2026-03-04 03:26:43','2026-03-04 03:26:43',0,NULL),(4,1,'M003','Default Comment','2026-03-04 03:26:43','2026-03-04 03:26:43',0,NULL),(5,1,'M004','Default Comment','2026-03-04 03:26:43','2026-03-04 03:26:43',0,NULL),(6,1,'M001','Default Reply','2026-03-04 03:26:43','2026-03-04 03:26:43',0,2),(7,1,'M002','Default Reply','2026-03-04 03:26:43','2026-03-04 03:26:43',0,2),(8,1,'M003','Default Reply','2026-03-04 03:26:43','2026-03-04 03:26:43',0,4),(9,1,'M004','Default Repply','2026-03-04 03:26:43','2026-03-04 03:26:43',0,4);
-/*!40000 ALTER TABLE `COMMENT` ENABLE KEYS */;
+LOCK TABLES `COMMENT_REPORT` WRITE;
+/*!40000 ALTER TABLE `COMMENT_REPORT` DISABLE KEYS */;
+/*!40000 ALTER TABLE `COMMENT_REPORT` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -67,4 +63,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-05 13:54:59
+-- Dump completed on 2026-03-05 13:54:58
