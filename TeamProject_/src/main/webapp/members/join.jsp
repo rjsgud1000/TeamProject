@@ -29,6 +29,16 @@
 </head>
 <body>
 
+<%-- 회원가입 실패 메시지 출력 --%>
+<%
+	String joinError = (String) request.getAttribute("joinError");
+	if (joinError != null) {
+%>
+	<div class="container" style="margin-top:20px;">
+		<div class="alert alert-danger" role="alert"><%= joinError %></div>
+	</div>
+<% } %>
+
 <%-- 가입 요청  --%>
 <form action="<%=contextPath%>/member/joinPro.me" 
 	  class="form" method="post">	
@@ -101,13 +111,19 @@
 			<div class="form-group">
 				<div class="row">
 					<div class="col-6">
-						<label>아이디</label> 
-						<input type="text" 
-							   id="id" 
-							   name="id"
-							   class="form-control"
-							   placeholder="아이디를 적어주세요.">
-					    <p id="idInput"></p> 
+						<label>아이디</label>
+						<div class="input-group">
+							<input type="text"
+							       id="id"
+							       name="id"
+							       class="form-control"
+							       placeholder="아이디를 적어주세요.">
+							<div class="input-group-append">
+								<button class="btn btn-outline-secondary" type="button" onclick="checkDuplicateId()">중복확인</button>
+							</div>
+						</div>
+						<small id="idDupMsg" class="form-text"></small>
+						<p id="idInput"></p>
 					</div>
 					<div class="col-6">
 						<label>비밀번호</label> 
@@ -122,25 +138,21 @@
 			</div>
 			<div class="form-group">
 				<div class="row">
-					<div class="col-6">
-						<label>이름</label> 
-						<input type="text" 
-							   id="name" 
-							   name="name"
-							   class="form-control"
-							   placeholder="이름을 적어주세요."> 
-						<p id="nameInput"></p>
-					</div>
-					
-					<div class="col-6">
-						<label>닉네임</label> 
-						<input type="text" 
-							   id="nickname" 
-							   name="nickname"
-							   class="form-control"
-							   placeholder="닉네임을 적어주세요."> 
+					<div class="col-12">
+						<label>닉네임</label>
+						<div class="input-group">
+							<input type="text" 
+							       id="nickname" 
+							       name="nickname"
+							       class="form-control"
+							       placeholder="닉네임을 적어주세요.">
+							<div class="input-group-append">
+								<button class="btn btn-outline-secondary" type="button" onclick="checkDuplicateNickname()">중복확인</button>
+							</div>
+						</div>
+						<small id="nickDupMsg" class="form-text"></small>
 						<p id="nickInput"></p>
-					</div>					
+					</div>
 				</div>
 			</div>					
 			<div class="form-group">
@@ -193,17 +205,8 @@
 							   placeholder="이메일을 적어주세요."> 
 						<p id="emailInput"></p>
 					</div>
-					
-					<div class="col-4">
-						<label>연락처</label> 
-						<input type="tel" 
-							   id="tel" 
-							   name="tel"
-							   class="form-control"
-							   placeholder="연락처를 '-'없이 적어주세요."> 
-					   	<p id="telInput"></p>	
-					</div>
-					<div class="col-4">
+
+					<div class="col-8">
 						<label>핸드폰번호</label> 
 						<input type="text" 
 							   id="hp" 
@@ -211,7 +214,7 @@
 							   class="form-control"
 							   placeholder="핸드폰번호를 '-'없이 적어주세요."> 
 						<p id="hpInput"></p>
-					</div>												
+					</div>
 				</div>
 			</div>				
 								
@@ -310,9 +313,6 @@
 		
 </body>
 </html>
-
-
-
 
 
 

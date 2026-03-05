@@ -1,4 +1,4 @@
-# TeamProject_ - MVC2 로그인(MySQL/JNDI) 구성
+ TeamProject_ - MVC2 로그인(MySQL/JNDI) 구성
 
 이 문서는 `TeamProject_` 프로젝트에서 **MVC2 패턴(Controller → Service → DAO → DB)**으로 **로그인 기능만** MySQL(DataSource/JNDI)과 연동해 동작시키는 최소 구성을 설명합니다.
 
