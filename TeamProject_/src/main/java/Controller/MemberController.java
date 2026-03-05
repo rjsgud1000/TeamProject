@@ -43,9 +43,53 @@ public class MemberController extends HttpServlet {
 		case "/logout.me":
 			logout(request, response);
 			return;
+		case "/join.me":
+			forward(request, response, "/members/join.jsp");
+			return;
+		case "/joinPro.me":
+			joinPro(request, response);
+			return;
+		case "/checkId.me":
+			checkId(request, response);
+			return;
+		case "/checkNickname.me":
+			checkNickname(request, response);
+			return;
 		default:
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
+		}
+	}
+
+	private void checkId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String id = emptyToNull(request.getParameter("id"));
+		response.setContentType("application/json; charset=UTF-8");
+		if (id == null) {
+			response.getWriter().write("{\"ok\":false,\"message\":\"아이디를 입력해 주세요.\"}");
+			return;
+		}
+		// join()에서 중복 체크를 하므로 여기선 간단히 DAO 조회만 사용
+		boolean exists = new Dao.MemberDAO().existsMemberId(id);
+		if (exists) {
+			response.getWriter().write("{\"ok\":false,\"message\":\"이미 사용 중인 아이디입니다.\"}");
+		} else {
+			response.getWriter().write("{\"ok\":true}");
+		}
+	}
+
+	private void checkNickname(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		String nickname = emptyToNull(request.getParameter("nickname"));
+		response.setContentType("application/json; charset=UTF-8");
+		if (nickname == null) {
+			response.getWriter().write("{\"ok\":false,\"message\":\"닉네임을 입력해 주세요.\"}");
+			return;
+		}
+		Dao.MemberDAO dao = new Dao.MemberDAO();
+		boolean exists = dao.existsUsername(nickname) || dao.existsNickname(nickname);
+		if (exists) {
+			response.getWriter().write("{\"ok\":false,\"message\":\"이미 사용 중인 닉네임입니다.\"}");
+		} else {
+			response.getWriter().write("{\"ok\":true}");
 		}
 	}
 
@@ -82,5 +126,55 @@ public class MemberController extends HttpServlet {
 			throws ServletException, IOException {
 		RequestDispatcher dispatcher = request.getRequestDispatcher(path);
 		dispatcher.forward(request, response);
+	}
+
+	private void joinPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		request.setCharacterEncoding("UTF-8");
+
+		String id = request.getParameter("id");
+		String pass = request.getParameter("pass");
+		String nickname = request.getParameter("nickname");
+
+		String zipcode = request.getParameter("address1");
+		String addr1 = request.getParameter("address2");
+		String addr2 = request.getParameter("address3");
+		String addr3 = request.getParameter("address4");
+		String addr4 = request.getParameter("address5");
+
+		String gender = request.getParameter("gender");
+		String email = request.getParameter("email");
+		String hp = request.getParameter("hp");
+
+		MemberVO vo = new MemberVO();
+		vo.setMemberId(id);
+		vo.setPasswordHash(pass);
+		vo.setUsername(nickname);
+		vo.setNickname(nickname);
+
+		vo.setZipcode(emptyToNull(zipcode));
+		vo.setAddr1(emptyToNull(addr1));
+		vo.setAddr2(emptyToNull(addr2));
+		vo.setAddr3(emptyToNull(addr3));
+		vo.setAddr4(emptyToNull(addr4));		
+		vo.setGender(emptyToNull(gender));
+		vo.setEmail(emptyToNull(email));
+		vo.setPhone(emptyToNull(hp));
+
+		String error = memberService.join(vo);
+		if (error != null) {
+			request.setAttribute("joinError", error);
+			forward(request, response, "/members/join.jsp");
+			return;
+		}
+
+		HttpSession session = request.getSession(true);
+		session.setAttribute("joinFlash", "회원가입에 성공하셨습니다");
+		response.sendRedirect(request.getContextPath() + "/members/login.jsp");
+	}
+
+	private static String emptyToNull(String s) {
+		if (s == null) return null;
+		String v = s.trim();
+		return v.isEmpty() ? null : v;
 	}
 }
