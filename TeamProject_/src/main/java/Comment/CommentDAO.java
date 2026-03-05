@@ -112,7 +112,7 @@ public class CommentDAO {
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, commentId);
-            ps.setString(2, memberId); // ⚡ 변경
+            ps.setString(2, memberId); // 
             ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
             return ps.executeUpdate() > 0;
         } catch (SQLIntegrityConstraintViolationException e) {

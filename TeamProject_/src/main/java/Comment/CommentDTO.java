@@ -6,7 +6,7 @@ public class CommentDTO {
 
     private int commentId;
     private int postId;
-    private String memberId;   // ⚡ 변경
+    private String memberId;   // 
     private String content;
     private Timestamp createdAt;
     private Timestamp updatedAt;
