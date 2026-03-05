@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd" id="WebApp_ID" version="4.0">
+  <display-name>CarProject</display-name>
+
+  <!-- ============================================
+       OpenRouter API Key (무료 AI 챗봇용)
+
+       [API 키 설정 방법]
+       1. https://openrouter.ai 접속
+       2. Google 계정으로 회원가입/로그인
+       3. 왼쪽 메뉴 "Keys" 클릭 -> "Create Key" 클릭
+       4. 생성된 API 키(sk-or-...)를 아래에 붙여넣기
+       5. Tomcat 재시작
+       ============================================ -->
+  <context-param>
+    <param-name>openrouterApiKey</param-name>
+    <param-value>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</param-value>
+  </context-param>
+
+  <!-- ============================================
+       앱 URL 설정 (AI 챗봇 HTTP-Referer용)
+
+       [Windows 개발환경] http://localhost:8090/CarProject2
+       [AWS Ubuntu 배포시] http://서버IP:8080/CarProject2
+       ============================================ -->
+  <context-param>
+    <param-name>appUrl</param-name>
+    <param-value>http://localhost:8090/CarProject2</param-value>
+  </context-param>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>default.html</welcome-file>
+    <welcome-file>default.htm</welcome-file>
+    <welcome-file>default.jsp</welcome-file>
+  </welcome-file-list>
+  
+     <resource-ref>
+   		<description>DB Connection</description>
+   		<res-ref-name>jdbc/jspbeginner</res-ref-name>
+   		<res-type>javax.sql.DataSource</res-type>
+   		<res-auth>Container</res-auth>
+   </resource-ref>
+</web-app>
