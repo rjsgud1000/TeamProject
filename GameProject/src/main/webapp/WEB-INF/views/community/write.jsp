@@ -1,4 +1,22 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/community/write.jsp
+
+  [역할]
+  - 게시글 작성 화면
+
+  [필요한 request attribute]
+  - level(int): 카테고리
+
+  [입력/출력]
+  - form action: POST /community/write.do
+  - 파라미터: level, title, content
+  - level=3: youtubeUrl 추가
+  - level=4: platform 추가(PC/PS/XBOX/SWITCH/MOBILE)
+
+  [유지보수 포인트]
+  - level별 입력 필드 정책이 바뀌면 CommunityBoardController.writeForm/doPost + PostDAO 저장 컬럼도 함께 확인
+--%>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <%
   int level = (Integer)request.getAttribute("level");

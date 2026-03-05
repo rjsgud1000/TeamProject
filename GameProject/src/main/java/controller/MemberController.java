@@ -27,19 +27,28 @@ import vo.Member;
 import vo.Post;
 
 /**
- * MVC2 Controller for member features.
+ * [역할] 회원 관련 MVC2 컨트롤러(서블릿)
  *
- * URL patterns:
- *  - /member/joinForm.me
- *  - /member/join.me
- *  - /member/loginForm.me
- *  - /member/login.me
- *  - /member/logout.me
- *  - /member/myPage.me
- *  - /member/profileForm.me
- *  - /member/profileUpdate.me
- *  - /member/myPosts.me
- *  - /member/myComments.me
+ * - Controller 책임: 라우팅(URI -> 기능), 파라미터 수집, 뷰(JSP)로 forward/redirect
+ * - Service 책임: 비즈니스 규칙(검증/정책). 예: 회원가입 이메일 형식 검증은 Service에서 최종 수행(우회 방지)
+ * - DAO 책임: DB 접근(SQL 실행)
+ *
+ * [URL 패턴]
+ *  - GET  /member/joinForm.me      : 회원가입 폼
+ *  - POST /member/join.me          : 회원가입 처리(성공: 로그인 폼으로 redirect, 실패: join.jsp forward + error)
+ *  - GET  /member/checkLoginId.me  : 아이디 중복 체크(JSON: {"ok":boolean})
+ *  - GET  /member/checkNickname.me : 닉네임 중복 체크(JSON: {"ok":boolean})
+ *  - GET  /member/checkEmail.me    : 이메일 중복 체크(JSON: {"ok":boolean})
+ *
+ *  - GET  /member/loginForm.me     : 로그인 폼
+ *  - POST /member/login.me         : 로그인 처리
+ *  - GET  /member/logout.me        : 로그아웃
+ *
+ *  - GET  /member/myPage.me        : 마이페이지(로그인 필요)
+ *  - GET  /member/profileForm.me   : 프로필 수정 폼(로그인 필요)
+ *  - POST /member/profileUpdate.me : 프로필(닉네임/비번) 수정(로그인 필요)
+ *  - POST /member/profileImageUpload.me : 프로필 이미지 업로드(로그인 필요)
+ *  - POST /member/profileImageDelete.me : 프로필 이미지 삭제(로그인 필요)
  */
 @WebServlet("/member/*")
 @MultipartConfig(
@@ -56,20 +65,25 @@ public class MemberController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 모든 화면/응답은 UTF-8 기준(한글 깨짐 방지)
         request.setCharacterEncoding("UTF-8");
         response.setCharacterEncoding("UTF-8");
 
+        // /member/* 에서 * 부분
         String action = request.getPathInfo();
         if (action == null) action = "/";
 
         switch (action) {
             case "/joinForm.me":
+                // 회원가입 폼 렌더링
                 forward(request, response, "/WEB-INF/views/member/join.jsp");
                 break;
             case "/loginForm.me":
+                // 로그인 폼 렌더링
                 forward(request, response, "/WEB-INF/views/member/login.jsp");
                 break;
             case "/logout.me":
+                // 세션 무효화 후 커뮤니티 홈으로 이동
                 HttpSession session = request.getSession(false);
                 if (session != null) session.invalidate();
                 response.sendRedirect(request.getContextPath() + "/community/list.do?level=5");
@@ -145,6 +159,8 @@ public class MemberController extends HttpServlet {
                 break;
             }
             case "/checkEmail.me": {
+                // AJAX 중복 체크 API: email 파라미터를 받아 존재 여부를 boolean으로 응답
+                // (형식 검증은 join.jsp(UX) + MemberService.register(최종)에서 별도 수행)
                 response.setContentType("application/json; charset=UTF-8");
                 String email = request.getParameter("email");
                 boolean ok = memberService.isEmailAvailable(email);
@@ -166,15 +182,18 @@ public class MemberController extends HttpServlet {
 
         switch (action) {
             case "/join.me": {
+                // [회원가입] 파라미터 수집 -> Service로 위임(검증/저장) -> 성공/실패 분기
                 String loginId = request.getParameter("loginId");
                 String password = request.getParameter("password");
                 String nickname = request.getParameter("nickname");
                 String email = request.getParameter("email");
 
                 try {
+                    // 중요: 이메일 형식/중복 등 최종 검증은 Service에서 수행(클라이언트 우회 방지)
                     memberService.register(loginId, password, nickname, email);
                     response.sendRedirect(request.getContextPath() + "/member/loginForm.me");
                 } catch (IllegalArgumentException ex) {
+                    // 검증 실패: 같은 JSP로 forward해서 error 메시지를 출력
                     request.setAttribute("error", ex.getMessage());
                     forward(request, response, "/WEB-INF/views/member/join.jsp");
                 }
@@ -226,6 +245,10 @@ public class MemberController extends HttpServlet {
                 break;
             }
             case "/profileImageUpload.me": {
+                // [프로필 이미지 업로드]
+                // - 파일 타입 체크(ProfileImageUtil)
+                // - 실제 저장 경로: /uploads/profile (WAS 배포 경로 기준)
+                // - DB에는 파일명만 저장(경로는 고정)
                 ensureLogin(request, response);
                 if (response.isCommitted()) return;
 

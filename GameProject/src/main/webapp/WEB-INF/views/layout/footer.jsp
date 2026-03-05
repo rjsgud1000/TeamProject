@@ -1,4 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/layout/footer.jsp
+
+  [역할]
+  - 콘텐츠 영역 닫기 + 하단 푸터 + 공통 스크립트 로드
+
+  [유지보수 포인트]
+  - Bootstrap/jQuery CDN 버전 변경 시 이 파일을 수정합니다.
+  - header.jsp에서 열어둔 .gc-container 구조와 짝이 맞아야 레이아웃이 깨지지 않습니다.
+--%>
 <%
 	request.setCharacterEncoding("UTF-8");
 	String contextPath = request.getContextPath();

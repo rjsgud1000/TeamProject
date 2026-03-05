@@ -7,6 +7,16 @@ import java.sql.SQLException;
 
 import util.DBCPUtil;
 
+/**
+ * [역할] post_like 테이블 접근 DAO
+ *
+ * - 특정 사용자(login_id)가 특정 게시글(post_id)을 좋아요 했는지 여부를 기록합니다.
+ * - toggle()은 post_like 삽입/삭제 + post.likes 카운터 갱신을 하나의 트랜잭션으로 묶습니다.
+ *
+ * [유지보수 포인트]
+ * - 동시성/무결성: toggle에서 autoCommit(false) 후 commit/rollback을 직접 관리합니다.
+ * - likes가 음수가 되지 않도록 UPDATE에서 GREATEST(0, ...) 방어 로직이 들어가 있습니다.
+ */
 public class PostLikeDAO {
 
     public boolean exists(long postId, String loginId) {

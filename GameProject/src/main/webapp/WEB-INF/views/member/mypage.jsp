@@ -1,4 +1,19 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/member/mypage.jsp
+
+  [역할]
+  - 로그인한 사용자의 요약 정보 + 내 글/내 댓글 접근 링크 제공
+
+  [필요한 request attribute]
+  - me(Member): MemberController.myPage에서 설정
+
+  [사용하는 session attribute]
+  - id: 로그인 아이디
+
+  [유지보수 포인트]
+  - 링크 대상 변경 시 MemberController 라우팅과 같이 수정
+--%>
 <%@ page import="vo.Member" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <%

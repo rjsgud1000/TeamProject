@@ -6,6 +6,16 @@ import dao.PostDAO;
 import dao.PostLikeDAO;
 import vo.Post;
 
+/**
+ * [역할] 커뮤니티 게시판 Service
+ *
+ * - 게시글 목록/검색/등록/조회수 증가/좋아요 토글 등의 정책을 담당합니다.
+ * - Controller는 파라미터/권한 분기를 하고, 실제 정책/DB 작업은 Service/DAO로 위임합니다.
+ *
+ * [유지보수 포인트]
+ * - 페이지네이션(page/pageSize) 정책 변경 시: offset 계산 로직 확인
+ * - 좋아요 정책 변경 시: toggleLike()/PostLikeDAO
+ */
 public class CommunityBoardService {
 
     private final PostDAO postDAO = new PostDAO();

@@ -11,8 +11,22 @@ import java.util.List;
 import util.DBCPUtil;
 import vo.Member;
 
+/**
+ * [역할] member 테이블 접근 DAO
+ *
+ * - DAO 책임: SQL 실행과 ResultSet 매핑
+ * - 트랜잭션 경계는 현재 단건 처리 위주(필요 시 Service에서 트랜잭션 관리 방식으로 확장)
+ *
+ * [예외 처리]
+ * - SQLException은 호출부에서 처리하기 복잡하므로 RuntimeException으로 래핑하여 전파합니다.
+ *   (운영에서는 로깅/에러 페이지 처리 전략을 별도로 두는 것을 권장)
+ *
+ * [유지보수 포인트]
+ * - member 테이블 컬럼명/스키마가 변경되면 이 클래스의 SQL과 map(...)이 함께 수정 대상입니다.
+ */
 public class MemberDAO {
 
+    /** 아이디(login_id) 존재 여부 */
     public boolean existsLoginId(String loginId) {
         String sql = "SELECT 1 FROM member WHERE login_id = ?";
         try (Connection con = DBCPUtil.getConnection();
@@ -26,6 +40,7 @@ public class MemberDAO {
         }
     }
 
+    /** 닉네임(nickname) 존재 여부 */
     public boolean existsNickname(String nickname) {
         String sql = "SELECT 1 FROM member WHERE nickname = ?";
         try (Connection con = DBCPUtil.getConnection();
@@ -39,6 +54,7 @@ public class MemberDAO {
         }
     }
 
+    /** 이메일(email) 존재 여부 */
     public boolean existsEmail(String email) {
         String sql = "SELECT 1 FROM member WHERE email = ?";
         try (Connection con = DBCPUtil.getConnection();

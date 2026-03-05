@@ -1,4 +1,19 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/layout/header.jsp
+
+  [역할]
+  - 모든 페이지에서 공통으로 include 하는 상단 레이아웃(브랜드/네비/로그인 상태 메뉴)을 렌더링합니다.
+
+  [사용하는 session attribute]
+  - id: 로그인 아이디
+  - role: 권한(ADMIN/USER) -> 관리자 메뉴 노출 여부 결정
+
+  [유지보수 포인트]
+  - CSS 경로: /assets/css/site.css
+  - Bootstrap CDN 버전 교체 시: 아래 <link>/<script> 변경
+  - 메뉴/권한 정책 변경 시: AdminController.ensureAdmin, MemberController.login 세션 세팅과 함께 확인
+--%>
 <%
 	request.setCharacterEncoding("utf-8");
 	String contextPath = request.getContextPath();

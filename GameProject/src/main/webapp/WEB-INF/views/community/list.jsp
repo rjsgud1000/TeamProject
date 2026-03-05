@@ -1,4 +1,21 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/community/list.jsp
+
+  [역할]
+  - 게시글 목록 화면(카테고리 level별/검색/인기글)
+
+  [필요한 request attribute] (CommunityBoardController에서 세팅)
+  - level(int): 카테고리
+  - page(int): 현재 페이지
+  - posts(List<Post>): 목록
+  - q(String): 검색어(선택)
+  - authorMap(Map<String,Member>): 작성자 프로필(닉네임/이미지) 표시용
+
+  [유지보수 포인트]
+  - 인기글( level=5 ) 노출 조건/정렬 정책은 PostDAO.listPopular()와 맞춰야 합니다.
+  - 카테고리(level) 추가 시 네비 버튼과 배지(플랫폼) 표시 로직도 같이 확인하세요.
+--%>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="vo.Post" %>

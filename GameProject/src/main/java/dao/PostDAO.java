@@ -10,8 +10,21 @@ import java.util.List;
 import util.DBCPUtil;
 import vo.Post;
 
+/**
+ * [역할] post 테이블 접근 DAO
+ *
+ * [데이터 모델 개요]
+ * - level: 게시판 카테고리(Controller/Service/JSP와 동일한 의미를 공유)
+ * - parent_id: Q&A 답변글인 경우 원글 id (null이면 일반 글/질문글)
+ * - views/likes: 단순 카운터(인기글 정렬/필터에 사용)
+ *
+ * [유지보수 포인트]
+ * - 인기글 정책(예: likes >= 10) 변경 시: listPopular() SQL 수정
+ * - 검색 정책 변경 시: searchByLevel() SQL 수정
+ */
 public class PostDAO {
 
+    /** 게시글 등록 후 생성된 PK(id) 반환 */
     public long insert(Post p) {
         String sql = "INSERT INTO post (level, parent_id, author_login_id, title, content, youtube_url, platform, views, likes, created_at) VALUES (?,?,?,?,?,?,?,0,0,NOW())";
         try (Connection con = DBCPUtil.getConnection();

@@ -10,6 +10,19 @@ import javax.servlet.http.HttpServletResponse;
 
 import service.CommentService;
 
+/**
+ * [역할] 댓글 작성/수정 컨트롤러
+ *
+ * - POST 전용 엔드포인트로 댓글 생성/수정만 담당합니다.
+ * - 로그인 필요: ensureLogin(...)에서 세션 id 존재 여부 확인
+ *
+ * [URL]
+ *  - POST /comment/write.do   : 댓글 작성 (postId, content)
+ *  - POST /comment/update.do  : 댓글 수정 (postId, commentId, content)
+ *
+ * [유지보수 포인트]
+ * - 댓글 정책(수정 권한, 내용 검증)이 바뀌면 CommentService/CommentDAO와 함께 수정
+ */
 @WebServlet("/comment/*")
 public class CommentController extends HttpServlet {
     private static final long serialVersionUID = 1L;

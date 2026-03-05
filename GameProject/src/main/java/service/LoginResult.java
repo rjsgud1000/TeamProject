@@ -4,6 +4,12 @@ import java.time.LocalDateTime;
 
 import vo.Member;
 
+/**
+ * [역할] 로그인 결과를 표현하는 DTO
+ *
+ * - 단순 성공/실패 뿐 아니라 "차단 상태"를 표현하기 위해 Status + blockedUntil을 포함합니다.
+ * - MemberService.loginDetailed()에서 생성하고, Controller에서 메시지/리다이렉트 분기용으로 사용합니다.
+ */
 public class LoginResult {
 
     public enum Status {

@@ -1,4 +1,17 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/member/myPosts.jsp
+
+  [역할]
+  - 로그인 사용자가 작성한 게시글 목록
+
+  [필요한 request attribute]
+  - posts(List<Post>)
+  - page(int)
+
+  [유지보수 포인트]
+  - 페이지네이션 정책은 MemberController.myPosts와 함께 조정
+--%>
 <%@ page import="java.util.List" %>
 <%@ page import="vo.Post" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />

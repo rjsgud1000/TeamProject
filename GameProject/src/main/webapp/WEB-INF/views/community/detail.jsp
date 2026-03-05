@@ -1,4 +1,31 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/community/detail.jsp
+
+  [역할]
+  - 게시글 상세 화면
+  - 댓글/좋아요/Q&A 답변 작성 UI를 포함합니다.
+
+  [필요한 request attribute] (CommunityBoardController에서 세팅)
+  - post(Post)
+  - author(Member)
+  - comments(List<Comment>)
+  - commentAuthorMap(Map<String,Member>)
+  - answers(List<Post>) : Q&A 질문글일 때만
+  - answerAuthorMap(Map<Long,Member>) : Q&A 답변 작성자 프로필
+  - youtubeEmbedUrl(String) : 동영상(level=3)일 때만
+  - likedByMe(Boolean)
+
+  [폼 action]
+  - 좋아요: POST /community/like.do (postId)
+  - 댓글 작성: POST /comment/write.do (postId, content)
+  - 댓글 수정: POST /comment/update.do (postId, commentId, content)
+  - 답변 작성(Q&A): POST /community/answer.do (parentId, content)
+
+  [유지보수 포인트]
+  - 권한(본인 댓글만 수정) UI는 loginId == comment.author 조건으로만 막고 있으므로,
+    서버에서도(CommentService/DAO) 동일한 조건으로 방어가 되는지 유지해야 합니다.
+--%>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="vo.Post" %>

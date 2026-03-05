@@ -5,6 +5,12 @@ import java.util.List;
 import dao.CommentDAO;
 import vo.Comment;
 
+/**
+ * [역할] 댓글 비즈니스 로직(Service)
+ *
+ * - 댓글 작성/조회/수정의 정책을 정의합니다.
+ * - 권한(본인만 수정 가능)은 DAO update 쿼리 조건(author_login_id)으로도 한 번 더 보강됩니다.
+ */
 public class CommentService {
 
     private final CommentDAO commentDAO = new CommentDAO();

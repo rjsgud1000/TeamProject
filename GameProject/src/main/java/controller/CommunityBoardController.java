@@ -21,15 +21,29 @@ import vo.Member;
 import vo.Post;
 
 /**
- * Community board controller (MVC2).
+ * [역할] 커뮤니티 게시판 컨트롤러(MVC2)
  *
- * Board levels:
- *  0 = 공지사항(ADMIN)
+ * - 목록/상세/글쓰기/답변(Q&A)/좋아요 토글 등 게시판 기능의 라우팅을 담당합니다.
+ * - Controller는 파라미터 수집/권한 분기/뷰 forward 중심이며, 정책/검증은 Service로 위임합니다.
+ *
+ * [Board level]
+ *  0 = 공지(ADMIN)
  *  1 = 자유
- *  2 = Q&A
- *  3 = 동영상(유튜브)
- *  4 = 같이할 사람 찾기
- *  5 = 인기게시글(views/likes 기준으로 목록 제공)
+ *  2 = Q&A (parent_id != null 인 경우 답변글)
+ *  3 = 동영상(유튜브 URL을 embed URL로 변환)
+ *  4 = 같이할 사람 찾기(플랫폼 배지)
+ *  5 = 인기글(조회/좋아요 기반)
+ *
+ * [주요 URL]
+ *  - GET  /community/list.do?level=&page=&q=
+ *  - GET  /community/detail.do?id=
+ *  - GET  /community/writeForm.do?level=
+ *  - POST /community/write.do
+ *  - POST /community/answer.do
+ *  - POST /community/like.do
+ *
+ * [유지보수 포인트]
+ * - level 정책/카테고리 추가 시: 여기 + list.jsp/detail.jsp/write.jsp + PostDAO 쿼리 동시 수정 가능
  */
 @WebServlet("/community/*")
 public class CommunityBoardController extends HttpServlet {

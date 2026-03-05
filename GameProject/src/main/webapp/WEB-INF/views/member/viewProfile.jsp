@@ -1,4 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/member/viewProfile.jsp
+
+  [역할]
+  - 공개 프로필 보기 화면(작성자 클릭 시 이동)
+
+  [필요한 request attribute]
+  - profile(Member): MemberController.viewProfile에서 설정
+
+  [유지보수 포인트]
+  - 기본 이미지 SVG/업로드 경로 정책이 바뀌면 list.jsp/detail.jsp/profile.jsp와 함께 수정
+--%>
 <%@ page import="vo.Member" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <%

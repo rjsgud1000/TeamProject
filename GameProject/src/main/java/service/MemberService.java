@@ -5,14 +5,44 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Pattern;
 
 import dao.MemberDAO;
 import vo.Member;
 
+/**
+ * [역할] 회원 관련 비즈니스 로직(Service)
+ *
+ * - Controller에서 받은 입력을 "정책"에 따라 검증하고 DAO를 호출합니다.
+ * - 클라이언트(JSP/JS) 검증은 우회될 수 있으므로, 가입/수정 같은 "쓰기" 작업의 최종 검증은 반드시 Service에서 수행합니다.
+ *
+ * [유지보수 포인트]
+ * - 회원가입 정책(비밀번호 규칙, 이메일 규칙, 차단/제재 정책 등)이 바뀌면 이 클래스가 1차 변경 지점입니다.
+ */
 public class MemberService {
 
     private final MemberDAO memberDAO = new MemberDAO();
 
+    // 이메일 형식 검증용(일반적인 케이스 커버; 완전한 RFC 구현은 아님)
+    // - 프론트에서도 검증하지만 최종 방어선은 서버(Service)입니다.
+    // - 너무 과한 RFC 규칙을 넣으면 정상 사용자도 차단될 수 있어 "현실적인" 규칙으로 둡니다.
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(
+            "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@" +
+            "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?" +
+            "(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$"
+    );
+
+    /**
+     * 회원가입
+     *
+     * [검증 순서]
+     * 1) 필수값
+     * 2) 이메일 형식(우회 방지)
+     * 3) 중복 체크(아이디/닉네임/이메일)
+     * 4) 저장(비밀번호는 SHA-256 해시로 저장)
+     *
+     * @throws IllegalArgumentException 검증 실패 시(컨트롤러에서 캐치하여 join.jsp에 메시지 출력)
+     */
     public void register(String loginId, String password, String nickname, String email) {
         if (isBlank(loginId) || isBlank(password) || isBlank(nickname) || isBlank(email)) {
             throw new IllegalArgumentException("필수값을 입력하세요.");
@@ -21,6 +51,10 @@ public class MemberService {
         String id = loginId.trim();
         String nn = nickname.trim();
         String em = email.trim();
+
+        if (!isValidEmail(em)) {
+            throw new IllegalArgumentException("이메일 형식이 올바르지 않습니다.");
+        }
 
         if (memberDAO.existsLoginId(id)) {
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
@@ -123,6 +157,18 @@ public class MemberService {
     public boolean isEmailAvailable(String email) {
         if (isBlank(email)) return false;
         return !memberDAO.existsEmail(email.trim());
+    }
+
+    /**
+     * 이메일 형식 검증(서버 최종 검증)
+     * - 길이 제한: 일반적으로 이메일 전체 길이는 320자(로컬 64 + @ + 도메인 255) 정도로 취급
+     */
+    private boolean isValidEmail(String email) {
+        if (isBlank(email)) return false;
+        String em = email.trim();
+        // 너무 긴 이메일은 차단(일반적으로 local 64, domain 255; 전체 320)
+        if (em.length() > 320) return false;
+        return EMAIL_PATTERN.matcher(em).matches();
     }
 
     private boolean isBlank(String s) {

@@ -1,4 +1,21 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/admin/memberDetail.jsp
+
+  [역할]
+  - 관리자 전용 회원 상세 + 수정/제재/삭제
+
+  [필요한 request attribute]
+  - member(Member): AdminController에서 설정
+
+  [폼 action]
+  - 수정: POST /admin/memberUpdate.do (loginId, nickname, role)
+  - 제재: POST /admin/memberSanction.do (loginId, days)
+  - 삭제: POST /admin/memberDelete.do (loginId)
+
+  [유지보수 포인트]
+  - 관리자 권한 체크는 AdminController.ensureAdmin 이 최종 방어선입니다.
+--%>
 <%@ page import="vo.Member" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <%

@@ -1,7 +1,10 @@
 package vo;
 
-import java.time.LocalDateTime;
-
+/**
+ * [역할] 댓글 VO
+ * - comment 테이블 레코드 표현
+ * - JSP에서는 줄바꿈/공백을 보존하기 위해 pre-wrap 스타일로 렌더링하는 경우가 있습니다.
+ */
 public class Comment {
     private long id;
     private long postId;

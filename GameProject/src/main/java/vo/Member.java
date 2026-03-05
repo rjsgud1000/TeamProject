@@ -1,7 +1,16 @@
 package vo;
 
-import java.time.LocalDateTime;
-
+/**
+ * [역할] 회원 정보 VO(= DTO)
+ *
+ * - DB의 member 테이블 레코드를 자바 객체로 표현합니다.
+ * - 화면(JSP)에서 사용되며, passwordHash는 저장용이므로 화면에 노출하지 않도록 주의합니다.
+ *
+ * [필드]
+ * - role: ADMIN / USER
+ * - status: ACTIVE / BLOCKED 등
+ * - sanctionUntil: 제재 만료 시각(만료 전이면 로그인 제한)
+ */
 public class Member {
     private String loginId;
     private String passwordHash;

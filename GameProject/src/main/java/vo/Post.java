@@ -1,7 +1,14 @@
 package vo;
 
-import java.time.LocalDateTime;
-
+/**
+ * [역할] 게시글 VO
+ *
+ * - post 테이블 레코드 표현
+ * - Q&A 답변글은 parentId가 질문글 id를 가리킵니다.
+ *
+ * [유지보수 포인트]
+ * - level 의미가 바뀌면 Controller/Service/JSP/DAO 전 영역에 영향이 있습니다.
+ */
 public class Post {
     private long id;
     private int level;

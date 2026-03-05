@@ -1,4 +1,16 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/admin/members.jsp
+
+  [역할]
+  - 관리자 전용 회원 목록 화면
+
+  [필요한 request attribute]
+  - members(List<Member>): AdminController에서 설정
+
+  [유지보수 포인트]
+  - 회원 상세/수정/제재 기능은 memberDetail.jsp와 AdminController에 연결됩니다.
+--%>
 <%@ page import="java.util.List" %>
 <%@ page import="vo.Member" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />

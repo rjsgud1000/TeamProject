@@ -1,4 +1,22 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/member/profile.jsp
+
+  [역할]
+  - 프로필(닉네임/비밀번호) 수정 + 프로필 이미지 업로드/삭제 화면
+
+  [필요한 request attribute]
+  - me(Member): MemberController.profileForm에서 설정
+  - error(String): 수정 실패 시 메시지(선택)
+
+  [폼 action]
+  - 이미지 업로드: POST /member/profileImageUpload.me (multipart, profileImage)
+  - 이미지 삭제: POST /member/profileImageDelete.me
+  - 정보 수정: POST /member/profileUpdate.me (nickname, newPassword)
+
+  [유지보수 포인트]
+  - 업로드 제한(확장자/용량)은 MemberController + ProfileImageUtil과 함께 변경해야 합니다.
+--%>
 <%@ page import="vo.Member" %>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <h2>정보수정</h2>

@@ -1,4 +1,17 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%--
+  /WEB-INF/views/member/login.jsp
+
+  [역할]
+  - 로그인 폼 화면
+
+  [입력/출력]
+  - form action: /member/login.me (POST)
+  - 파라미터: loginId, password
+
+  [사용하는 request attribute]
+  - error: 로그인 실패/차단 시 컨트롤러가 설정하는 메시지
+--%>
 <jsp:include page="/WEB-INF/views/layout/header.jsp" />
 <h2>로그인</h2>
 
