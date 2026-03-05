@@ -1,6 +1,17 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%
+	String loginFlash = (String) session.getAttribute("loginFlash");
+	if (loginFlash != null) {
+		session.removeAttribute("loginFlash");
+%>
+<script type="text/javascript">
+	alert("<%= loginFlash.replace("\\", "\\\\").replace("\"", "\\\"") %>");
+</script>
+<%
+	}
+%>
 <!doctype html>
 <html lang="ko">
 <head>
