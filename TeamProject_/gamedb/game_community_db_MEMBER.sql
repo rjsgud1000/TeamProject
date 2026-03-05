@@ -35,6 +35,14 @@ CREATE TABLE `MEMBER` (
   `username` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
   `password_hash` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
   `nickname` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  `zipcode` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `addr1` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `addr2` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `addr3` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `addr4` varchar(255) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `gender` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `email` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `phone` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL,
   `role` varchar(10) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'USER',
   `status` varchar(10) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'ACTIVE',
   `updated_at` datetime DEFAULT NULL,
@@ -51,7 +59,7 @@ CREATE TABLE `MEMBER` (
 
 LOCK TABLES `MEMBER` WRITE;
 /*!40000 ALTER TABLE `MEMBER` DISABLE KEYS */;
-INSERT INTO `MEMBER` VALUES ('M001','admin','1234','관리자','ADMIN','ACTIVE',NULL,'2026-03-03 16:09:47'),('M002','user01','1234','겜돌이1','USER','ACTIVE',NULL,'2026-03-03 16:09:47'),('M003','user02','1234','겜돌이2','USER','ACTIVE',NULL,'2026-03-03 16:09:47'),('M004','banned01','1234','문제유저','USER','BANNED',NULL,'2026-03-03 16:09:47'),('M005','inactive01','1234','휴면계정','USER','INACTIVE',NULL,'2026-03-03 16:09:47'),('test1','test1','pass','테스터1','USER','ACTIVE','2026-03-04 06:45:11','2026-03-04 06:45:11'),('test2','test2','pass','테스터2','USER','ACTIVE','2026-03-04 06:45:11','2026-03-04 06:45:11');
+INSERT INTO `MEMBER` VALUES ('M001','admin','1234','관리자',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'ADMIN','ACTIVE',NULL,'2026-03-03 16:09:47'),('M002','user01','1234','겜돌이1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','ACTIVE',NULL,'2026-03-03 16:09:47'),('M003','user02','1234','겜돌이2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','ACTIVE',NULL,'2026-03-03 16:09:47'),('M004','banned01','1234','문제유저',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','BANNED',NULL,'2026-03-03 16:09:47'),('M005','inactive01','1234','휴면계정',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','INACTIVE',NULL,'2026-03-03 16:09:47'),('test1','test1','pass','테스터1',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','ACTIVE','2026-03-04 06:45:11','2026-03-04 06:45:11'),('test2','test2','pass','테스터2',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'USER','ACTIVE','2026-03-04 06:45:11','2026-03-04 06:45:11');
 /*!40000 ALTER TABLE `MEMBER` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -65,4 +73,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-05 13:54:57
+-- Dump completed on 2026-03-05 16:24:41
