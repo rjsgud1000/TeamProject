@@ -126,7 +126,7 @@ public class CommentDAO {
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, commentId);
-            ps.setString(2, memberId); // ⚡ 변경
+            ps.setString(2, memberId); 
             return ps.executeUpdate() > 0;
         } catch (Exception e) { e.printStackTrace(); return false; }
     }
