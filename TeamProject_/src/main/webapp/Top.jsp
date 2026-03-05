@@ -4,6 +4,10 @@
     request.setCharacterEncoding("utf-8");
     /* Java 코드: 현재 웹 애플리케이션의 경로 얻기 (예: /CarProject2) */
     String contextPath = request.getContextPath();
+
+    // 로그인 상태 (MemberController에서 session에 loginId/loginName 저장)
+    String loginId = (String) session.getAttribute("loginId");
+    String loginName = (String) session.getAttribute("loginName");
 %>
 <header class="topbar">
     <div class="container topbar__inner">
@@ -12,12 +16,17 @@
         <span class="brand__name">G-UNIVERSE</span>
       </a>
 
-
-
       <nav class="nav" aria-label="상단 메뉴">
-        <a href="<%=contextPath%>/member/login.me">로그인</a>
-        <a href="<%=contextPath%>/member/join.me">회원가입</a>
-        <a href="<%=contextPath%>/member/mypage.me">마이페이지</a>
+        <% if (loginId == null) { %>
+          <a href="<%=contextPath%>/member/login.me">로그인</a>
+          <a href="<%=contextPath%>/member/join.me">회원가입</a>
+        <% } else { %>
+          <a href="#" style="pointer-events:none; opacity:0.9; font-weight:900;">
+            <%= (loginName != null ? loginName : loginId) %>님
+          </a>
+          <a href="<%=contextPath%>/member/logout.me">로그아웃</a>
+          <a href="<%=contextPath%>/member/mypage.me">마이페이지</a>
+        <% } %>
       </nav>
     </div>
 

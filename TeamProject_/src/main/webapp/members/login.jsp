@@ -124,8 +124,19 @@
     <div class="login-page">
         <div class="login-card">
 
+            <%-- 로그인 실패 메시지 출력 --%>
+            <%
+            String loginError = (String) request.getAttribute("loginError");
+            if (loginError != null) {
+            %>
+                <div style="margin-bottom:12px; color:#d00; font-weight:bold; text-align:center;">
+                    <%= loginError %>
+                </div>
+            <% } %>
+
             <%--MemberController서블릿에.. 로그인 처리 요청시! 입력한 id와 패스워드 전달 --%>
             <form class="form-signin"
+                  method="post"
                   action="<%=request.getContextPath()%>/member/loginPro.me" id="join">
 
                 <h2 class="form-signin-heading">로그인 화면</h2>

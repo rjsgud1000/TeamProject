@@ -34,7 +34,7 @@
     maxTotal="50"
     maxIdle="10"
     maxWaitMillis="-1"
-    url="jdbc:mysql://ls-37ce0c3f4e47885099a83f17e5ff69934f6553f3.c72qaimaqt1h.ap-northeast-2.rds.amazonaws.com:3306/rentcar_db?serverTimezone=Asia/Seoul&amp;characterEncoding=UTF-8&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
+    url="jdbc:mysql://ls-48ebe287859564129511134a6d11233300c07bca.czgiqoag813n.ap-northeast-2.rds.amazonaws.com:3306/game_community_db?serverTimezone=Asia/Seoul&amp;characterEncoding=UTF-8&amp;allowPublicKeyRetrieval=true&amp;useSSL=false"
 	/>
 	
 	<!-- Tomcat JNDI 커넥션풀 설정 (MySQL8 기준) -->
