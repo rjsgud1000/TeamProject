@@ -34,7 +34,7 @@
       <div class="container subnav__inner" aria-label="보조 메뉴">
         <a href="#">전체보기</a>
         <a href="#">인기 게시글</a>
-        <a href="#">자유 게시판</a>
+        <a href="BoardList.jsp">자유 게시판</a>
         <a href="#">질문과 답변</a>
         <a href="#">파티원 모집</a>
         <a href="#">공지사항</a>
