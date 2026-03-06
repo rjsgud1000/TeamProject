@@ -118,6 +118,23 @@
 </head>
 <body>
 
+<%
+	// 회원가입 성공 메시지(1회성)
+	String joinFlash = null;
+	javax.servlet.http.HttpSession flashSession = request.getSession(false);
+	if (flashSession != null) {
+		joinFlash = (String) flashSession.getAttribute("joinFlash");
+		if (joinFlash != null) {
+			flashSession.removeAttribute("joinFlash");
+		}
+	}
+%>
+<% if (joinFlash != null) { %>
+	<script>
+		alert('<%= joinFlash.replace("'", "\\'") %>');
+	</script>
+<% } %>
+
     <!-- ==========================================
          로그인 화면
          ========================================== -->
