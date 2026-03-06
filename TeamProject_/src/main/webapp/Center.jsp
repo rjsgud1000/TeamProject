@@ -1,4 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="Dao.mainDAO" %>
+<%@ page import="Vo.mainVO" %>
+
 <main>
     <div class="container">
       <section class="page">
@@ -13,7 +18,7 @@
             <div class="game-card__bg bg-lostark"></div>
             <div class="rank-badge"><span class="rank-circle">1</span> 1위</div>
             <div class="game-card__content">
-              <div class="game-name">LOSTARK</div>
+              <div class="game-name">LOL</div>
               <div class="game-meta"><span class="meta-dot"></span> 5,412</div>
             </div>
           </a>
@@ -70,154 +75,163 @@
 
         <!-- 3 columns -->
         <div class="grid3">
-          <!-- Popular -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">인기 게시글</h3>
-              <span style="color:var(--sub); font-weight:900; font-size:12px;">TOP</span>
-            </div>
-            <div class="panel__body">
-              <ul class="list">
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 발로란트 듀오 같이 하실 분?</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 22</div>
-                </li>
+<!-- Popular -->
+<section class="panel">
+  <div class="panel__head">
+    <h3 class="panel__title">인기 게시글</h3>
+        <span style="color:red; font-weight:900; font-size:12px;">HOT!</span>
+  </div>
 
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 로스트아크 유저분들께 팁 공유</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 27</div>
-                </li>
+  <div class="panel__body">
+    <ul class="list">
+<%
+    mainDAO dao = new mainDAO();
+    ArrayList<mainVO> popularList = dao.popularList();
 
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도 스위치 추천 게임 알려주세요</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 21</div>
-                </li>
-
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 차지 후 회복스탯 버그 요안</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 19</div>
-                </li>
-
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도의 미래 가능성 어떨까요?</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 17</div>
-                </li>
-              </ul>
-            </div>
-          </section>
+    if(popularList != null && !popularList.isEmpty()) {
+        for(mainVO vo : popularList) {
+%>
+      <li class="item">
+        <div class="item__text">
+          <div class="title">🔥 <%= vo.getMa_title() %></div>
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>추천수 <%= vo.getLike_count() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+        </div>
+      </li>
+<%
+        }
+    } else {
+%>
+      <li class="item">
+        <div class="item__text">
+          <div class="title">인기 게시글이 없습니다.</div>
+          <div class="meta">
+            <span>-</span>
+            <span>-</span>
+          </div>
+        </div>
+      </li>
+<%
+    }
+%>
+    </ul>
+  </div>
+</section>
 
           <!-- Latest -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">최신 게시글</h3>
-              <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW</span>
-            </div>
-            <div class="panel__body">
-              <ul class="list">
-                <li class="item">
-                  <span class="avatar">A</span>
-                  <div class="item__text">
-                    <div class="title">[협력] PSS 모 같이 하실 분 구합니다</div>
-                    <div class="meta"><span>루틴밍</span><span>방금 전</span></div>
-                  </div>
-                </li>
+<section class="panel">
+  <div class="panel__head">
+    <h3 class="panel__title">최신 게시글</h3>
+    <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW!</span>
+  </div>
 
-                <li class="item">
-                  <span class="avatar">B</span>
-                  <div class="item__text">
-                    <div class="title">[소식] 이번 게임 BJ 방송 논란이네요 ㅋㅋ</div>
-                    <div class="meta"><span>밤하늘토끼</span><span>17분 전</span></div>
-                  </div>
-                </li>
+  <div class="panel__body">
+    <ul class="list">
 
-                <li class="item">
-                  <span class="avatar">C</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 발로란트 듀오 같이 하실 분?</div>
-                    <div class="meta"><span>BlueSky</span><span>1시간 전</span></div>
-                  </div>
-                </li>
+<%
+    mainDAO dao2 = new mainDAO();
+    ArrayList<mainVO> list = dao2.mainList();
 
-                <li class="item">
-                  <span class="avatar">D</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 로스트아크 유저분들께 팁 공유</div>
-                    <div class="meta"><span>Gamingring</span><span>2시간 전</span></div>
-                  </div>
-                </li>
+    if(list != null && !list.isEmpty()){
+        for(mainVO vo : list){
+%>
 
-                <li class="item">
-                  <span class="avatar">E</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도 스위치 추천 게임 알려주세요</div>
-                    <div class="meta"><span>Meun</span><span>6시간 전</span></div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </section>
+      <li class="item">
 
-          <!-- Notices -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">공지사항</h3>
-              <div class="tabs" role="tablist" aria-label="공지 탭">
-                <button class="tab is-active" type="button" data-tab="notice">공지</button>
-                <button class="tab" type="button" data-tab="update">최신작업</button>
-              </div>
-            </div>
+        <div class="item__text">
+          <div class="title">
+            <%= vo.getMa_title() %>
+          </div>
 
-            <div class="notice" data-pane="notice">
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게시판 이용규칙 안내</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">새로운 커뮤니티 기능 업데이트</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게임 티어 이벤트 당첨자 발표</div>
-                <div class="date">2024.04.20</div>
-              </div>
-            </div>
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>조회수 <%= vo.getMa_viewcount() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+        </div>
 
-            <div class="notice" data-pane="update" style="display:none;">
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게시판 이용규칙 미세 수정</div>
-                <div class="date">2024.04.23</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">새로운 커뮤니티 감정 가이드</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게임 티어 이벤트 당첨자 발표</div>
-                <div class="date">2024.04.20</div>
-              </div>
-            </div>
-          </section>
+      </li>
+
+<%
+        }
+    } else {
+%>
+
+      <li class="item">
+        <div class="item__text">
+          <div class="title">게시글이 없습니다.</div>
+        </div>
+      </li>
+
+<%
+    }
+%>
+
+    </ul>
+  </div>
+</section>
+
+ <!-- Notices -->
+<section class="panel">
+
+  <div class="panel__head">
+    <h3 class="panel__title">공지사항</h3>
+        <span style="color:var(--sub); font-weight:900; font-size:12px;">NOTICE</span>
+  </div>
+
+  <div class="panel__body">
+    <ul class="list">
+
+<%
+    mainDAO dao3 = new mainDAO();
+    ArrayList<mainVO> noticeList = dao3.noticeList();
+
+    if(noticeList != null && !noticeList.isEmpty()){
+
+        for(mainVO vo : noticeList){
+%>
+
+      <li class="item">
+
+        <div class="item__text">
+
+          <div class="title">
+            [공지] <%= vo.getMa_title() %>
+          </div>
+
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>조회수 <%= vo.getMa_viewcount() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+
+        </div>
+
+      </li>
+
+<%
+        }
+
+    } else {
+%>
+
+      <li class="item">
+        <div class="item__text">
+          <div class="title">등록된 공지사항이 없습니다.</div>
+        </div>
+      </li>
+
+<%
+    }
+%>
+
+    </ul>
+  </div>
+
+</section>
         </div>
       </section>
     </div>
