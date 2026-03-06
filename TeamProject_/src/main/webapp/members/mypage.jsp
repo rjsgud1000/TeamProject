@@ -1,13 +1,14 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="Vo.MemberVO" %>
-<%
-	request.setCharacterEncoding("UTF-8");
-	String contextPath = request.getContextPath();
-
-	MemberVO loginMember = (MemberVO) session.getAttribute("loginMember");
-	String loginId = (String) session.getAttribute("loginId");
-	String loginName = (String) session.getAttribute("loginName"); // 현재는 닉네임으로 저장됨
-%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<c:set var="member" value="${requestScope.memberDetail}" />
+<c:set var="profileFlash" value="${sessionScope.profileFlash}" />
+<c:if test="${not empty profileFlash}">
+	<c:remove var="profileFlash" scope="session" />
+	<script type="text/javascript">
+		alert("${profileFlash}");
+	</script>
+</c:if>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -16,121 +17,99 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <title>마이페이지</title>
 
-<link rel="stylesheet" href="<%=contextPath%>/css/mypage.css" />
+<link rel="stylesheet" href="${contextPath}/css/mypage.css" />
 
 </head>
 <body>
-
-<%-- NOTE: main.jsp가 Top.jsp를 포함하므로, center로 로드되는 mypage.jsp에서는 Top.jsp를 include하지 않습니다. --%>
 
 <div class="page">
 	<div class="container">
 		<div class="card">
 			<div class="hero">
 				<h1>마이페이지</h1>
-				<p>내 정보와 계정 상태를 확인할 수 있어요. (JSP 화면만 구성)</p>
+				<p>내 정보와 계정 상태를 확인할 수 있어요.</p>
 			</div>
 
 			<div class="body">
-				<% if (loginId == null || loginMember == null) { %>
-					<div class="empty">
-						<h2>로그인이 필요해요</h2>
-						<p>마이페이지는 로그인 후 이용할 수 있습니다.</p>
-						<div class="actions">
-							<a class="btn primary" href="<%=contextPath%>/member/login.me">로그인</a>
-							<a class="btn" href="<%=contextPath%>/main.jsp">메인으로</a>
-						</div>
-					</div>
-				<% } else {
-					String nickname = loginMember.getNickname();
-					String username = loginMember.getUsername();
-					String status = loginMember.getStatus();
-					String role = loginMember.getRole();
-					String email = loginMember.getEmail();
-					String phone = loginMember.getPhone();
-
-					String displayName = (nickname != null && !nickname.isBlank()) ? nickname : (loginName != null ? loginName : loginId);
-					String avatarText = (displayName != null && !displayName.isBlank()) ? displayName.substring(0, 1) : "?";
-
-					String badgeText = (status != null && !status.isBlank()) ? status : "ACTIVE";
-					String badgeClass = "";
-					String badgeLabel = badgeText;
-					if ("ACTIVE".equalsIgnoreCase(badgeText)) {
-						badgeClass = "ok";
-						badgeLabel = "정상";
-					} else if ("INACTIVE".equalsIgnoreCase(badgeText)) {
-						badgeClass = "warn";
-						badgeLabel = "휴면";
-					} else if ("BANNED".equalsIgnoreCase(badgeText)) {
-						badgeClass = "bad";
-						badgeLabel = "제재";
-					} else {
-						badgeClass = "bad";
-					}
-
-					String emailText = (email != null && !email.isBlank()) ? email : "(미등록)";
-					String phoneText = (phone != null && !phone.isBlank()) ? phone : "(미등록)";
-					String usernameText = (username != null && !username.isBlank()) ? username : "";
-					String roleText = (role != null && !role.isBlank()) ? role : "";
-				%>
-
-					<div class="grid">
-						<div class="profile">
-							<div class="section-title">프로필</div>
-							<div style="display:flex; gap:12px; align-items:center;">
-								<div class="avatar"><%= avatarText %></div>
-								<div class="kv">
-									<div class="name"><%= displayName %></div>
-									<div class="sub">@<%= loginId %> · <span class="badge <%=badgeClass%>"><%= badgeLabel %></span></div>
-								</div>
-							</div>
-
+				<c:choose>
+					<c:when test="${empty member}">
+						<div class="empty">
+							<h2>로그인이 필요해요</h2>
+							<p>마이페이지는 로그인 후 이용할 수 있습니다.</p>
 							<div class="actions">
-								<a class="btn" href="<%=contextPath%>/member/logout.me">로그아웃</a>
-								<a class="btn primary" href="#" onclick="alert('비밀번호 변경 기능은 추후 연결해주세요.'); return false;">비밀번호 변경</a>
-								<a class="btn" href="#" onclick="alert('내 정보 수정 기능은 추후 연결해주세요.'); return false;">내 정보 수정</a>
-							</div>
-
-							<div class="note">
-
+								<a class="btn primary" href="${contextPath}/member/login.me">로그인</a>
+								<a class="btn" href="${contextPath}/main.jsp">메인으로</a>
 							</div>
 						</div>
+					</c:when>
+					<c:otherwise>
+						<c:set var="displayName" value="${not empty member.nickname ? member.nickname : member.memberId}" />
+						<c:set var="avatarText" value="${not empty displayName ? displayName.substring(0,1) : '?'}" />
+						<c:set var="genderLabel" value="${member.gender eq 'man' ? '남성' : member.gender eq 'woman' ? '여성' : '(미등록)'}" />
+						<c:set var="fullAddress" value="${empty member.zipcode and empty member.addr1 and empty member.addr2 and empty member.addr3 and empty member.addr4 ? '(미등록)' : '['}${member.zipcode}${empty member.zipcode ? '' : '] '}${member.addr1} ${member.addr2} ${member.addr3} ${member.addr4}" />
 
-						<div>
-							<div class="section-title">내 정보</div>
-							<div class="list" aria-label="내 정보">
-								<div class="row">
-									<div class="key">닉네임</div>
-									<div class="val"><%= displayName %></div>
+						<div class="grid">
+							<div class="profile">
+								<div class="section-title">프로필</div>
+								<div style="display:flex; gap:12px; align-items:center;">
+									<div class="avatar">${avatarText}</div>
+									<div class="kv">
+										<div class="name">${displayName}</div>
+										<div class="sub">@${member.memberId}</div>
+									</div>
 								</div>
-								<div class="row">
-									<div class="key">이름</div>
-									<div class="val"><%= usernameText %></div>
+
+								<div class="actions">
+									<a class="btn" href="${contextPath}/member/logout.me">로그아웃</a>
+									<a class="btn primary" href="${contextPath}/member/editProfile.me">회원정보 수정</a>
+									<a class="btn" href="${contextPath}/member/withdraw.me" style="background:#fff5f5; color:#b91c1c; border:1px solid #fecaca;">회원탈퇴</a>
 								</div>
-								<div class="row">
-									<div class="key">권한</div>
-									<div class="val"><%= roleText %></div>
-								</div>
-								<div class="row">
-									<div class="key">계정 상태</div>
-									<div class="val"><%= badgeLabel %></div>
-								</div>
-								<div class="row">
-									<div class="key">이메일</div>
-									<div class="val"><%= emailText %></div>
-								</div>
-								<div class="row">
-									<div class="key">휴대폰</div>
-									<div class="val"><%= phoneText %></div>
+
+								<div class="note">
+									비밀번호 변경은 회원정보 수정 화면에서 함께 처리할 수 있습니다.
 								</div>
 							</div>
-							<div class="note">
-								<span class="small">TIP</span><br>
-								로그인 상태 표시는 상단바(Top.jsp)와 동일하게 세션 기준으로 동작합니다.
+
+							<div>
+								<div class="section-title">내 정보</div>
+								<div class="list" aria-label="내 정보">
+									<div class="row">
+										<div class="key">아이디</div>
+										<div class="val">${member.memberId}</div>
+									</div>
+									<div class="row">
+										<div class="key">닉네임</div>
+										<div class="val">${displayName}</div>
+									</div>
+									<div class="row">
+										<div class="key">이름</div>
+										<div class="val">${member.username}</div>
+									</div>
+									<div class="row">
+										<div class="key">성별</div>
+										<div class="val">${genderLabel}</div>
+									</div>
+									<div class="row">
+										<div class="key">이메일</div>
+										<div class="val">${empty member.email ? '(미등록)' : member.email}</div>
+									</div>
+									<div class="row">
+										<div class="key">휴대폰</div>
+										<div class="val">${empty member.phone ? '(미등록)' : member.phone}</div>
+									</div>
+									<div class="row">
+										<div class="key">집주소</div>
+										<div class="val">${fullAddress}</div>
+									</div>
+								</div>
+								<div class="note">
+									<span class="small">TIP</span><br>
+									이메일, 휴대폰, 주소는 DB에서 다시 조회한 최신 정보입니다.
+								</div>
 							</div>
 						</div>
-					</div>
-				<% } %>
+					</c:otherwise>
+				</c:choose>
 			</div>
 		</div>
 	</div>

@@ -84,6 +84,21 @@ public class MemberDAO {
 		}
 	}
 
+	public boolean existsNicknameExceptMemberId(String nickname, String memberId) {
+		String sql = "SELECT 1 FROM MEMBER WHERE nickname=? AND member_id<>?";
+		try (Connection con = DBCPUtil.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, nickname);
+			pstmt.setString(2, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
 	public int insertMember(MemberVO vo) {
 		String sql = "INSERT INTO MEMBER (member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, updated_at) "
 				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())";
@@ -114,29 +129,42 @@ public class MemberDAO {
 	}
 
 	public MemberVO findByMemberId(String memberId) {
-		String sql = "SELECT member_id, username, password_hash, nickname, role, status "
+		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status "
 				+ "FROM MEMBER WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
 			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
-					MemberVO vo = new MemberVO();
-					vo.setMemberId(rs.getString("member_id"));
-					String username = rs.getString("username");
-					vo.setUsername(username);
-					vo.setNameReal(username);
-					vo.setPasswordHash(rs.getString("password_hash"));
-					vo.setNickname(rs.getString("nickname"));
-					vo.setRole(rs.getString("role"));
-					vo.setStatus(rs.getString("status"));
-					return vo;
+					return mapMember(rs);
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	public int updateProfile(MemberVO vo) {
+		String sql = "UPDATE MEMBER SET nickname=?, zipcode=?, addr1=?, addr2=?, addr3=?, addr4=?, gender=?, email=?, phone=?, updated_at=NOW() WHERE member_id=?";
+		try (Connection con = DBCPUtil.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			int i = 1;
+			pstmt.setString(i++, vo.getNickname());
+			pstmt.setString(i++, vo.getZipcode());
+			pstmt.setString(i++, vo.getAddr1());
+			pstmt.setString(i++, vo.getAddr2());
+			pstmt.setString(i++, vo.getAddr3());
+			pstmt.setString(i++, vo.getAddr4());
+			pstmt.setString(i++, vo.getGender());
+			pstmt.setString(i++, vo.getEmail());
+			pstmt.setString(i++, vo.getPhone());
+			pstmt.setString(i++, vo.getMemberId());
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 	
 	public int updatePasswordHash(String memberId, String newPasswordHash) {
@@ -179,8 +207,41 @@ public class MemberDAO {
 		return null;
 	}
 
+	public int withdrawMember(String memberId) {
+		String sql = "UPDATE MEMBER SET status='WITHDRAWN', updated_at=NOW() WHERE member_id=? AND status<>'WITHDRAWN'";
+		try (Connection con = DBCPUtil.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
 	public static class SanctionInfo {
 		public String reason;
 		public LocalDateTime endAt;
+	}
+
+	private MemberVO mapMember(ResultSet rs) throws Exception {
+		MemberVO vo = new MemberVO();
+		vo.setMemberId(rs.getString("member_id"));
+		String username = rs.getString("username");
+		vo.setUsername(username);
+		vo.setNameReal(username);
+		vo.setPasswordHash(rs.getString("password_hash"));
+		vo.setNickname(rs.getString("nickname"));
+		vo.setZipcode(rs.getString("zipcode"));
+		vo.setAddr1(rs.getString("addr1"));
+		vo.setAddr2(rs.getString("addr2"));
+		vo.setAddr3(rs.getString("addr3"));
+		vo.setAddr4(rs.getString("addr4"));
+		vo.setGender(rs.getString("gender"));
+		vo.setEmail(rs.getString("email"));
+		vo.setPhone(rs.getString("phone"));
+		vo.setRole(rs.getString("role"));
+		vo.setStatus(rs.getString("status"));
+		return vo;
 	}
 }
