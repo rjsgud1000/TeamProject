@@ -32,9 +32,6 @@ public class MemberService {
 		String status = member.getStatus();
 		if (status != null) {
 			String s = status.trim().toUpperCase();
-			if ("INACTIVE".equals(s)) {
-				return new LoginResult(null, "휴면계정입니다. 고객센터에 문의해 주세요.");
-			}
 			if ("BANNED".equals(s)) {
 				Dao.MemberDAO.SanctionInfo info = memberDAO.findActiveSanction(id);
 				String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
@@ -50,7 +47,10 @@ public class MemberService {
 				}
 				return new LoginResult(null, msg);
 			}
-			if (!"ACTIVE".equals(s)) {
+			if ("WITHDRAWN".equals(s)) {
+				return new LoginResult(null, "탈퇴한 계정입니다.");
+			}
+			if (!"ACTIVE".equals(s) && !"INACTIVE".equals(s)) {
 				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + s + ")");
 			}
 		}
@@ -130,6 +130,100 @@ public class MemberService {
 
 		int inserted = memberDAO.insertMember(vo);
 		return inserted == 1 ? null : "회원가입에 실패했습니다.";
+	}
+
+	public MemberVO getMemberDetail(String memberId) {
+		String id = trimToNull(memberId);
+		if (id == null) {
+			return null;
+		}
+		return memberDAO.findByMemberId(id);
+	}
+
+	public String updateProfile(MemberVO vo, String newPassword) {
+		if (vo == null) {
+			return "잘못된 요청입니다.";
+		}
+		String memberId = trimToNull(vo.getMemberId());
+		String nickname = trimToNull(vo.getNickname());
+		if (memberId == null) {
+			return "로그인 정보가 올바르지 않습니다.";
+		}
+		if (nickname == null) {
+			return "닉네임은 필수입니다.";
+		}
+
+		vo.setMemberId(memberId);
+		vo.setNickname(nickname);
+		vo.setZipcode(trimToNull(vo.getZipcode()));
+		vo.setAddr1(trimToNull(vo.getAddr1()));
+		vo.setAddr2(trimToNull(vo.getAddr2()));
+		vo.setAddr3(trimToNull(vo.getAddr3()));
+		vo.setAddr4(trimToNull(vo.getAddr4()));
+		vo.setGender(trimToNull(vo.getGender()));
+		vo.setEmail(trimToNull(vo.getEmail()));
+		vo.setPhone(trimToNull(vo.getPhone()));
+
+		if (vo.getEmail() != null && !vo.getEmail().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+			return "이메일 형식이 올바르지 않습니다.";
+		}
+		if (vo.getPhone() != null && !vo.getPhone().matches("^\\d{10,11}$")) {
+			return "핸드폰 번호는 숫자만 10~11자리로 입력해 주세요.";
+		}
+		if (memberDAO.existsNicknameExceptMemberId(nickname, memberId)) {
+			return "이미 사용 중인 닉네임입니다.";
+		}
+
+		int updated = memberDAO.updateProfile(vo);
+		if (updated != 1) {
+			return "회원정보 수정에 실패했습니다.";
+		}
+
+		String password = trimToNull(newPassword);
+		if (password != null) {
+			if (password.length() < 4) {
+				return "새 비밀번호는 4자 이상 입력해 주세요.";
+			}
+			int pwUpdated = memberDAO.updatePasswordHash(memberId, PasswordUtil.hash(password));
+			if (pwUpdated != 1) {
+				return "비밀번호 변경에 실패했습니다.";
+			}
+		}
+
+		return null;
+	}
+
+	public String withdrawMember(String memberId, String password) {
+		String id = trimToNull(memberId);
+		String rawPassword = trimToNull(password);
+		if (id == null) {
+			return "로그인 정보가 올바르지 않습니다.";
+		}
+		if (rawPassword == null) {
+			return "비밀번호를 입력해 주세요.";
+		}
+
+		MemberVO member = memberDAO.findByMemberId(id);
+		if (member == null) {
+			return "회원 정보를 찾을 수 없습니다.";
+		}
+		if ("WITHDRAWN".equalsIgnoreCase(trimToNull(member.getStatus()))) {
+			return "이미 탈퇴 처리된 계정입니다.";
+		}
+
+		String stored = member.getPasswordHash();
+		boolean ok;
+		if (PasswordUtil.isHashed(stored)) {
+			ok = PasswordUtil.matches(rawPassword, stored);
+		} else {
+			ok = rawPassword.equals(stored);
+		}
+		if (!ok) {
+			return "비밀번호가 올바르지 않습니다.";
+		}
+
+		int updated = memberDAO.withdrawMember(id);
+		return updated == 1 ? null : "회원탈퇴 처리에 실패했습니다.";
 	}
 
 	private static String trimToNull(String s) {

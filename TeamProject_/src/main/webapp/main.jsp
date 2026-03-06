@@ -559,6 +559,9 @@
 
 <body>
  <c:set var="center" value="${requestScope.center}" />
+ <c:if test="${empty requestScope.isAdmin}">
+   <c:set var="isAdmin" value="${sessionScope.isAdmin or sessionScope.loginRole eq 'ADMIN'}" scope="request"/>
+ </c:if>
  
  
   <c:if test="${empty center}">
