@@ -41,12 +41,13 @@ CREATE TABLE `BOARD_POST` (
   `create_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL,
   `is_deleted` int DEFAULT '0',
+  `accepted_comment_id` int DEFAULT NULL,
   PRIMARY KEY (`post_id`),
   KEY `FK` (`member_id`),
   KEY `FK2` (`nickname`),
   CONSTRAINT `FK` FOREIGN KEY (`member_id`) REFERENCES `MEMBER` (`member_id`),
   CONSTRAINT `FK2` FOREIGN KEY (`nickname`) REFERENCES `MEMBER` (`nickname`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -55,7 +56,7 @@ CREATE TABLE `BOARD_POST` (
 
 LOCK TABLES `BOARD_POST` WRITE;
 /*!40000 ALTER TABLE `BOARD_POST` DISABLE KEYS */;
-INSERT INTO `BOARD_POST` VALUES (1,'M001','관리자',0,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',0,'2026-03-03 07:27:49',NULL,0),(2,'M001','관리자',0,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',0,'2026-03-03 07:29:38',NULL,0),(3,'M002','겜돌이1',1,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',0,'2026-03-03 07:29:38',NULL,0),(4,'M003','겜돌이2',2,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',0,'2026-03-03 07:29:38',NULL,0),(5,'M002','겜돌이1',1,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',2,'2026-03-03 07:30:06',NULL,0),(6,'M003','겜돌이2',2,'Default POST','Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.',0,'2026-03-03 07:30:06',NULL,0),(19,'test1','테스터1',1,'첫 글','내용입니다',1,'2026-03-04 06:45:34',NULL,0),(20,'test2','테스터2',1,'두번째 글','내용입니다',3,'2026-03-04 06:45:34',NULL,0),(21,'test1','테스터1',2,'질문 글','질문 내용',0,'2026-03-04 06:45:34',NULL,0);
+INSERT INTO `BOARD_POST` VALUES (24,'test1','테스터1',2,'[질문] 발로란트 입문 질문','요즘 시작했는데 캐릭 추천 좀',0,'2026-03-05 08:30:48',NULL,0,NULL),(25,'test2','테스터2',2,'[질문] 로아 뉴비 스펙업','장비 뭐부터 맞추는게 좋아요?',0,'2026-03-05 08:30:48',NULL,0,NULL);
 /*!40000 ALTER TABLE `BOARD_POST` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -69,4 +70,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-05 16:24:40
+-- Dump completed on 2026-03-06 13:43:40

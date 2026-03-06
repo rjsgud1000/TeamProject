@@ -85,7 +85,7 @@ public class MemberController extends HttpServlet {
 			return;
 		}
 		Dao.MemberDAO dao = new Dao.MemberDAO();
-		boolean exists = dao.existsUsername(nickname) || dao.existsNickname(nickname);
+		boolean exists = dao.existsNickname(nickname);
 		if (exists) {
 			response.getWriter().write("{\"ok\":false,\"message\":\"이미 사용 중인 닉네임입니다.\"}");
 		} else {
@@ -97,9 +97,10 @@ public class MemberController extends HttpServlet {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
 
-		MemberVO loginMember = memberService.login(id, pass);
+		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
+		MemberVO loginMember = result.member;
 		if (loginMember == null) {
-			request.setAttribute("loginError", "아이디 또는 비밀번호가 올바르지 않습니다.");
+			request.setAttribute("loginError", result.error != null ? result.error : "아이디 또는 비밀번호가 올바르지 않습니다.");
 			forward(request, response, "/members/login.jsp");
 			return;
 		}
@@ -107,8 +108,7 @@ public class MemberController extends HttpServlet {
 		HttpSession session = request.getSession(true);
 		session.setAttribute("loginMember", loginMember);
 		session.setAttribute("loginId", loginMember.getId());
-		session.setAttribute("loginName", loginMember.getName());
-		// 로그인 성공 후 메인에서 딱 1번만 보여줄 메시지
+		session.setAttribute("loginName", loginMember.getNickname());
 		session.setAttribute("loginFlash", "로그인하셨습니다.");
 
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
@@ -133,6 +133,7 @@ public class MemberController extends HttpServlet {
 
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
+		String name = request.getParameter("name");
 		String nickname = request.getParameter("nickname");
 
 		String zipcode = request.getParameter("address1");
@@ -148,7 +149,8 @@ public class MemberController extends HttpServlet {
 		MemberVO vo = new MemberVO();
 		vo.setMemberId(id);
 		vo.setPasswordHash(pass);
-		vo.setUsername(nickname);
+		vo.setNameReal(emptyToNull(name));
+		vo.setUsername(emptyToNull(name));
 		vo.setNickname(nickname);
 
 		vo.setZipcode(emptyToNull(zipcode));
