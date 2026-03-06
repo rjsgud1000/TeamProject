@@ -33,6 +33,8 @@ public class MemberController extends HttpServlet {
 		String action = request.getPathInfo();
 		if (action == null) action = "";
 
+		populateLoginViewAttributes(request);
+
 		switch (action) {
 		case "/login.me":
 			request.setAttribute("center", "members/login.jsp");
@@ -106,6 +108,7 @@ public class MemberController extends HttpServlet {
 		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
+			populateLoginViewAttributes(request);
 			request.setAttribute("loginError", result.error != null ? result.error : "아이디 또는 비밀번호가 올바르지 않습니다.");
 			request.setAttribute("center", "members/login.jsp");
 			forward(request, response, "/main.jsp");
@@ -116,6 +119,8 @@ public class MemberController extends HttpServlet {
 		session.setAttribute("loginMember", loginMember);
 		session.setAttribute("loginId", loginMember.getId());
 		session.setAttribute("loginName", loginMember.getNickname());
+		session.setAttribute("loginRole", loginMember.getRole());
+		session.setAttribute("isAdmin", isAdminRole(loginMember.getRole()));
 		session.setAttribute("loginFlash", "로그인하셨습니다.");
 
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
@@ -186,5 +191,32 @@ public class MemberController extends HttpServlet {
 		if (s == null) return null;
 		String v = s.trim();
 		return v.isEmpty() ? null : v;
+	}
+
+	private void populateLoginViewAttributes(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session == null) {
+			request.setAttribute("isAdmin", false);
+			return;
+		}
+
+		Object loginMemberObj = session.getAttribute("loginMember");
+		String loginRole = null;
+		if (loginMemberObj instanceof MemberVO) {
+			loginRole = ((MemberVO) loginMemberObj).getRole();
+		}
+		if (loginRole == null) {
+			Object sessionRole = session.getAttribute("loginRole");
+			if (sessionRole instanceof String) {
+				loginRole = (String) sessionRole;
+			}
+		}
+
+		request.setAttribute("loginRole", loginRole);
+		request.setAttribute("isAdmin", isAdminRole(loginRole));
+	}
+
+	private boolean isAdminRole(String role) {
+		return role != null && "ADMIN".equalsIgnoreCase(role.trim());
 	}
 }
