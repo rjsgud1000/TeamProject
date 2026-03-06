@@ -5,6 +5,7 @@ public class MemberVO {
 	private String username;
 	private String passwordHash;
 	private String nickname;
+	private String name;
 
 	private String zipcode;
 	private String addr1;
@@ -17,6 +18,10 @@ public class MemberVO {
 
 	private String role;
 	private String status;
+
+	// sanction info (when BANNED)
+	private String sanctionReason;
+	private java.time.LocalDateTime sanctionEndAt;
 
 	public MemberVO() {
 	}
@@ -51,6 +56,14 @@ public class MemberVO {
 
 	public void setNickname(String nickname) {
 		this.nickname = nickname;
+	}
+
+	public String getNameReal() {
+		return name;
+	}
+
+	public void setNameReal(String name) {
+		this.name = name;
 	}
 
 	public String getZipcode() {
@@ -133,6 +146,22 @@ public class MemberVO {
 		this.status = status;
 	}
 
+	public String getSanctionReason() {
+		return sanctionReason;
+	}
+
+	public void setSanctionReason(String sanctionReason) {
+		this.sanctionReason = sanctionReason;
+	}
+
+	public java.time.LocalDateTime getSanctionEndAt() {
+		return sanctionEndAt;
+	}
+
+	public void setSanctionEndAt(java.time.LocalDateTime sanctionEndAt) {
+		this.sanctionEndAt = sanctionEndAt;
+	}
+
 	// ===== 호환용 별칭 메서드 (기존 JSP/세션 코드 방어) =====
 	public String getId() {
 		// 로그인 식별자는 member_id로 통일
@@ -140,6 +169,7 @@ public class MemberVO {
 	}
 
 	public String getName() {
-		return nickname;
+		// 상단/세션 표시 이름: name(실명) 우선, 없으면 nickname
+		return (name != null && !name.isBlank()) ? name : nickname;
 	}
 }
