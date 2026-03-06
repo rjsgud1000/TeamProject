@@ -633,27 +633,30 @@
     .featured-slider__btn--prev{ left:0; }
     .featured-slider__btn--next{ right:0; }
 
-    .trend-card{
-      display:block;
-  	  min-height:180px;
-      padding:24px;
-      border-radius:20px;
-      background:linear-gradient(135deg, #2563eb, #1e3a8a);
-      color:#fff;
-      position:relative;
-      overflow:hidden;
-      box-shadow:0 18px 40px rgba(37, 99, 235, .25);
-    }
+		.trend-card{
+		  display:block;
+		  min-height:180px;
+		  padding:24px;
+		  border-radius:20px;
+		  color:#fff;
+		  position:relative;
+		  overflow:hidden;
+		  box-shadow:0 18px 40px rgba(37, 99, 235, .25);
+		
+		  background-size:cover;
+		  background-position:center;
+		  background-repeat:no-repeat;
+		}
 
-    .trend-card::before{
-      content:"";
-      position:absolute;
-      inset:auto -30px -30px auto;
-      width:180px;
-      height:180px;
-      border-radius:999px;
-      background:rgba(255,255,255,.08);
-    }
+		.trend-card::before{
+		  content:"";
+		  position:absolute;
+		  inset:auto -30px -30px auto;
+		  width:180px;
+		  height:180px;
+		  border-radius:999px;
+		  background:rgba(255,255,255,.08);
+		}
 
     .game-submeta{
       margin-top:8px;

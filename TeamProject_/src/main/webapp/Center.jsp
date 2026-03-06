@@ -17,7 +17,7 @@
 %>
 
 <div class="section-title">
-  <h2>인기 게임 차트</h2>
+  <h2>인기 게임</h2>
   <p>Naver DataLab · PC 검색 기준</p>
 </div>
 
@@ -27,30 +27,37 @@
 
     <div class="featured-slider__viewport">
       <div class="featured-slider__track" data-total-slides="<%= featuredCount %>">
-        <% for (int i = 0; i < featuredCount; i++) {
-             TrendGameVO item = trendGames.get(i);
-        %>
-          <div class="featured-slide">
-            <a class="game-card trend-card" href="#top10ChartPopup">
-              <div class="rank-badge">
-                <span class="rank-circle"><%= item.getRank() %></span>
-                <%= item.getRank() %>위
-              </div>
-
-              <div class="game-card__content">
-                <div>
-                  <div class="game-name"><%= item.getTitle() %></div>
-                  <div class="game-submeta">평균 점수 <%= String.format("%.1f", item.getScore()) %></div>
-                </div>
-
-                <div class="game-meta">
-                  <span class="meta-dot"></span>
-                  <%= item.getSource() %>
-                </div>
-              </div>
-            </a>
-          </div>
-        <% } %>
+			<% for (int i = 0; i < featuredCount; i++) {
+			     TrendGameVO item = trendGames.get(i);
+			
+			     String displayTitle = item.getTitle();
+			     if ("오버워치 2".equals(displayTitle) || "오버워치2".equals(displayTitle)) {
+			         displayTitle = "오버워치";
+			     }
+			%>
+			    <div class="featured-slide">
+			      <a class="game-card trend-card"
+			         href="#top10ChartPopup"
+			         style="background-image:url('<%= request.getContextPath() + "/img/rank_slide/" + java.net.URLEncoder.encode(displayTitle, "UTF-8").replace("+", "%20") + ".png" %>');">
+			        <div class="rank-badge">
+			          <span class="rank-circle"><%= item.getRank() %></span>
+			          <%= item.getRank() %>위
+			        </div>
+			
+			        <div class="game-card__content">
+			          <div>
+			            <div class="game-name"><%= displayTitle %></div>
+			            <div class="game-submeta">평균 점수 <%= String.format("%.1f", item.getScore()) %></div>
+			          </div>
+			
+			          <div class="game-meta">
+			            <span class="meta-dot"></span>
+			            <%= item.getSource() %>
+			          </div>
+			        </div>
+			      </a>
+			    </div>
+			<% } %>
       </div>
     </div>
 
