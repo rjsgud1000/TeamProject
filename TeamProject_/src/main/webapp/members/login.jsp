@@ -12,6 +12,12 @@
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/auth.css" />
 
+<style>
+.alert{
+	white-space: pre-line;
+}
+</style>
+
 </head>
 <body>
 

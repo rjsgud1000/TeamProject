@@ -35,7 +35,8 @@ public class MemberController extends HttpServlet {
 
 		switch (action) {
 		case "/login.me":
-			forward(request, response, "/members/login.jsp");
+			request.setAttribute("center", "members/login.jsp");
+			forward(request, response, "/main.jsp");
 			return;
 		case "/loginPro.me":
 			loginPro(request, response);
@@ -44,10 +45,15 @@ public class MemberController extends HttpServlet {
 			logout(request, response);
 			return;
 		case "/join.me":
-			forward(request, response, "/members/join.jsp");
+			request.setAttribute("center", "members/join.jsp");
+			forward(request, response, "/main.jsp");
 			return;
 		case "/joinPro.me":
 			joinPro(request, response);
+			return;
+		case "/mypage.me":
+			request.setAttribute("center", "members/mypage.jsp");
+			forward(request, response, "/main.jsp");
 			return;
 		case "/checkId.me":
 			checkId(request, response);
@@ -101,7 +107,8 @@ public class MemberController extends HttpServlet {
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
 			request.setAttribute("loginError", result.error != null ? result.error : "아이디 또는 비밀번호가 올바르지 않습니다.");
-			forward(request, response, "/members/login.jsp");
+			request.setAttribute("center", "members/login.jsp");
+			forward(request, response, "/main.jsp");
 			return;
 		}
 
@@ -165,13 +172,14 @@ public class MemberController extends HttpServlet {
 		String error = memberService.join(vo);
 		if (error != null) {
 			request.setAttribute("joinError", error);
-			forward(request, response, "/members/join.jsp");
+			request.setAttribute("center", "members/join.jsp");
+			forward(request, response, "/main.jsp");
 			return;
 		}
 
 		HttpSession session = request.getSession(true);
 		session.setAttribute("joinFlash", "회원가입에 성공하셨습니다");
-		response.sendRedirect(request.getContextPath() + "/members/login.jsp");
+		response.sendRedirect(request.getContextPath() + "/member/login.me");
 	}
 
 	private static String emptyToNull(String s) {

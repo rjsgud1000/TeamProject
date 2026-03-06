@@ -12,7 +12,7 @@
 <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="<%=contextPath %>/main.jsp">
-        <span class="brand__logo">🎮</span>
+        <img src="<%=contextPath %>/img/logo.png" alt="G-UNIVERSE 로고" style="width:70px; height:34px; border-radius:10px; object-fit:cover; display:block;" />
         <span class="brand__name">G-UNIVERSE</span>
       </a>
 
