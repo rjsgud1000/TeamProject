@@ -28,6 +28,7 @@ public class MemberController extends HttpServlet {
 		doHandle(request, response);
 	}
 
+	// 회원 관련 요청 분기 처리
 	private void doHandle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
 		String action = request.getPathInfo();
@@ -37,44 +38,57 @@ public class MemberController extends HttpServlet {
 
 		switch (action) {
 		case "/login.me":
+			// 로그인 페이지 이동
 			request.setAttribute("center", "members/login.jsp");
 			forward(request, response, "/main.jsp");
 			return;
 		case "/loginPro.me":
+			// 로그인 요청 처리
 			loginPro(request, response);
 			return;
 		case "/logout.me":
+			// 로그아웃 처리
 			logout(request, response);
 			return;
 		case "/join.me":
+			// 회원가입 페이지 이동
 			request.setAttribute("center", "members/join.jsp");
 			forward(request, response, "/main.jsp");
 			return;
 		case "/joinPro.me":
+			// 회원가입 요청 처리
 			joinPro(request, response);
 			return;
 		case "/mypage.me":
+			// 마이페이지 조회
 			showMyPage(request, response);
 			return;
 		case "/editProfile.me":
+			// 회원정보 수정 페이지 이동
 			showEditProfile(request, response);
 			return;
 		case "/updateProfile.me":
+			// 회원정보 수정 요청 처리
 			updateProfile(request, response);
 			return;
 		case "/withdraw.me":
+			// 회원탈퇴 페이지 이동
 			showWithdrawPage(request, response);
 			return;
 		case "/withdrawPro.me":
+			// 회원탈퇴 요청 처리
 			withdrawPro(request, response);
 			return;
 		case "/checkId.me":
+			// 아이디 중복 확인
 			checkId(request, response);
 			return;
 		case "/checkNickname.me":
+			// 닉네임 중복 확인
 			checkNickname(request, response);
 			return;
 		case "/checkProfileNickname.me":
+			// 프로필 수정용 닉네임 중복 확인
 			checkProfileNickname(request, response);
 			return;
 		default:
@@ -83,6 +97,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 회원가입용 아이디 중복 확인
 	private void checkId(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String id = emptyToNull(request.getParameter("id"));
 		response.setContentType("application/json; charset=UTF-8");
@@ -99,6 +114,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 회원가입용 닉네임 중복 확인
 	private void checkNickname(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String nickname = emptyToNull(request.getParameter("nickname"));
 		response.setContentType("application/json; charset=UTF-8");
@@ -115,6 +131,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 본인 제외 닉네임 중복 확인
 	private void checkProfileNickname(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json; charset=UTF-8");
 		MemberVO sessionMember = getSessionLoginMember(request);
@@ -138,6 +155,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 로그인 인증 처리
 	private void loginPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
@@ -163,6 +181,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 세션 종료 후 메인으로 이동
 	private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
@@ -171,12 +190,14 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 공통 포워드 처리
 	private void forward(HttpServletRequest request, HttpServletResponse response, String path)
 			throws ServletException, IOException {
 		RequestDispatcher dispatcher = request.getRequestDispatcher(path);
 		dispatcher.forward(request, response);
 	}
 
+	// 회원가입 데이터 저장 처리
 	private void joinPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		request.setCharacterEncoding("UTF-8");
 
@@ -224,6 +245,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/member/login.me");
 	}
 
+	// 로그인 회원의 마이페이지 조회
 	private void showMyPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -234,6 +256,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원정보 수정 페이지 조회
 	private void showEditProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -244,6 +267,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원정보 수정 저장 처리
 	private void updateProfile(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
@@ -280,6 +304,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/member/mypage.me");
 	}
 
+	// 회원탈퇴 페이지 조회
 	private void showWithdrawPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -290,6 +315,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원탈퇴 처리
 	private void withdrawPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
@@ -322,12 +348,14 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 빈 문자열을 null로 정리
 	private static String emptyToNull(String s) {
 		if (s == null) return null;
 		String v = s.trim();
 		return v.isEmpty() ? null : v;
 	}
 
+	// 로그인 화면 공통 속성 세팅
 	private void populateLoginViewAttributes(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session == null) {
@@ -351,10 +379,12 @@ public class MemberController extends HttpServlet {
 		request.setAttribute("isAdmin", isAdminRole(loginRole));
 	}
 
+	// 관리자 권한 여부 확인
 	private boolean isAdminRole(String role) {
 		return role != null && "ADMIN".equalsIgnoreCase(role.trim());
 	}
 
+	// 로그인 여부 확인 후 회원 상세 조회
 	private MemberVO requireLoginMember(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		MemberVO member = getSessionLoginMember(request);
 		if (member == null) {
@@ -371,6 +401,7 @@ public class MemberController extends HttpServlet {
 		return detail;
 	}
 
+	// 세션에서 로그인 회원 정보 조회
 	private MemberVO getSessionLoginMember(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session == null) {
@@ -380,6 +411,7 @@ public class MemberController extends HttpServlet {
 		return (loginMemberObj instanceof MemberVO) ? (MemberVO) loginMemberObj : null;
 	}
 
+	// 세션의 로그인 정보 갱신
 	private void refreshLoginSession(HttpSession session, MemberVO member) {
 		session.setAttribute("loginMember", member);
 		session.setAttribute("loginId", member.getId());
@@ -388,6 +420,7 @@ public class MemberController extends HttpServlet {
 		session.setAttribute("isAdmin", isAdminRole(member.getRole()));
 	}
 
+	// 수정 실패 시 화면에 보여줄 회원정보 병합
 	private MemberVO mergeProfileForView(MemberVO base, MemberVO input) {
 		MemberVO merged = new MemberVO();
 		if (base != null) {
