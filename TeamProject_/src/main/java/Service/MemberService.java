@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 public class MemberService {
 	private final MemberDAO memberDAO = new MemberDAO();
 
-	// 로그인 결과 전달용 객체
 	public static class LoginResult {
 		public final MemberVO member;
 		public final String error;
@@ -19,14 +18,12 @@ public class MemberService {
 		}
 	}
 
-	// 로그인 검증 및 사유 반환
 	public LoginResult loginWithReason(String memberId, String password) {
 		if (memberId == null || memberId.isBlank() || password == null || password.isBlank()) {
 			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
 		}
 		String id = memberId.trim();
 
-		// 회원 정보 조회
 		MemberVO member = memberDAO.findByMemberId(id);
 		if (member == null) {
 			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
@@ -35,7 +32,6 @@ public class MemberService {
 		String status = member.getStatus();
 		if (status != null) {
 			String s = status.trim().toUpperCase();
-			// 제재 계정 로그인 차단
 			if ("BANNED".equals(s)) {
 				Dao.MemberDAO.SanctionInfo info = memberDAO.findActiveSanction(id);
 				String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
@@ -51,11 +47,9 @@ public class MemberService {
 				}
 				return new LoginResult(null, msg);
 			}
-			// 탈퇴 계정 로그인 차단
 			if ("WITHDRAWN".equals(s)) {
 				return new LoginResult(null, "탈퇴한 계정입니다.");
 			}
-			// 허용되지 않은 상태 로그인 차단
 			if (!"ACTIVE".equals(s) && !"INACTIVE".equals(s)) {
 				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + s + ")");
 			}
@@ -65,10 +59,8 @@ public class MemberService {
 		String stored = member.getPasswordHash();
 		boolean ok;
 		if (PasswordUtil.isHashed(stored)) {
-			// 해시 비밀번호 비교
 			ok = PasswordUtil.matches(password, stored);
 		} else {
-			// 구버전 평문 비밀번호 비교 후 해시 전환
 			ok = password.equals(stored);
 			if (ok) {
 				String newHash = PasswordUtil.hash(password);
@@ -80,14 +72,12 @@ public class MemberService {
 		return ok ? new LoginResult(member, null) : new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
 	}
 
-	// 기존 로그인 호출부 호환용 메서드
 	public MemberVO login(String memberId, String password) {
 		// 기존 호출부 호환: 이유 없이 member만 반환
 		LoginResult r = loginWithReason(memberId, password);
 		return r.member;
 	}
 
-	// 회원가입 검증 및 저장
 	public String join(MemberVO vo) {
 		if (vo == null || vo.getMemberId() == null || vo.getMemberId().isBlank()) {
 			return "아이디는 필수입니다.";
@@ -102,7 +92,6 @@ public class MemberService {
 			return "닉네임은 필수입니다.";
 		}
 
-		// 입력값 공백 제거
 		String memberIdTrim = vo.getMemberId().trim();
 		String usernameTrim = vo.getUsername().trim();
 		String nicknameTrim = vo.getNickname().trim();
@@ -114,11 +103,9 @@ public class MemberService {
 		String rawPassword = vo.getPasswordHash();
 		vo.setPasswordHash(PasswordUtil.hash(rawPassword));
 
-		// 기본 권한 설정
 		if (vo.getRole() == null || vo.getRole().isBlank()) {
 			vo.setRole("USER");
 		}
-		// 기본 상태 설정
 		if (vo.getStatus() == null || vo.getStatus().isBlank()) {
 			vo.setStatus("ACTIVE");
 		}
@@ -133,22 +120,18 @@ public class MemberService {
 			return "핸드폰 번호는 숫자만 10~11자리로 입력해 주세요.";
 		}
 
-		// 아이디 중복 확인
 		if (memberDAO.existsMemberId(memberIdTrim)) {
 			return "이미 사용 중인 아이디입니다.";
 		}
 		// 동명이인(이름/username) 가입 허용: 이름 중복 검사는 하지 않음
-		// 닉네임 중복 확인
 		if (memberDAO.existsNickname(nicknameTrim)) {
 			return "이미 사용 중인 닉네임입니다.";
 		}
 
-		// 회원 정보 저장
 		int inserted = memberDAO.insertMember(vo);
 		return inserted == 1 ? null : "회원가입에 실패했습니다.";
 	}
 
-	// 회원 상세 정보 조회
 	public MemberVO getMemberDetail(String memberId) {
 		String id = trimToNull(memberId);
 		if (id == null) {
@@ -157,7 +140,6 @@ public class MemberService {
 		return memberDAO.findByMemberId(id);
 	}
 
-	// 회원정보 수정 검증 및 저장
 	public String updateProfile(MemberVO vo, String newPassword) {
 		if (vo == null) {
 			return "잘못된 요청입니다.";
@@ -171,7 +153,6 @@ public class MemberService {
 			return "닉네임은 필수입니다.";
 		}
 
-		// 수정값 공백 정리
 		vo.setMemberId(memberId);
 		vo.setNickname(nickname);
 		vo.setZipcode(trimToNull(vo.getZipcode()));
@@ -183,20 +164,16 @@ public class MemberService {
 		vo.setEmail(trimToNull(vo.getEmail()));
 		vo.setPhone(trimToNull(vo.getPhone()));
 
-		// 이메일 형식 확인
 		if (vo.getEmail() != null && !vo.getEmail().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
 			return "이메일 형식이 올바르지 않습니다.";
 		}
-		// 연락처 형식 확인
 		if (vo.getPhone() != null && !vo.getPhone().matches("^\\d{10,11}$")) {
 			return "핸드폰 번호는 숫자만 10~11자리로 입력해 주세요.";
 		}
-		// 닉네임 중복 확인
 		if (memberDAO.existsNicknameExceptMemberId(nickname, memberId)) {
 			return "이미 사용 중인 닉네임입니다.";
 		}
 
-		// 프로필 정보 저장
 		int updated = memberDAO.updateProfile(vo);
 		if (updated != 1) {
 			return "회원정보 수정에 실패했습니다.";
@@ -204,11 +181,9 @@ public class MemberService {
 
 		String password = trimToNull(newPassword);
 		if (password != null) {
-			// 새 비밀번호 길이 확인
 			if (password.length() < 4) {
 				return "새 비밀번호는 4자 이상 입력해 주세요.";
 			}
-			// 새 비밀번호 해시 저장
 			int pwUpdated = memberDAO.updatePasswordHash(memberId, PasswordUtil.hash(password));
 			if (pwUpdated != 1) {
 				return "비밀번호 변경에 실패했습니다.";
@@ -218,7 +193,6 @@ public class MemberService {
 		return null;
 	}
 
-	// 회원탈퇴 검증 및 처리
 	public String withdrawMember(String memberId, String password) {
 		String id = trimToNull(memberId);
 		String rawPassword = trimToNull(password);
@@ -229,12 +203,10 @@ public class MemberService {
 			return "비밀번호를 입력해 주세요.";
 		}
 
-		// 회원 정보 조회
 		MemberVO member = memberDAO.findByMemberId(id);
 		if (member == null) {
 			return "회원 정보를 찾을 수 없습니다.";
 		}
-		// 이미 탈퇴한 계정 확인
 		if ("WITHDRAWN".equalsIgnoreCase(trimToNull(member.getStatus()))) {
 			return "이미 탈퇴 처리된 계정입니다.";
 		}
@@ -242,22 +214,18 @@ public class MemberService {
 		String stored = member.getPasswordHash();
 		boolean ok;
 		if (PasswordUtil.isHashed(stored)) {
-			// 해시 비밀번호 비교
 			ok = PasswordUtil.matches(rawPassword, stored);
 		} else {
-			// 평문 비밀번호 비교
 			ok = rawPassword.equals(stored);
 		}
 		if (!ok) {
 			return "비밀번호가 올바르지 않습니다.";
 		}
 
-		// 탈퇴 상태로 변경
 		int updated = memberDAO.withdrawMember(id);
 		return updated == 1 ? null : "회원탈퇴 처리에 실패했습니다.";
 	}
 
-	// 공백 문자열을 null로 변환
 	private static String trimToNull(String s) {
 		if (s == null)
 			return null;

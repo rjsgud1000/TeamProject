@@ -19,7 +19,7 @@
           <c:otherwise>
             <c:if test="${requestScope.isAdmin}">
               <a href="#">회원관리</a>
-              <a href="#">신고조회</a>
+              <a href="#">신고처리</a>
             </c:if>
             <a href="#" style="pointer-events:none; opacity:0.9; font-weight:900;">
               ${not empty loginName ? loginName : loginId}님

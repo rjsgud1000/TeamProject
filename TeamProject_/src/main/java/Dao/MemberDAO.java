@@ -11,20 +11,18 @@ import util.DBCPUtil;
 
 public class MemberDAO {
 
-	// 로그인 가능한 회원 조회
 	public MemberVO login(String memberId, String password) {
 		String sql = "SELECT member_id, username, password_hash, nickname, role, status "
 				+ "FROM MEMBER "
 				+ "WHERE member_id=? AND password_hash=? AND status='ACTIVE'";
 
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 
 			pstmt.setString(1, memberId);
 			pstmt.setString(2, password);
 
 			try (ResultSet rs = pstmt.executeQuery()) {
-				// 로그인 회원 정보 반환
 				if (rs.next()) {
 					MemberVO vo = new MemberVO();
 					vo.setMemberId(rs.getString("member_id"));
@@ -44,11 +42,10 @@ public class MemberDAO {
 		return null;
 	}
 
-	// 아이디 중복 여부 확인
 	public boolean existsMemberId(String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				return rs.next();
@@ -59,11 +56,10 @@ public class MemberDAO {
 		}
 	}
 
-	// 사용자명 중복 여부 확인
 	public boolean existsUsername(String username) {
 		String sql = "SELECT 1 FROM MEMBER WHERE username=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, username);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				return rs.next();
@@ -74,11 +70,10 @@ public class MemberDAO {
 		}
 	}
 
-	// 닉네임 중복 여부 확인
 	public boolean existsNickname(String nickname) {
 		String sql = "SELECT 1 FROM MEMBER WHERE nickname=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, nickname);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				return rs.next();
@@ -89,11 +84,10 @@ public class MemberDAO {
 		}
 	}
 
-	// 본인 제외 닉네임 중복 여부 확인
 	public boolean existsNicknameExceptMemberId(String nickname, String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE nickname=? AND member_id<>?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, nickname);
 			pstmt.setString(2, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
@@ -105,12 +99,11 @@ public class MemberDAO {
 		}
 	}
 
-	// 회원가입 정보 저장
 	public int insertMember(MemberVO vo) {
 		String sql = "INSERT INTO MEMBER (member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, updated_at) "
 				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			int i = 1;
 			pstmt.setString(i++, vo.getMemberId());
 			pstmt.setString(i++, vo.getUsername());
@@ -135,12 +128,11 @@ public class MemberDAO {
 		}
 	}
 
-	// 회원 상세 정보 조회
 	public MemberVO findByMemberId(String memberId) {
 		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status "
 				+ "FROM MEMBER WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
@@ -153,11 +145,10 @@ public class MemberDAO {
 		return null;
 	}
 	
-	// 회원 프로필 정보 수정
 	public int updateProfile(MemberVO vo) {
 		String sql = "UPDATE MEMBER SET nickname=?, zipcode=?, addr1=?, addr2=?, addr3=?, addr4=?, gender=?, email=?, phone=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			int i = 1;
 			pstmt.setString(i++, vo.getNickname());
 			pstmt.setString(i++, vo.getZipcode());
@@ -176,11 +167,10 @@ public class MemberDAO {
 		}
 	}
 	
-	// 비밀번호 변경
 	public int updatePasswordHash(String memberId, String newPasswordHash) {
 		String sql = "UPDATE MEMBER SET password_hash=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, newPasswordHash);
 			pstmt.setString(2, memberId);
 			return pstmt.executeUpdate();
@@ -194,14 +184,13 @@ public class MemberDAO {
 	 * 현재 시점에 유효한 제재(BANNED) 정보를 조회합니다.
 	 * 없으면 null.
 	 */
-	// 현재 활성 제재 정보 조회
 	public SanctionInfo findActiveSanction(String memberId) {
 		String sql = "SELECT REASON, end_at "
 				+ "FROM SANCTION "
 				+ "WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() "
 				+ "ORDER BY end_at DESC, action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
@@ -218,11 +207,10 @@ public class MemberDAO {
 		return null;
 	}
 
-	// 회원 상태를 탈퇴로 변경
 	public int withdrawMember(String memberId) {
 		String sql = "UPDATE MEMBER SET status='WITHDRAWN', updated_at=NOW() WHERE member_id=? AND status<>'WITHDRAWN'";
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			return pstmt.executeUpdate();
 		} catch (Exception e) {
@@ -231,13 +219,11 @@ public class MemberDAO {
 		}
 	}
 
-	// 제재 정보 전달용 객체
 	public static class SanctionInfo {
 		public String reason;
 		public LocalDateTime endAt;
 	}
 
-	// ResultSet 데이터를 MemberVO로 변환
 	private MemberVO mapMember(ResultSet rs) throws Exception {
 		MemberVO vo = new MemberVO();
 		vo.setMemberId(rs.getString("member_id"));
