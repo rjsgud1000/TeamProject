@@ -115,11 +115,41 @@ public class MemberDAO {
 		}
 	}
 
+	public boolean existsEmailExceptMemberId(String email, String memberId) {
+		String sql = "SELECT 1 FROM MEMBER WHERE email=? AND member_id<>?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, email);
+			pstmt.setString(2, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
 	public boolean existsPhone(String phone) {
 		String sql = "SELECT 1 FROM MEMBER WHERE phone=?";
 		try (Connection con = DBCPUtil.getConnection();
 				 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, phone);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean existsPhoneExceptMemberId(String phone, String memberId) {
+		String sql = "SELECT 1 FROM MEMBER WHERE phone=? AND member_id<>?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, phone);
+			pstmt.setString(2, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				return rs.next();
 			}

@@ -183,6 +183,12 @@ public class MemberService {
 		if (memberDAO.existsNicknameExceptMemberId(nickname, memberId)) {
 			return "이미 사용 중인 닉네임입니다.";
 		}
+		if (vo.getEmail() != null && memberDAO.existsEmailExceptMemberId(vo.getEmail(), memberId)) {
+			return "이미 사용 중인 이메일입니다.";
+		}
+		if (vo.getPhone() != null && memberDAO.existsPhoneExceptMemberId(vo.getPhone(), memberId)) {
+			return "이미 사용 중인 전화번호입니다.";
+		}
 
 		int updated = memberDAO.updateProfile(vo);
 		if (updated != 1) {
