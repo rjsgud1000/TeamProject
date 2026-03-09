@@ -4,6 +4,9 @@ import Dao.MemberDAO;
 import Vo.MemberVO;
 import util.PasswordUtil;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class MemberService {
 	private final MemberDAO memberDAO = new MemberDAO();
@@ -224,6 +227,46 @@ public class MemberService {
 
 		int updated = memberDAO.withdrawMember(id);
 		return updated == 1 ? null : "회원탈퇴 처리에 실패했습니다.";
+	}
+
+	public List<MemberVO> getMembersForAdmin(String keyword, String status) {
+		return memberDAO.findMembers(trimToNull(keyword), normalizeStatusFilter(status));
+	}
+
+	public Map<String, Integer> getMemberStatusSummary() {
+		Map<String, Integer> summary = new LinkedHashMap<>();
+		summary.put("ALL", memberDAO.countMembers());
+		summary.put("ACTIVE", memberDAO.countMembersByStatus("ACTIVE"));
+		summary.put("INACTIVE", memberDAO.countMembersByStatus("INACTIVE"));
+		summary.put("BANNED", memberDAO.countMembersByStatus("BANNED"));
+		summary.put("WITHDRAWN", memberDAO.countMembersByStatus("WITHDRAWN"));
+		return summary;
+	}
+
+	public MemberVO getMemberDetailForAdmin(String memberId) {
+		String id = trimToNull(memberId);
+		if (id == null) {
+			return null;
+		}
+		return memberDAO.findMemberDetailForAdmin(id);
+	}
+
+	private String normalizeStatusFilter(String status) {
+		String value = trimToNull(status);
+		if (value == null) {
+			return "ALL";
+		}
+		String normalized = value.toUpperCase();
+		switch (normalized) {
+		case "ALL":
+		case "ACTIVE":
+		case "INACTIVE":
+		case "BANNED":
+		case "WITHDRAWN":
+			return normalized;
+		default:
+			return null;
+		}
 	}
 
 	private static String trimToNull(String s) {
