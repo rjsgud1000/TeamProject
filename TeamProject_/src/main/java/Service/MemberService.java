@@ -98,9 +98,13 @@ public class MemberService {
 		String memberIdTrim = vo.getMemberId().trim();
 		String usernameTrim = vo.getUsername().trim();
 		String nicknameTrim = vo.getNickname().trim();
+		String email = trimToNull(vo.getEmail());
+		String hp = trimToNull(vo.getPhone());
 		vo.setMemberId(memberIdTrim);
 		vo.setUsername(usernameTrim);
 		vo.setNickname(nicknameTrim);
+		vo.setEmail(email);
+		vo.setPhone(hp);
 
 		// password_hash 컬럼에는 해시를 저장
 		String rawPassword = vo.getPasswordHash();
@@ -114,11 +118,9 @@ public class MemberService {
 		}
 
 		// 서버 측 형식 검증(클라 우회 방지)
-		String email = trimToNull(vo.getEmail());
 		if (email != null && !email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
 			return "이메일 형식이 올바르지 않습니다.";
 		}
-		String hp = trimToNull(vo.getPhone());
 		if (hp != null && !hp.matches("^\\d{10,11}$")) {
 			return "핸드폰 번호는 숫자만 10~11자리로 입력해 주세요.";
 		}
@@ -126,9 +128,14 @@ public class MemberService {
 		if (memberDAO.existsMemberId(memberIdTrim)) {
 			return "이미 사용 중인 아이디입니다.";
 		}
-		// 동명이인(이름/username) 가입 허용: 이름 중복 검사는 하지 않음
 		if (memberDAO.existsNickname(nicknameTrim)) {
 			return "이미 사용 중인 닉네임입니다.";
+		}
+		if (email != null && memberDAO.existsEmail(email)) {
+			return "이미 사용 중인 이메일입니다.";
+		}
+		if (hp != null && memberDAO.existsPhone(hp)) {
+			return "이미 사용 중인 전화번호입니다.";
 		}
 
 		int inserted = memberDAO.insertMember(vo);

@@ -101,6 +101,34 @@ public class MemberDAO {
 		}
 	}
 
+	public boolean existsEmail(String email) {
+		String sql = "SELECT 1 FROM MEMBER WHERE email=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, email);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean existsPhone(String phone) {
+		String sql = "SELECT 1 FROM MEMBER WHERE phone=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, phone);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
 	public int insertMember(MemberVO vo) {
 		String sql = "INSERT INTO MEMBER (member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, updated_at) "
 				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())";
