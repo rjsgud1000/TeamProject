@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import Vo.MemberVO;
 import util.DBCPUtil;
@@ -99,6 +101,64 @@ public class MemberDAO {
 		}
 	}
 
+	public boolean existsEmail(String email) {
+		String sql = "SELECT 1 FROM MEMBER WHERE email=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, email);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean existsEmailExceptMemberId(String email, String memberId) {
+		String sql = "SELECT 1 FROM MEMBER WHERE email=? AND member_id<>?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, email);
+			pstmt.setString(2, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean existsPhone(String phone) {
+		String sql = "SELECT 1 FROM MEMBER WHERE phone=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, phone);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean existsPhoneExceptMemberId(String phone, String memberId) {
+		String sql = "SELECT 1 FROM MEMBER WHERE phone=? AND member_id<>?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, phone);
+			pstmt.setString(2, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
 	public int insertMember(MemberVO vo) {
 		String sql = "INSERT INTO MEMBER (member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, updated_at) "
 				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())";
@@ -170,7 +230,7 @@ public class MemberDAO {
 	public int updatePasswordHash(String memberId, String newPasswordHash) {
 		String sql = "UPDATE MEMBER SET password_hash=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
-			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, newPasswordHash);
 			pstmt.setString(2, memberId);
 			return pstmt.executeUpdate();
@@ -190,7 +250,7 @@ public class MemberDAO {
 				+ "WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() "
 				+ "ORDER BY end_at DESC, action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
-			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
@@ -210,7 +270,7 @@ public class MemberDAO {
 	public int withdrawMember(String memberId) {
 		String sql = "UPDATE MEMBER SET status='WITHDRAWN', updated_at=NOW() WHERE member_id=? AND status<>'WITHDRAWN'";
 		try (Connection con = DBCPUtil.getConnection();
-			 PreparedStatement pstmt = con.prepareStatement(sql)) {
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			return pstmt.executeUpdate();
 		} catch (Exception e) {
@@ -219,9 +279,135 @@ public class MemberDAO {
 		}
 	}
 
-	public static class SanctionInfo {
-		public String reason;
-		public LocalDateTime endAt;
+	public List<MemberVO> findMembers(String keyword, String status) {
+		List<MemberVO> members = new ArrayList<>();
+		StringBuilder sql = new StringBuilder(
+				"SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, created_at, updated_at "
+				+ "FROM MEMBER WHERE 1=1");
+		String keywordTrim = trimToNull(keyword);
+		String statusTrim = trimToNull(status);
+		boolean hasKeyword = keywordTrim != null;
+		boolean hasStatus = statusTrim != null && !"ALL".equalsIgnoreCase(statusTrim);
+		if (hasKeyword) {
+			sql.append(" AND (member_id LIKE ? OR username LIKE ? OR nickname LIKE ?)");
+		}
+		if (hasStatus) {
+			sql.append(" AND status=?");
+		}
+		sql.append(" ORDER BY created_at DESC, member_id ASC");
+
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql.toString())) {
+			int i = 1;
+			if (hasKeyword) {
+				String like = "%" + keywordTrim + "%";
+				pstmt.setString(i++, like);
+				pstmt.setString(i++, like);
+				pstmt.setString(i++, like);
+			}
+			if (hasStatus) {
+				pstmt.setString(i++, statusTrim.toUpperCase());
+			}
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					members.add(mapMember(rs));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return members;
+	}
+
+	public int countMembersByStatus(String status) {
+		String sql = "SELECT COUNT(*) FROM MEMBER WHERE status=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, status);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next() ? rs.getInt(1) : 0;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public int countMembers() {
+		String sql = "SELECT COUNT(*) FROM MEMBER";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql);
+				 ResultSet rs = pstmt.executeQuery()) {
+			return rs.next() ? rs.getInt(1) : 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public MemberVO findMemberDetailForAdmin(String memberId) {
+		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, created_at, updated_at "
+				+ "FROM MEMBER WHERE member_id=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (!rs.next()) {
+					return null;
+				}
+				MemberVO vo = mapMember(rs);
+				SanctionInfo info = findLatestSanction(memberId);
+				if (info != null) {
+					vo.setSanctionReason(info.reason);
+					vo.setSanctionEndAt(info.endAt);
+				}
+				Timestamp createdAt = rs.getTimestamp("created_at");
+				if (createdAt != null) {
+					vo.setCreatedAt(createdAt.toLocalDateTime());
+				}
+				Timestamp updatedAt = rs.getTimestamp("updated_at");
+				if (updatedAt != null) {
+					vo.setUpdatedAt(updatedAt.toLocalDateTime());
+				}
+				return vo;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public SanctionInfo findLatestSanction(String memberId) {
+		String sql = "SELECT REASON, end_at FROM SANCTION WHERE target_member_id=? ORDER BY end_at DESC, action_id DESC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					SanctionInfo info = new SanctionInfo();
+					info.reason = rs.getString("REASON");
+					Timestamp ts = rs.getTimestamp("end_at");
+					info.endAt = ts != null ? ts.toLocalDateTime() : null;
+					return info;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public int updateMemberStatus(String memberId, String status) {
+		String sql = "UPDATE MEMBER SET status=?, updated_at=NOW() WHERE member_id=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, status);
+			pstmt.setString(2, memberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 
 	private MemberVO mapMember(ResultSet rs) throws Exception {
@@ -242,6 +428,35 @@ public class MemberDAO {
 		vo.setPhone(rs.getString("phone"));
 		vo.setRole(rs.getString("role"));
 		vo.setStatus(rs.getString("status"));
+		Timestamp createdAt = safeTimestamp(rs, "created_at");
+		if (createdAt != null) {
+			vo.setCreatedAt(createdAt.toLocalDateTime());
+		}
+		Timestamp updatedAt = safeTimestamp(rs, "updated_at");
+		if (updatedAt != null) {
+			vo.setUpdatedAt(updatedAt.toLocalDateTime());
+		}
 		return vo;
+	}
+
+	private Timestamp safeTimestamp(ResultSet rs, String columnLabel) {
+		try {
+			return rs.getTimestamp(columnLabel);
+		} catch (Exception ignore) {
+			return null;
+		}
+	}
+
+	private String trimToNull(String s) {
+		if (s == null) {
+			return null;
+		}
+		String v = s.trim();
+		return v.isEmpty() ? null : v;
+	}
+
+	public static class SanctionInfo {
+		public String reason;
+		public LocalDateTime endAt;
 	}
 }

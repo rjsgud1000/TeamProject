@@ -23,6 +23,9 @@ public class MemberVO {
 	private String sanctionReason;
 	private java.time.LocalDateTime sanctionEndAt;
 
+	private java.time.LocalDateTime createdAt;
+	private java.time.LocalDateTime updatedAt;
+
 	public MemberVO() {
 	}
 
@@ -160,6 +163,22 @@ public class MemberVO {
 
 	public void setSanctionEndAt(java.time.LocalDateTime sanctionEndAt) {
 		this.sanctionEndAt = sanctionEndAt;
+	}
+
+	public java.time.LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(java.time.LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public java.time.LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 
 	// ===== 호환용 별칭 메서드 (기존 JSP/세션 코드 방어) =====
