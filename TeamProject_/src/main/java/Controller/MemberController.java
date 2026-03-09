@@ -1,6 +1,7 @@
 package Controller;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -343,6 +344,8 @@ public class MemberController extends HttpServlet {
 		request.setAttribute("adminMember", admin);
 		request.setAttribute("memberList", members);
 		request.setAttribute("statusSummary", statusSummary);
+		request.setAttribute("roleLabelMap", buildRoleLabelMap());
+		request.setAttribute("statusLabelMap", buildStatusLabelMap());
 		request.setAttribute("keyword", keyword == null ? "" : keyword);
 		request.setAttribute("selectedStatus", status == null ? "ALL" : status.toUpperCase());
 		request.setAttribute("center", "admin/memberList.jsp");
@@ -363,11 +366,30 @@ public class MemberController extends HttpServlet {
 		}
 		request.setAttribute("adminMember", admin);
 		request.setAttribute("memberDetail", detail);
+		request.setAttribute("roleLabelMap", buildRoleLabelMap());
+		request.setAttribute("statusLabelMap", buildStatusLabelMap());
 		request.setAttribute("memberCreatedAtText", formatDateTime(detail.getCreatedAt()));
 		request.setAttribute("memberUpdatedAtText", formatDateTime(detail.getUpdatedAt()));
 		request.setAttribute("memberSanctionEndAtText", formatDateTime(detail.getSanctionEndAt()));
 		request.setAttribute("center", "admin/memberDetail.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private Map<String, String> buildRoleLabelMap() {
+		Map<String, String> roleLabelMap = new LinkedHashMap<>();
+		roleLabelMap.put("USER", "유저");
+		roleLabelMap.put("ADMIN", "관리자");
+		return roleLabelMap;
+	}
+
+	private Map<String, String> buildStatusLabelMap() {
+		Map<String, String> statusLabelMap = new LinkedHashMap<>();
+		statusLabelMap.put("ALL", "전체");
+		statusLabelMap.put("ACTIVE", "활성");
+		statusLabelMap.put("INACTIVE", "휴면/비활성");
+		statusLabelMap.put("BANNED", "제재");
+		statusLabelMap.put("WITHDRAWN", "탈퇴");
+		return statusLabelMap;
 	}
 
 	private String formatDateTime(java.time.LocalDateTime value) {

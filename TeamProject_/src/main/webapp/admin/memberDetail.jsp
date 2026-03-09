@@ -34,8 +34,8 @@
 				<dt>아이디</dt><dd>${member.memberId}</dd>
 				<dt>이름</dt><dd>${member.username}</dd>
 				<dt>닉네임</dt><dd>${member.nickname}</dd>
-				<dt>권한</dt><dd><span class="badge badge--${member.role}">${member.role}</span></dd>
-				<dt>상태</dt><dd><span class="badge badge--${member.status}">${member.status}</span></dd>
+				<dt>권한</dt><dd><span class="badge badge--${member.role}">${empty roleLabelMap[member.role] ? member.role : roleLabelMap[member.role]}</span></dd>
+				<dt>상태</dt><dd><span class="badge badge--${member.status}">${empty statusLabelMap[member.status] ? member.status : statusLabelMap[member.status]}</span></dd>
 				<dt>이메일</dt><dd><c:out value="${empty member.email ? '-' : member.email}" /></dd>
 				<dt>휴대폰</dt><dd><c:out value="${empty member.phone ? '-' : member.phone}" /></dd>
 				<dt>가입일</dt><dd>${memberCreatedAtText}</dd>

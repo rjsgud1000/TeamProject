@@ -42,11 +42,11 @@
 			<div>
 				<label for="status">상태</label>
 				<select id="status" name="status">
-					<option value="ALL" <c:if test="${selectedStatus eq 'ALL'}">selected</c:if>>전체</option>
-					<option value="ACTIVE" <c:if test="${selectedStatus eq 'ACTIVE'}">selected</c:if>>ACTIVE</option>
-					<option value="INACTIVE" <c:if test="${selectedStatus eq 'INACTIVE'}">selected</c:if>>INACTIVE</option>
-					<option value="BANNED" <c:if test="${selectedStatus eq 'BANNED'}">selected</c:if>>BANNED</option>
-					<option value="WITHDRAWN" <c:if test="${selectedStatus eq 'WITHDRAWN'}">selected</c:if>>WITHDRAWN</option>
+					<option value="ALL" <c:if test="${selectedStatus eq 'ALL'}">selected</c:if>>${statusLabelMap.ALL}</option>
+					<option value="ACTIVE" <c:if test="${selectedStatus eq 'ACTIVE'}">selected</c:if>>${statusLabelMap.ACTIVE}</option>
+					<option value="INACTIVE" <c:if test="${selectedStatus eq 'INACTIVE'}">selected</c:if>>${statusLabelMap.INACTIVE}</option>
+					<option value="BANNED" <c:if test="${selectedStatus eq 'BANNED'}">selected</c:if>>${statusLabelMap.BANNED}</option>
+					<option value="WITHDRAWN" <c:if test="${selectedStatus eq 'WITHDRAWN'}">selected</c:if>>${statusLabelMap.WITHDRAWN}</option>
 				</select>
 			</div>
 			<button class="btn" type="submit">검색</button>
@@ -82,8 +82,8 @@
 								<td>${member.memberId}</td>
 								<td>${member.username}</td>
 								<td>${member.nickname}</td>
-								<td><span class="badge badge--${member.role}">${member.role}</span></td>
-								<td><span class="badge badge--${member.status}">${member.status}</span></td>
+								<td><span class="badge badge--${member.role}">${empty roleLabelMap[member.role] ? member.role : roleLabelMap[member.role]}</span></td>
+								<td><span class="badge badge--${member.status}">${empty statusLabelMap[member.status] ? member.status : statusLabelMap[member.status]}</span></td>
 								<td><c:out value="${empty member.email ? '-' : member.email}" /></td>
 								<td><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${member.memberId}">보기</a></td>
 							</tr>
