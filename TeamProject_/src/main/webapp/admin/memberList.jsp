@@ -28,7 +28,6 @@
 	<div class="member-admin__chips">
 		<div class="chip">전체 회원<strong>${statusSummary.ALL}</strong></div>
 		<div class="chip">활성<strong>${statusSummary.ACTIVE}</strong></div>
-		<div class="chip">휴면/비활성<strong>${statusSummary.INACTIVE}</strong></div>
 		<div class="chip">제재<strong>${statusSummary.BANNED}</strong></div>
 		<div class="chip">탈퇴<strong>${statusSummary.WITHDRAWN}</strong></div>
 	</div>
@@ -44,7 +43,6 @@
 				<select id="status" name="status">
 					<option value="ALL" <c:if test="${selectedStatus eq 'ALL'}">selected</c:if>>${statusLabelMap.ALL}</option>
 					<option value="ACTIVE" <c:if test="${selectedStatus eq 'ACTIVE'}">selected</c:if>>${statusLabelMap.ACTIVE}</option>
-					<option value="INACTIVE" <c:if test="${selectedStatus eq 'INACTIVE'}">selected</c:if>>${statusLabelMap.INACTIVE}</option>
 					<option value="BANNED" <c:if test="${selectedStatus eq 'BANNED'}">selected</c:if>>${statusLabelMap.BANNED}</option>
 					<option value="WITHDRAWN" <c:if test="${selectedStatus eq 'WITHDRAWN'}">selected</c:if>>${statusLabelMap.WITHDRAWN}</option>
 				</select>

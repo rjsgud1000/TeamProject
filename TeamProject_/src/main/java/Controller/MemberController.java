@@ -45,6 +45,9 @@ public class MemberController extends HttpServlet {
 		case "/admin/detail.me":
 			showAdminMemberDetail(request, response);
 			return;
+		case "/admin/reportList.me":
+			showAdminReportBoard(request, response);
+			return;
 		case "/login.me":
 			request.setAttribute("center", "members/login.jsp");
 			forward(request, response, "/main.jsp");
@@ -375,6 +378,16 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	private void showAdminReportBoard(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		MemberVO admin = requireAdminMember(request, response);
+		if (admin == null) {
+			return;
+		}
+		request.setAttribute("adminMember", admin);
+		request.setAttribute("center", "admin/reportBoard.jsp");
+		forward(request, response, "/main.jsp");
+	}
+
 	private Map<String, String> buildRoleLabelMap() {
 		Map<String, String> roleLabelMap = new LinkedHashMap<>();
 		roleLabelMap.put("USER", "유저");
@@ -386,7 +399,6 @@ public class MemberController extends HttpServlet {
 		Map<String, String> statusLabelMap = new LinkedHashMap<>();
 		statusLabelMap.put("ALL", "전체");
 		statusLabelMap.put("ACTIVE", "활성");
-		statusLabelMap.put("INACTIVE", "휴면/비활성");
 		statusLabelMap.put("BANNED", "제재");
 		statusLabelMap.put("WITHDRAWN", "탈퇴");
 		return statusLabelMap;
