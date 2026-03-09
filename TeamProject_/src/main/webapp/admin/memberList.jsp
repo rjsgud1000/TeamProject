@@ -13,34 +13,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원관리</title>
-<style>
-.member-admin{max-width:1180px;margin:0 auto;padding:8px 0 24px;}
-.member-admin__hero{display:flex;justify-content:space-between;gap:16px;align-items:end;flex-wrap:wrap;margin-bottom:20px;}
-.member-admin__hero h1{margin:0;font-size:30px;}
-.member-admin__hero p{margin:8px 0 0;color:#64748b;font-weight:700;}
-.member-admin__chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:18px;}
-.chip{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:16px;box-shadow:0 10px 30px rgba(15,23,42,.06);}
-.chip strong{display:block;font-size:24px;margin-top:6px;color:#0f172a;}
-.filter-card,.table-card{background:#fff;border:1px solid #e2e8f0;border-radius:22px;box-shadow:0 14px 34px rgba(15,23,42,.08);}
-.filter-card{padding:18px;margin-bottom:18px;}
-.filter-form{display:grid;grid-template-columns:1.7fr 1fr auto auto;gap:12px;align-items:end;}
-.filter-form label{display:block;font-size:13px;font-weight:900;color:#334155;margin-bottom:6px;}
-.filter-form input,.filter-form select{width:100%;height:44px;border:1px solid #cbd5e1;border-radius:12px;padding:0 14px;font-size:14px;}
-.btn{height:44px;padding:0 18px;border-radius:12px;border:1px solid #2563eb;background:#2563eb;color:#fff;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;}
-.btn--ghost{background:#fff;color:#334155;border-color:#cbd5e1;}
-.table-card{overflow:hidden;}
-.table-head{padding:18px 20px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.table-head h2{margin:0;font-size:20px;}
-.member-table{width:100%;border-collapse:collapse;}
-.member-table th,.member-table td{padding:14px 16px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px;}
-.member-table th{background:#f8fafc;font-size:13px;color:#475569;}
-.member-table tr:hover{background:#f8fbff;}
-.badge{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;}
-.badge--ACTIVE{background:#dcfce7;color:#166534;}.badge--INACTIVE{background:#fef3c7;color:#92400e;}.badge--BANNED{background:#fee2e2;color:#b91c1c;}.badge--WITHDRAWN{background:#e2e8f0;color:#475569;}.badge--ADMIN{background:#dbeafe;color:#1d4ed8;}.badge--USER{background:#f1f5f9;color:#334155;}
-.empty-box{padding:48px 20px;text-align:center;color:#64748b;font-weight:700;}
-.link{color:#1d4ed8;font-weight:900;text-decoration:none;}
-@media (max-width:900px){.filter-form{grid-template-columns:1fr;}.member-table{font-size:13px;}}
-</style>
+<link rel="stylesheet" href="${contextPath}/css/admin-member.css" />
 </head>
 <body>
 <div class="member-admin">
