@@ -1,10 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%
+	String contextPath = request.getContextPath();
+%>
 <footer>
     <div class="container">
       <div class="foot">
         <div>
           <a class="brand" href="#">
-            <span class="brand__logo">🎮</span>
+            <img src="<%=contextPath%>/img/logo.png" alt="G-UNIVERSE 로고" style="width:70px; height:34px; border-radius:10px; object-fit:cover; display:inline-block; vertical-align:middle;" />
             <span class="brand__name">G-UNIVERSE</span>
           </a>
 
@@ -16,7 +19,7 @@
           </div>
 
           <small>
-            대표전화 : 02-6456-6974 &nbsp;|&nbsp; 고객센터 : 010-1234-5678<br/>
+            대표전화 : 02-1234-5678 &nbsp;|&nbsp; 고객센터 : 010-1234-5678<br/>
             주소 : (예시) 서울특별시 구로구 시흥대로 110 4F<br/>
             Copyright © G-UNIVERSE. All rights reserved.
           </small>
