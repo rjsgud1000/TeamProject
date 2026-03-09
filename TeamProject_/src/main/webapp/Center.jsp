@@ -172,29 +172,181 @@
 </div>
 
         <!-- Board header -->
-        <div class="board-header">
-          <div class="board-header__title">파티원 모집 게시판</div>
-          <div class="controls">
-            <select class="select" aria-label="게임 장르">
-              <option>플랫폼</option>
-              <option>PC</option>
-              <option>모바일</option>
-              <option>콘솔</option>
-              <option>기타</option>
-            </select>
+<div class="board-header">
+  <div class="board-header__title">최신 정보</div>
+  <div class="controls">
+    <select class="select" id="gameSelect" aria-label="게임 선택">
+      <option value="lol">리그 오브 레전드</option>
+      <option value="battleground">배틀그라운드</option>
+      <option value="valorant">발로란트</option>
+      <option value="suddenattack">서든 어택</option>
+      <option value="fconline">FC 온라인</option>
+      <option value="maplestory">메이플스토리</option>
+      <option value="aion2">아이온2</option>
+      <option value="dnf">던전앤파이터</option>
+      <option value="lostark">로스트아크</option>
+    </select>
 
-            <select class="select" aria-label="전체 목록">
-              <option>게임 장르</option>
-              <option>RTS</option>
-              <option>RPG</option>
-              <option>FPS</option>
-              <option>기타</option>
-            </select>
+    <select class="select" id="typeSelect" aria-label="정보 선택">
+      <option value="notice">공지사항</option>
+      <option value="patch">패치노트</option>
+      <option value="news">뉴스</option>
+    </select>
 
-            <button class="btn" type="button">검색</button>
-            <button class="btn secondary" type="button">전체글보기</button>
-          </div>
-        </div>
+    <button class="btn" type="button" id="crawlBtn">검색</button>
+  </div>
+</div>
+
+<style>
+  .crawl-result-box {
+    margin-top: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    background: #fff;
+  }
+  .crawl-result-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  .crawl-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .crawl-item {
+    border: 1px solid #edf0f3;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #fafafa;
+  }
+  .crawl-item__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .crawl-item__title a {
+    color: #111827;
+    text-decoration: none;
+  }
+  .crawl-item__title a:hover {
+    text-decoration: underline;
+  }
+  .crawl-item__date {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .crawl-item__summary {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .crawl-message {
+    color: #374151;
+    line-height: 1.6;
+  }
+</style>
+
+<div id="crawlResult" class="crawl-result-box">
+  <p class="crawl-message">검색 조건을 선택한 뒤 검색 버튼을 눌러주세요.</p>
+</div>
+
+<script>
+(function () {
+  var crawlBtn = document.getElementById('crawlBtn');
+  var gameSelect = document.getElementById('gameSelect');
+  var typeSelect = document.getElementById('typeSelect');
+  var crawlResult = document.getElementById('crawlResult');
+
+  if (!crawlBtn || !gameSelect || !typeSelect || !crawlResult) {
+    return;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderMessage(message) {
+    crawlResult.innerHTML = '<p class="crawl-message">' + escapeHtml(message) + '</p>';
+  }
+
+  function renderItems(data) {
+    var items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length) {
+      renderMessage('불러온 데이터가 없습니다.');
+      return;
+    }
+
+    var html = '';
+    html += '<div class="crawl-result-meta">';
+    html += '  <div>총 ' + items.length + '건</div>';
+    html += '  <div><a href="' + escapeHtml(data.sourceUrl || '#') + '" target="_blank" rel="noopener noreferrer">원본 페이지 바로가기</a></div>';
+    html += '</div>';
+    html += '<ul class="crawl-list">';
+
+    items.forEach(function (item) {
+      html += '<li class="crawl-item">';
+      html += '  <div class="crawl-item__title"><a href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title || '제목 없음') + '</a></div>';
+      if (item.date) {
+        html += '  <div class="crawl-item__date">등록일: ' + escapeHtml(item.date) + '</div>';
+      }
+      if (item.summary) {
+        html += '  <div class="crawl-item__summary">' + escapeHtml(item.summary) + '</div>';
+      }
+      html += '</li>';
+    });
+
+    html += '</ul>';
+    crawlResult.innerHTML = html;
+  }
+
+  crawlBtn.addEventListener('click', function () {
+    var game = gameSelect.value;
+    var type = typeSelect.value;
+    renderMessage('불러오는 중입니다...');
+
+    var url = '<%= request.getContextPath() %>/crawl/latest?game=' + encodeURIComponent(game) + '&type=' + encodeURIComponent(type);
+
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error('서버 응답 오류: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function (data) {
+      if (!data.ok) {
+        renderMessage(data.message || '데이터를 불러오지 못했습니다.');
+        return;
+      }
+      renderItems(data);
+    })
+    .catch(function (error) {
+      renderMessage('크롤링 요청에 실패했습니다. ' + error.message);
+    });
+  });
+})();
+</script>
 
         <!-- 3 columns -->
         <div class="grid3">
