@@ -31,6 +31,8 @@ public class BoardDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String postIdStr = request.getParameter("postId");
+        String category = request.getParameter("category");   
+        String page = request.getParameter("page");           
         int postId;
 
         try {
@@ -59,6 +61,8 @@ public class BoardDetailController extends HttpServlet {
 
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
+        request.setAttribute("category", category);   
+        request.setAttribute("page", page);          
         request.setAttribute("center", "boardDetail.jsp");
 
         request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
@@ -79,6 +83,8 @@ public class BoardDetailController extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
 
         String action = request.getParameter("action");
+        String category = request.getParameter("category"); 
+        String page = request.getParameter("page");          
 
         int postId = 0;
         String postIdStr = request.getParameter("postId");
@@ -161,6 +167,12 @@ public class BoardDetailController extends HttpServlet {
                 break;
         }
 
-        response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
+        response.sendRedirect(
+        	    request.getContextPath() +
+        	    "/board/detail?postId=" + postId +
+        	    "&category=" + category +
+        	    "&page=" + page
+        	);
+        
     }
 }
