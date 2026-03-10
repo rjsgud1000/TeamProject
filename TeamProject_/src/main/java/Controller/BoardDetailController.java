@@ -31,8 +31,9 @@ public class BoardDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String postIdStr = request.getParameter("postId");
-        int postId;
+        int postId = 0;
 
+        // 1️⃣ 파라미터 검증
         try {
             postId = Integer.parseInt(postIdStr);
         } catch (NumberFormatException | NullPointerException e) {
@@ -40,14 +41,17 @@ public class BoardDetailController extends HttpServlet {
             return;
         }
 
+        // 2️⃣ 게시글 조회
         BoardDTO post = boardService.getPostById(postId);
         if (post == null) {
             response.sendRedirect(request.getContextPath() + "/board/list");
             return;
         }
 
+        // 3️⃣ 조회수 증가
         boardService.increaseViewCount(postId);
 
+        // 4️⃣ 게시글별 댓글 조회
         List<CommentDTO> comments;
         try {
             comments = commentDAO.getCommentsByPostId(postId);
@@ -57,108 +61,61 @@ public class BoardDetailController extends HttpServlet {
             comments = Collections.emptyList();
         }
 
+        // 5️⃣ 로그인 멤버 정보 가져오기 (세션)
+        HttpSession session = request.getSession(false);
+        MemberVO loginMember = null;
+        if (session != null) {
+            Object obj = session.getAttribute("loginMember");
+            if (obj instanceof MemberVO) {
+                loginMember = (MemberVO) obj;
+            }
+        }
+
+        // 6️⃣ JSP에 데이터 전달
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
+        request.setAttribute("loginMember", loginMember);
         request.setAttribute("center", "boardDetail.jsp");
 
         request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
     }
 
+    // POST 요청 (댓글 작성) 처리
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession(false);
-        MemberVO loginMember = (session != null) ? (MemberVO) session.getAttribute("loginMember") : null;
-
-        if (loginMember == null) {
+        if (session == null) {
             response.sendRedirect(request.getContextPath() + "/member/login.me");
             return;
         }
 
-        request.setCharacterEncoding("UTF-8");
+        Object obj = session.getAttribute("loginMember");
+        if (!(obj instanceof MemberVO)) {
+            response.sendRedirect(request.getContextPath() + "/member/login.me");
+            return;
+        }
+        MemberVO loginMember = (MemberVO) obj;
 
-        String action = request.getParameter("action");
-
-        int postId = 0;
         String postIdStr = request.getParameter("postId");
-
-        if (postIdStr != null) {
+        String content = request.getParameter("content");
+        int postId = 0;
+        try {
             postId = Integer.parseInt(postIdStr);
+        } catch (NumberFormatException | NullPointerException e) {
+            response.sendRedirect(request.getContextPath() + "/board/list");
+            return;
         }
 
-        switch (action) {
+        if (content != null && !content.isBlank()) {
+            CommentDTO comment = new CommentDTO();
+            comment.setPostId(postId);
+            comment.setMemberId(loginMember.getMemberId());
+            comment.setContent(content);
 
-            case "insert":
-
-                String content = request.getParameter("content");
-
-                Integer parentId = request.getParameter("parentCommentId") != null
-                        ? Integer.valueOf(request.getParameter("parentCommentId"))
-                        : null;
-
-                CommentDTO comment = new CommentDTO();
-                comment.setPostId(postId);
-                comment.setMemberId(loginMember.getMemberId());
-                comment.setContent(content);
-                comment.setParentCommentId(parentId);
-
-                commentDAO.insertComment(comment);
-
-                break;
-
-            case "update":
-
-                int updateId = Integer.parseInt(request.getParameter("commentId"));
-                String newContent = request.getParameter("content");
-
-                commentDAO.updateComment(updateId, newContent);
-
-                postId = commentDAO.getPostIdByCommentId(updateId);
-
-                break;
-
-            case "delete":
-
-                int deleteId = Integer.parseInt(request.getParameter("commentId"));
-
-                commentDAO.deleteComment(deleteId);
-
-                postId = commentDAO.getPostIdByCommentId(deleteId);
-
-                break;
-
-            case "like":
-
-                int likeId = Integer.parseInt(request.getParameter("commentId"));
-
-                commentDAO.likeComment(likeId, loginMember.getMemberId());
-
-                postId = commentDAO.getPostIdByCommentId(likeId);
-
-                break;
-
-            case "dislike":
-
-                int dislikeId = Integer.parseInt(request.getParameter("commentId"));
-
-                commentDAO.dislikeComment(dislikeId, loginMember.getMemberId());
-
-                postId = commentDAO.getPostIdByCommentId(dislikeId);
-
-                break;
-
-            case "report":
-
-                int reportId = Integer.parseInt(request.getParameter("commentId"));
-
-                String reason = request.getParameter("reason");
-
-                commentDAO.reportComment(reportId, loginMember.getMemberId(), reason);
-
-                postId = commentDAO.getPostIdByCommentId(reportId);
-
-                break;
+            commentDAO.insertComment(comment);
         }
 
         response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
