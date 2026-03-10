@@ -56,6 +56,13 @@ public class BoardDetailController extends HttpServlet {
         try {
             comments = commentDAO.getCommentsByPostId(postId);
             if (comments == null) comments = Collections.emptyList();
+
+            // ⭐ 좋아요/싫어요 수 세팅
+            for (CommentDTO c : comments) {
+                c.setLikeCount(commentDAO.getCommentLikeCount(c.getCommentId()));
+                c.setDislikeCount(commentDAO.getCommentDislikeCount(c.getCommentId()));
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             comments = Collections.emptyList();
@@ -80,7 +87,7 @@ public class BoardDetailController extends HttpServlet {
         request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
     }
 
-    // POST 요청 (댓글 작성) 처리
+    // POST 요청 처리 (댓글/답글/좋아요/싫어요/삭제/신고)
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -162,6 +169,7 @@ public class BoardDetailController extends HttpServlet {
                 break;
         }
 
+        // 처리 후 다시 상세페이지로 리다이렉트
         response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
     }
 }

@@ -63,19 +63,22 @@
                 <p>${c.content}</p>
 
                 <c:if test="${sessionScope.loginMember != null}">
+                   
                     <!-- 좋아요 -->
-                    <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
-                        <input type="hidden" name="action" value="like"/>
-                        <input type="hidden" name="commentId" value="${c.commentId}"/>
-                        <button type="submit">👍 ${c.likeCount}</button>
-                    </form>
+            <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
+                <input type="hidden" name="action" value="like"/>
+                <input type="hidden" name="commentId" value="${c.commentId}"/>
+                <input type="hidden" name="postId" value="${post.postId}"/>
+                <button type="submit">👍 ${c.likeCount}</button>
+            </form>
 
-                    <!-- 싫어요 -->
-                    <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
-                        <input type="hidden" name="action" value="dislike"/>
-                        <input type="hidden" name="commentId" value="${c.commentId}"/>
-                        <button type="submit">👎 ${c.dislikeCount}</button>
-                    </form>
+            <!-- 싫어요 -->
+            <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
+                <input type="hidden" name="action" value="dislike"/>
+                <input type="hidden" name="commentId" value="${c.commentId}"/>
+                <input type="hidden" name="postId" value="${post.postId}"/>
+                <button type="submit">👎 ${c.dislikeCount}</button>
+            </form>
 
                     <!-- 삭제 버튼 (작성자 본인만) -->
                     <c:if test="${sessionScope.loginMember.memberId eq c.memberId}">
