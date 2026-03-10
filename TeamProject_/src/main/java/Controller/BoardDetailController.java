@@ -192,7 +192,6 @@ public class BoardDetailController extends HttpServlet {
         	    "&page=" + page
         	);
         
-        // 처리 후 다시 상세페이지로 리다이렉트
-        response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
+
     }
 }

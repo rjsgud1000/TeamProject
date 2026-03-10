@@ -22,6 +22,8 @@ public class MemberVO {
 	// sanction info (when BANNED)
 	private String sanctionReason;
 	private java.time.LocalDateTime sanctionEndAt;
+	private int warningCount;
+	private int bannedCount;
 
 	private java.time.LocalDateTime createdAt;
 	private java.time.LocalDateTime updatedAt;
@@ -163,6 +165,22 @@ public class MemberVO {
 
 	public void setSanctionEndAt(java.time.LocalDateTime sanctionEndAt) {
 		this.sanctionEndAt = sanctionEndAt;
+	}
+
+	public int getWarningCount() {
+		return warningCount;
+	}
+
+	public void setWarningCount(int warningCount) {
+		this.warningCount = warningCount;
+	}
+
+	public int getBannedCount() {
+		return bannedCount;
+	}
+
+	public void setBannedCount(int bannedCount) {
+		this.bannedCount = bannedCount;
 	}
 
 	public java.time.LocalDateTime getCreatedAt() {

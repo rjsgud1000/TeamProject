@@ -245,7 +245,7 @@ public class MemberDAO {
 	 * 없으면 null.
 	 */
 	public SanctionInfo findActiveSanction(String memberId) {
-		String sql = "SELECT REASON, end_at "
+		String sql = "SELECT TYPE, REASON, end_at, member_status "
 				+ "FROM SANCTION "
 				+ "WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() "
 				+ "ORDER BY end_at DESC, action_id DESC LIMIT 1";
@@ -255,7 +255,9 @@ public class MemberDAO {
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
 					SanctionInfo info = new SanctionInfo();
+					info.type = rs.getString("TYPE");
 					info.reason = rs.getString("REASON");
+					info.memberStatus = rs.getString("member_status");
 					Timestamp ts = rs.getTimestamp("end_at");
 					info.endAt = (ts != null) ? ts.toLocalDateTime() : null;
 					return info;
@@ -265,6 +267,96 @@ public class MemberDAO {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public boolean hasActiveBannedSanction(String memberId) {
+		String sql = "SELECT 1 FROM SANCTION WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean isLatestBannedSanctionExpired(String memberId) {
+		String sql = "SELECT end_at FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (!rs.next()) {
+					return false;
+				}
+				Timestamp ts = rs.getTimestamp("end_at");
+				return ts != null && ts.toLocalDateTime().isBefore(LocalDateTime.now());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public SanctionInfo findLatestBannedSanction(String memberId) {
+		String sql = "SELECT TYPE, REASON, end_at, member_status FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					SanctionInfo info = new SanctionInfo();
+					info.type = rs.getString("TYPE");
+					info.reason = rs.getString("REASON");
+					info.memberStatus = rs.getString("member_status");
+					Timestamp ts = rs.getTimestamp("end_at");
+					info.endAt = ts != null ? ts.toLocalDateTime() : null;
+					return info;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public int activateMember(String memberId) {
+		String sql = "UPDATE MEMBER SET status='ACTIVE', updated_at=NOW() WHERE member_id=? AND status<>'ACTIVE'";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public int endWarningSanctions(String targetMemberId) {
+		String sql = "UPDATE SANCTION SET member_status='END' WHERE target_member_id=? AND member_status='WARNING'";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, targetMemberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public int endActiveSanctions(String targetMemberId) {
+		String sql = "UPDATE SANCTION SET member_status='END', end_at=NOW() WHERE target_member_id=? AND member_status IN ('WARNING','BANNED')";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, targetMemberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 
 	public int withdrawMember(String memberId) {
@@ -361,6 +453,9 @@ public class MemberDAO {
 					vo.setSanctionReason(info.reason);
 					vo.setSanctionEndAt(info.endAt);
 				}
+				int[] counts = countSanctions(memberId);
+				vo.setWarningCount(counts[0]);
+				vo.setBannedCount(counts[1]);
 				Timestamp createdAt = rs.getTimestamp("created_at");
 				if (createdAt != null) {
 					vo.setCreatedAt(createdAt.toLocalDateTime());
@@ -377,15 +472,41 @@ public class MemberDAO {
 		return null;
 	}
 
+	public int[] countSanctions(String memberId) {
+		String sql = "SELECT TYPE, COUNT(*) cnt FROM SANCTION WHERE target_member_id=? GROUP BY TYPE";
+		int warningCount = 0;
+		int bannedCount = 0;
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					String type = rs.getString("TYPE");
+					int count = rs.getInt("cnt");
+					if ("WARN".equalsIgnoreCase(type)) {
+						warningCount = count;
+					} else if ("BAN".equalsIgnoreCase(type)) {
+						bannedCount = count;
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return new int[] { warningCount, bannedCount };
+	}
+
 	public SanctionInfo findLatestSanction(String memberId) {
-		String sql = "SELECT REASON, end_at FROM SANCTION WHERE target_member_id=? ORDER BY end_at DESC, action_id DESC LIMIT 1";
+		String sql = "SELECT TYPE, REASON, end_at, member_status FROM SANCTION WHERE target_member_id=? ORDER BY create_at DESC, action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
 				 PreparedStatement pstmt = con.prepareStatement(sql)) {
 			pstmt.setString(1, memberId);
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
 					SanctionInfo info = new SanctionInfo();
+					info.type = rs.getString("TYPE");
 					info.reason = rs.getString("REASON");
+					info.memberStatus = rs.getString("member_status");
 					Timestamp ts = rs.getTimestamp("end_at");
 					info.endAt = ts != null ? ts.toLocalDateTime() : null;
 					return info;
@@ -407,6 +528,59 @@ public class MemberDAO {
 		} catch (Exception e) {
 			e.printStackTrace();
 			return 0;
+		}
+	}
+
+	public boolean updateMemberStatusWithSanction(String targetMemberId, String adminMemberId, String nextStatus,
+			String sanctionType, String reason, LocalDateTime startAt, LocalDateTime endAt, boolean endPreviousSanctions) {
+		String updateMemberSql = "UPDATE MEMBER SET status=?, updated_at=NOW() WHERE member_id=?";
+		String insertSanctionSql = "INSERT INTO SANCTION (target_member_id, admin_member_id, TYPE, REASON, start_at, end_at, member_status) VALUES (?,?,?,?,?,?,?)";
+		String endSanctionSql = "UPDATE SANCTION SET member_status='END', end_at=NOW() WHERE target_member_id=? AND member_status IN ('WARNING','BANNED')";
+		try (Connection con = DBCPUtil.getConnection()) {
+			boolean oldAutoCommit = con.getAutoCommit();
+			con.setAutoCommit(false);
+			try {
+				try (PreparedStatement pstmt = con.prepareStatement(updateMemberSql)) {
+					pstmt.setString(1, nextStatus);
+					pstmt.setString(2, targetMemberId);
+					if (pstmt.executeUpdate() != 1) {
+						con.rollback();
+						return false;
+					}
+				}
+				if (sanctionType != null) {
+					try (PreparedStatement pstmt = con.prepareStatement(insertSanctionSql)) {
+						int i = 1;
+						pstmt.setString(i++, targetMemberId);
+						pstmt.setString(i++, adminMemberId);
+						pstmt.setString(i++, sanctionType);
+						pstmt.setString(i++, reason);
+						pstmt.setTimestamp(i++, Timestamp.valueOf(startAt));
+						pstmt.setTimestamp(i++, Timestamp.valueOf(endAt));
+						pstmt.setString(i++, nextStatus);
+						if (pstmt.executeUpdate() != 1) {
+							con.rollback();
+							return false;
+						}
+					}
+				}
+				if (endPreviousSanctions) {
+					try (PreparedStatement pstmt = con.prepareStatement(endSanctionSql)) {
+						pstmt.setString(1, targetMemberId);
+						pstmt.executeUpdate();
+					}
+				}
+				con.commit();
+				con.setAutoCommit(oldAutoCommit);
+				return true;
+			} catch (Exception e) {
+				con.rollback();
+				con.setAutoCommit(oldAutoCommit);
+				throw e;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
 		}
 	}
 
@@ -456,7 +630,9 @@ public class MemberDAO {
 	}
 
 	public static class SanctionInfo {
+		public String type;
 		public String reason;
+		public String memberStatus;
 		public LocalDateTime endAt;
 	}
 }
