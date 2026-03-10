@@ -53,7 +53,7 @@ public class MemberService {
 			if ("WITHDRAWN".equals(s)) {
 				return new LoginResult(null, "탈퇴한 계정입니다.");
 			}
-			if (!"ACTIVE".equals(s) && !"INACTIVE".equals(s)) {
+			if (!"ACTIVE".equals(s) && !"INACTIVE".equals(s) && !"WARNING".equals(s)) {
 				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + s + ")");
 			}
 		}
@@ -250,6 +250,7 @@ public class MemberService {
 		Map<String, Integer> summary = new LinkedHashMap<>();
 		summary.put("ALL", memberDAO.countMembers());
 		summary.put("ACTIVE", memberDAO.countMembersByStatus("ACTIVE"));
+		summary.put("WARNING", memberDAO.countMembersByStatus("WARNING"));
 		summary.put("INACTIVE", memberDAO.countMembersByStatus("INACTIVE"));
 		summary.put("BANNED", memberDAO.countMembersByStatus("BANNED"));
 		summary.put("WITHDRAWN", memberDAO.countMembersByStatus("WITHDRAWN"));
@@ -264,6 +265,76 @@ public class MemberService {
 		return memberDAO.findMemberDetailForAdmin(id);
 	}
 
+	public String updateMemberStatusByAdmin(String adminMemberId, String targetMemberId, String status, String sanctionReason, String sanctionEndAtText) {
+		String adminId = trimToNull(adminMemberId);
+		String memberId = trimToNull(targetMemberId);
+		String nextStatus = normalizeAdminStatus(status);
+		String reason = trimToNull(sanctionReason);
+		if (adminId == null) {
+			return "관리자 정보가 올바르지 않습니다.";
+		}
+		if (memberId == null) {
+			return "변경할 회원 정보를 찾을 수 없습니다.";
+		}
+		if (nextStatus == null) {
+			return "변경할 회원 상태가 올바르지 않습니다.";
+		}
+		if (adminId.equals(memberId)) {
+			return "관리자 본인 상태는 변경할 수 없습니다.";
+		}
+
+		MemberVO target = memberDAO.findByMemberId(memberId);
+		if (target == null) {
+			return "회원 정보를 찾을 수 없습니다.";
+		}
+		if ("ADMIN".equalsIgnoreCase(trimToNull(target.getRole()))) {
+			return "관리자 계정은 상태를 변경할 수 없습니다.";
+		}
+		String currentStatus = trimToNull(target.getStatus());
+		if ("WITHDRAWN".equalsIgnoreCase(currentStatus) && !"WITHDRAWN".equals(nextStatus)) {
+			return "탈퇴 회원은 다른 상태로 변경할 수 없습니다.";
+		}
+		if (nextStatus.equalsIgnoreCase(currentStatus)) {
+			return null;
+		}
+		if (("WARNING".equals(nextStatus) || "BANNED".equals(nextStatus)) && reason == null) {
+			return "경고 또는 제재 처리 시 사유를 입력해 주세요.";
+		}
+
+		String sanctionType = null;
+		java.time.LocalDateTime startAt = null;
+		java.time.LocalDateTime endAt = null;
+		boolean endPreviousSanctions = false;
+		if ("WARNING".equals(nextStatus) || "BANNED".equals(nextStatus)) {
+			sanctionType = "WARNING".equals(nextStatus) ? "WARN" : "BAN";
+			startAt = java.time.LocalDateTime.now();
+			endAt = parseDateTimeLocal(trimToNull(sanctionEndAtText));
+			if (endAt == null) {
+				return "경고 또는 제재 종료일시를 입력해 주세요.";
+			}
+			if (!endAt.isAfter(startAt)) {
+				return "제재 종료일시는 현재 시각보다 늦어야 합니다.";
+			}
+		}
+		if ("ACTIVE".equals(nextStatus) && ("WARNING".equalsIgnoreCase(currentStatus) || "BANNED".equalsIgnoreCase(currentStatus))) {
+			endPreviousSanctions = true;
+		}
+
+		boolean updated = memberDAO.updateMemberStatusWithSanction(memberId, adminId, nextStatus, sanctionType, reason, startAt, endAt, endPreviousSanctions);
+		return updated ? null : "회원 상태 변경 또는 SANCTION 처리에 실패했습니다.";
+	}
+
+	private java.time.LocalDateTime parseDateTimeLocal(String value) {
+		if (value == null) {
+			return null;
+		}
+		try {
+			return java.time.LocalDateTime.parse(value);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
 	private String normalizeStatusFilter(String status) {
 		String value = trimToNull(status);
 		if (value == null) {
@@ -273,7 +344,25 @@ public class MemberService {
 		switch (normalized) {
 		case "ALL":
 		case "ACTIVE":
+		case "WARNING":
 		case "INACTIVE":
+		case "BANNED":
+		case "WITHDRAWN":
+			return normalized;
+		default:
+			return null;
+		}
+	}
+
+	private String normalizeAdminStatus(String status) {
+		String value = trimToNull(status);
+		if (value == null) {
+			return null;
+		}
+		String normalized = value.toUpperCase();
+		switch (normalized) {
+		case "ACTIVE":
+		case "WARNING":
 		case "BANNED":
 		case "WITHDRAWN":
 			return normalized;
