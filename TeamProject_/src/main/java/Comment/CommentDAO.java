@@ -108,16 +108,36 @@ public class CommentDAO {
 
     // 5️⃣ 댓글 좋아요
     public boolean likeComment(int commentId, String memberId) {
-        String sql = "INSERT INTO COMMENT_LIKE (comment_id, member_id, created_at) VALUES (?, ?, ?)";
-        try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, commentId);
-            ps.setString(2, memberId); // 
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            return ps.executeUpdate() > 0;
-        } catch (SQLIntegrityConstraintViolationException e) {
-            return false;
-        } catch (Exception e) { e.printStackTrace(); return false; }
+
+        try {
+
+            if(hasLiked(commentId, memberId)){
+                // 👍 다시 누르면 취소
+                return unlikeComment(commentId, memberId);
+            }
+
+            if(hasDisliked(commentId, memberId)){
+                // 👎 제거
+                undislikeComment(commentId, memberId);
+            }
+
+            String sql = "INSERT INTO COMMENT_LIKE (comment_id, member_id, created_at) VALUES (?, ?, ?)";
+
+            try(Connection conn = DBCPUtil.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)){
+
+                ps.setInt(1, commentId);
+                ps.setString(2, memberId);
+                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+
+                return ps.executeUpdate() > 0;
+            }
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // 6️⃣ 댓글 좋아요 취소
@@ -146,15 +166,36 @@ public class CommentDAO {
 
     // 8️⃣ 댓글 싫어요 추가
     public boolean dislikeComment(int commentId, String memberId) {
-        String sql = "INSERT INTO COMMENT_DISLIKE (comment_id, member_id, created_at) VALUES (?, ?, ?)";
-        try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, commentId);
-            ps.setString(2, memberId); // ⚡ 변경
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            return ps.executeUpdate() > 0;
-        } catch (SQLIntegrityConstraintViolationException e) { return false; }
-        catch (Exception e) { e.printStackTrace(); return false; }
+
+        try {
+
+            if(hasDisliked(commentId, memberId)){
+                // 👎 다시 누르면 취소
+                return undislikeComment(commentId, memberId);
+            }
+
+            if(hasLiked(commentId, memberId)){
+                // 👍 제거
+                unlikeComment(commentId, memberId);
+            }
+
+            String sql = "INSERT INTO COMMENT_DISLIKE (comment_id, member_id, created_at) VALUES (?, ?, ?)";
+
+            try(Connection conn = DBCPUtil.getConnection();
+                PreparedStatement ps = conn.prepareStatement(sql)){
+
+                ps.setInt(1, commentId);
+                ps.setString(2, memberId);
+                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+
+                return ps.executeUpdate() > 0;
+            }
+
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     // 9️⃣ 댓글 싫어요 취소
@@ -213,5 +254,45 @@ public class CommentDAO {
         }
 
         return 0;
+    }
+    public boolean hasLiked(int commentId, String memberId){
+
+        String sql = "SELECT 1 FROM COMMENT_LIKE WHERE comment_id=? AND member_id=?";
+
+        try(Connection conn = DBCPUtil.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)){
+
+            ps.setInt(1, commentId);
+            ps.setString(2, memberId);
+
+            ResultSet rs = ps.executeQuery();
+
+            return rs.next();
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    public boolean hasDisliked(int commentId, String memberId){
+
+        String sql = "SELECT 1 FROM COMMENT_DISLIKE WHERE comment_id=? AND member_id=?";
+
+        try(Connection conn = DBCPUtil.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)){
+
+            ps.setInt(1, commentId);
+            ps.setString(2, memberId);
+
+            ResultSet rs = ps.executeQuery();
+
+            return rs.next();
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }
