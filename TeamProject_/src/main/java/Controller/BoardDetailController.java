@@ -143,6 +143,15 @@ public class BoardDetailController extends HttpServlet {
                     commentDAO.insertComment(comment);
                 }
                 break;
+                
+            case "update": // 댓글 수정
+                if(commentId > 0){
+                    String newContent = request.getParameter("content");
+                    if(newContent != null && !newContent.isBlank()){
+                        commentDAO.updateComment(commentId, newContent);
+                    }
+                }
+                break;
 
             case "delete": // 댓글 삭제
                 if(commentId > 0){
@@ -170,6 +179,7 @@ public class BoardDetailController extends HttpServlet {
                     }
                 }
                 break;
+                
 
             default:
                 break;

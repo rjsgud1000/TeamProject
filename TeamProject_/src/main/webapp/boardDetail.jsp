@@ -64,34 +64,48 @@
 
         <c:forEach var="c" items="${comments}">
             <div style="border-bottom:1px solid #ccc; padding:8px;
-                <c:if test='${c.parentCommentId != null}'>
-                    margin-left:40px; background:#f9f9f9;
-                </c:if>
-            ">
+                <c:if test='${c.parentCommentId != null}'>margin-left:40px; background:#f9f9f9;</c:if>">
+
                 <b>${c.memberNickname}</b>
                 <fmt:formatDate value="${c.createdAt}" pattern="yyyy-MM-dd HH:mm"/>
                 <p>${c.content}</p>
 
                 <c:if test="${sessionScope.loginMember != null}">
-                   
                     <!-- 좋아요 -->
-            <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
-                <input type="hidden" name="action" value="like"/>
-                <input type="hidden" name="commentId" value="${c.commentId}"/>
-                <input type="hidden" name="postId" value="${post.postId}"/>
-                <button type="submit">👍 ${c.likeCount}</button>
-            </form>
+                    <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
+                        <input type="hidden" name="action" value="like"/>
+                        <input type="hidden" name="commentId" value="${c.commentId}"/>
+                        <input type="hidden" name="postId" value="${post.postId}"/>
+                        <button type="submit">👍 ${c.likeCount}</button>
+                    </form>
 
-            <!-- 싫어요 -->
-            <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
-                <input type="hidden" name="action" value="dislike"/>
-                <input type="hidden" name="commentId" value="${c.commentId}"/>
-                <input type="hidden" name="postId" value="${post.postId}"/>
-                <button type="submit">👎 ${c.dislikeCount}</button>
-            </form>
+                    <!-- 싫어요 -->
+                    <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
+                        <input type="hidden" name="action" value="dislike"/>
+                        <input type="hidden" name="commentId" value="${c.commentId}"/>
+                        <input type="hidden" name="postId" value="${post.postId}"/>
+                        <button type="submit">👎 ${c.dislikeCount}</button>
+                    </form>
 
-                    <!-- 삭제 버튼 (작성자 본인만) -->
-                    <c:if test="${sessionScope.loginMember.memberId eq c.memberId}">
+                    <!-- 수정 버튼 (작성자 또는 ADMIN) -->
+                    <c:if test="${sessionScope.loginMember.memberId eq c.memberId 
+                                || sessionScope.loginMember.memberId eq 'ADMIN'}">
+                        <button type="button" onclick="toggleEdit(${c.commentId})">수정</button>
+                        <div id="editForm-${c.commentId}" style="display:none; margin-top:5px;">
+                            <form action="${pageContext.request.contextPath}/board/detail" method="post">
+                                <input type="hidden" name="action" value="update"/>
+                                <input type="hidden" name="commentId" value="${c.commentId}"/>
+                                <input type="hidden" name="postId" value="${post.postId}"/>
+                                <textarea name="content" rows="2" cols="40"><c:out value="${c.content}"/></textarea>
+                                <br>
+                                <button type="submit">수정 완료</button>
+                            </form>
+                        </div>
+                    </c:if>
+
+                    <!-- 삭제 버튼 (작성자 또는 ADMIN) -->
+                    <c:if test="${sessionScope.loginMember.memberId eq c.memberId 
+                                || sessionScope.loginMember.memberId eq 'ADMIN'}">
                         <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
                             <input type="hidden" name="action" value="delete"/>
                             <input type="hidden" name="commentId" value="${c.commentId}"/>
@@ -102,8 +116,6 @@
 
                     <!-- 답글 버튼 -->
                     <button type="button" onclick="toggleReply(${c.commentId})">답글</button>
-
-                    <!-- 대댓글 폼 -->
                     <div id="replyForm-${c.commentId}" style="display:none; margin-top:5px;">
                         <form action="${pageContext.request.contextPath}/board/detail" method="post">
                             <input type="hidden" name="action" value="insert"/>
@@ -117,8 +129,6 @@
 
                     <!-- 신고 버튼 -->
                     <button type="button" onclick="toggleReport(${c.commentId})">신고</button>
-
-                    <!-- 신고 폼 -->
                     <div id="reportForm-${c.commentId}" style="display:none; margin-top:5px;">
                         <form action="${pageContext.request.contextPath}/board/detail" method="post">
                             <input type="hidden" name="action" value="report"/>
@@ -133,7 +143,7 @@
             </div>
         </c:forEach>
 
-        <!-- 일반 댓글 작성 -->
+        <!-- 일반 댓글 작성 폼 (반복문 밖) -->
         <c:if test="${sessionScope.loginMember != null}">
             <div style="margin-top:20px;">
                 <form action="${pageContext.request.contextPath}/board/detail" method="post">
@@ -155,6 +165,10 @@ function toggleReply(id){
 }
 function toggleReport(id){
     let f = document.getElementById("reportForm-" + id);
+    f.style.display = (f.style.display === "none") ? "block" : "none";
+}
+function toggleEdit(id){
+    let f = document.getElementById("editForm-" + id);
     f.style.display = (f.style.display === "none") ? "block" : "none";
 }
 </script>
