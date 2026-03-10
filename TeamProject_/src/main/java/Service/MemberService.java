@@ -14,47 +14,63 @@ public class MemberService {
 	public static class LoginResult {
 		public final MemberVO member;
 		public final String error;
+		public final String flash;
 
-		public LoginResult(MemberVO member, String error) {
+		public LoginResult(MemberVO member, String error, String flash) {
 			this.member = member;
 			this.error = error;
+			this.flash = flash;
 		}
 	}
 
 	public LoginResult loginWithReason(String memberId, String password) {
 		if (memberId == null || memberId.isBlank() || password == null || password.isBlank()) {
-			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
+			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
 		}
 		String id = memberId.trim();
 
 		MemberVO member = memberDAO.findByMemberId(id);
 		if (member == null) {
-			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
+			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
 		}
 
+		String flash = null;
 		String status = member.getStatus();
 		if (status != null) {
 			String s = status.trim().toUpperCase();
 			if ("BANNED".equals(s)) {
-				Dao.MemberDAO.SanctionInfo info = memberDAO.findActiveSanction(id);
-				String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
-				String until = "";
-				if (info != null && info.endAt != null) {
-					DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-					until = info.endAt.format(fmt);
+				if (memberDAO.isLatestBannedSanctionExpired(id)) {
+					memberDAO.endActiveSanctions(id);
+					memberDAO.activateMember(id);
+					member.setStatus("ACTIVE");
+				} else {
+					Dao.MemberDAO.SanctionInfo info = memberDAO.findLatestBannedSanction(id);
+					String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
+					String until = "";
+					if (info != null && info.endAt != null) {
+						DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+						until = info.endAt.format(fmt);
+					}
+					String msg = "제재계정입니다.";
+					msg += "\n제재사유: " + reason;
+					if (!until.isEmpty()) {
+						msg += "\n제재기간: ~ " + until;
+					}
+					return new LoginResult(null, msg, null);
 				}
-				String msg = "제재계정입니다.";
-				msg += "\n제재사유: " + reason;
-				if (!until.isEmpty()) {
-					msg += "\n제재기간: ~ " + until;
-				}
-				return new LoginResult(null, msg);
 			}
 			if ("WITHDRAWN".equals(s)) {
-				return new LoginResult(null, "탈퇴한 계정입니다.");
+				return new LoginResult(null, "탈퇴한 계정입니다.", null);
 			}
-			if (!"ACTIVE".equals(s) && !"INACTIVE".equals(s) && !"WARNING".equals(s)) {
-				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + s + ")");
+			if ("WARNING".equals(s)) {
+				int warningCount = memberDAO.countSanctions(id)[0];
+				memberDAO.endWarningSanctions(id);
+				memberDAO.activateMember(id);
+				member.setStatus("ACTIVE");
+				flash = "관리자로 부터 경고를 받았습니다. 경고 누적시 제재당할수도 있으니 주의하십시오. 경고누적: " + warningCount + "회";
+			}
+			if (!"ACTIVE".equals(member.getStatus()) && !"INACTIVE".equals(member.getStatus()) && !"WARNING".equals(member.getStatus())) {
+				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + member.getStatus() + ")", null);
 			}
 		}
 
@@ -72,7 +88,7 @@ public class MemberService {
 			}
 		}
 
-		return ok ? new LoginResult(member, null) : new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.");
+		return ok ? new LoginResult(memberDAO.findByMemberId(id), null, flash) : new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
 	}
 
 	public MemberVO login(String memberId, String password) {
@@ -308,12 +324,16 @@ public class MemberService {
 		if ("WARNING".equals(nextStatus) || "BANNED".equals(nextStatus)) {
 			sanctionType = "WARNING".equals(nextStatus) ? "WARN" : "BAN";
 			startAt = java.time.LocalDateTime.now();
-			endAt = parseDateTimeLocal(trimToNull(sanctionEndAtText));
-			if (endAt == null) {
-				return "경고 또는 제재 종료일시를 입력해 주세요.";
-			}
-			if (!endAt.isAfter(startAt)) {
-				return "제재 종료일시는 현재 시각보다 늦어야 합니다.";
+			if ("WARNING".equals(nextStatus)) {
+				endAt = startAt;
+			} else {
+				endAt = parseDateTimeLocal(trimToNull(sanctionEndAtText));
+				if (endAt == null) {
+					return "제재 종료일시를 입력해 주세요.";
+				}
+				if (!endAt.isAfter(startAt)) {
+					return "제재 종료일시는 현재 시각보다 늦어야 합니다.";
+				}
 			}
 		}
 		if ("ACTIVE".equals(nextStatus) && ("WARNING".equalsIgnoreCase(currentStatus) || "BANNED".equalsIgnoreCase(currentStatus))) {

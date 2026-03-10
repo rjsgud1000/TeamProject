@@ -173,11 +173,7 @@ public class MemberController extends HttpServlet {
 		session.setAttribute("loginName", loginMember.getNickname());
 		session.setAttribute("loginRole", loginMember.getRole());
 		session.setAttribute("isAdmin", isAdminRole(loginMember.getRole()));
-		if ("WARNING".equalsIgnoreCase(loginMember.getStatus())) {
-			session.setAttribute("loginFlash", "관리자로부터 경고를 받았습니다. 앞으로의 커뮤니티 이용에 주의 바랍니다.");
-		} else {
-			session.setAttribute("loginFlash", "로그인하셨습니다.");
-		}
+		session.setAttribute("loginFlash", (result.flash != null && !result.flash.isBlank()) ? result.flash : "로그인하셨습니다.");
 
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}

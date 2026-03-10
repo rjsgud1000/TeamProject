@@ -245,9 +245,9 @@ public class MemberDAO {
 	 * 없으면 null.
 	 */
 	public SanctionInfo findActiveSanction(String memberId) {
-		String sql = "SELECT REASON, end_at "
+		String sql = "SELECT TYPE, REASON, end_at, member_status "
 				+ "FROM SANCTION "
-				+ "WHERE target_member_id=? AND member_status IN ('WARNING','BANNED') AND start_at<=NOW() AND end_at>=NOW() "
+				+ "WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() "
 				+ "ORDER BY end_at DESC, action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
 				 PreparedStatement pstmt = con.prepareStatement(sql)) {
@@ -255,7 +255,9 @@ public class MemberDAO {
 			try (ResultSet rs = pstmt.executeQuery()) {
 				if (rs.next()) {
 					SanctionInfo info = new SanctionInfo();
+					info.type = rs.getString("TYPE");
 					info.reason = rs.getString("REASON");
+					info.memberStatus = rs.getString("member_status");
 					Timestamp ts = rs.getTimestamp("end_at");
 					info.endAt = (ts != null) ? ts.toLocalDateTime() : null;
 					return info;
@@ -265,6 +267,96 @@ public class MemberDAO {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public boolean hasActiveBannedSanction(String memberId) {
+		String sql = "SELECT 1 FROM SANCTION WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				return rs.next();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return true;
+		}
+	}
+
+	public boolean isLatestBannedSanctionExpired(String memberId) {
+		String sql = "SELECT end_at FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (!rs.next()) {
+					return false;
+				}
+				Timestamp ts = rs.getTimestamp("end_at");
+				return ts != null && ts.toLocalDateTime().isBefore(LocalDateTime.now());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public SanctionInfo findLatestBannedSanction(String memberId) {
+		String sql = "SELECT TYPE, REASON, end_at, member_status FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					SanctionInfo info = new SanctionInfo();
+					info.type = rs.getString("TYPE");
+					info.reason = rs.getString("REASON");
+					info.memberStatus = rs.getString("member_status");
+					Timestamp ts = rs.getTimestamp("end_at");
+					info.endAt = ts != null ? ts.toLocalDateTime() : null;
+					return info;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public int activateMember(String memberId) {
+		String sql = "UPDATE MEMBER SET status='ACTIVE', updated_at=NOW() WHERE member_id=? AND status<>'ACTIVE'";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public int endWarningSanctions(String targetMemberId) {
+		String sql = "UPDATE SANCTION SET member_status='END' WHERE target_member_id=? AND member_status='WARNING'";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, targetMemberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
+
+	public int endActiveSanctions(String targetMemberId) {
+		String sql = "UPDATE SANCTION SET member_status='END', end_at=NOW() WHERE target_member_id=? AND member_status IN ('WARNING','BANNED')";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, targetMemberId);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
 	}
 
 	public int withdrawMember(String memberId) {

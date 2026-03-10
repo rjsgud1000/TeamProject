@@ -70,10 +70,12 @@
 							<div id="sanctionFields">
 								<label for="sanctionReason" style="display:block; margin-bottom:8px; font-weight:600;">경고/제재 사유</label>
 								<textarea id="sanctionReason" name="sanctionReason" rows="4" placeholder="경고 또는 제재 처리 시 사유를 입력하세요." style="width:100%; padding:10px; border-radius:10px; margin-bottom:12px; resize:vertical;"></textarea>
-								<label for="sanctionEndAt" style="display:block; margin-bottom:8px; font-weight:600;">종료 일시</label>
-								<input type="datetime-local" id="sanctionEndAt" name="sanctionEndAt" style="width:100%; padding:10px; border-radius:10px; margin-bottom:12px;">
+								<div id="sanctionEndAtWrap">
+									<label for="sanctionEndAt" style="display:block; margin-bottom:8px; font-weight:600;">제재 종료 일시</label>
+									<input type="datetime-local" id="sanctionEndAt" name="sanctionEndAt" style="width:100%; padding:10px; border-radius:10px; margin-bottom:12px;">
+								</div>
 							</div>
-							<p style="margin:0 0 12px; color:#666; font-size:13px;">시작일시는 저장 시점(NOW)으로 자동 처리됩니다.</p>
+							<p style="margin:0 0 12px; color:#666; font-size:13px;">경고는 로그인 시 안내 후 자동 해제됩니다. 제재는 기간 종료 후 로그인 시 자동으로 활성화됩니다.</p>
 							<button class="btn" type="submit">상태 변경 저장</button>
 						</form>
 					</c:otherwise>
@@ -95,9 +97,13 @@
 function toggleSanctionFields() {
 	var status = document.getElementById('status');
 	var fields = document.getElementById('sanctionFields');
+	var endWrap = document.getElementById('sanctionEndAtWrap');
 	if (!status || !fields) return;
-	var show = status.value === 'WARNING' || status.value === 'BANNED';
-	fields.style.display = show ? 'block' : 'none';
+	var sanction = status.value === 'WARNING' || status.value === 'BANNED';
+	fields.style.display = sanction ? 'block' : 'none';
+	if (endWrap) {
+		endWrap.style.display = status.value === 'BANNED' ? 'block' : 'none';
+	}
 }
 function validateStatusForm() {
 	var status = document.getElementById('status').value;
@@ -107,8 +113,8 @@ function validateStatusForm() {
 		alert('경고 또는 제재 처리 시 사유를 입력해 주세요.');
 		return false;
 	}
-	if ((status === 'WARNING' || status === 'BANNED') && !endAt) {
-		alert('경고 또는 제재 종료일시를 입력해 주세요.');
+	if (status === 'BANNED' && !endAt) {
+		alert('제재 종료일시를 입력해 주세요.');
 		return false;
 	}
 	return confirm('회원 상태를 변경하시겠습니까?');
