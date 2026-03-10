@@ -192,14 +192,14 @@ public class BoardDetailController extends HttpServlet {
         }
 
         // category/page 안전 처리
-        String category = request.getParameter("category");
-        String page = request.getParameter("page");
-        category = (category != null) ? category : "0";
-        page = (page != null) ? page : "1";
+        String category1 = request.getParameter("category");
+        String page1 = request.getParameter("page");
+        category1 = (category1 != null) ? category1 : "0";
+        page1 = (page1 != null) ? page1 : "1";
 
         String redirectUrl = String.format(
                 "%s/board/detail?postId=%d&category=%s&page=%s",
-                request.getContextPath(), postId, category, page
+                request.getContextPath(), postId, category1, page1
         );
 
         response.sendRedirect(redirectUrl);
