@@ -99,23 +99,67 @@ public class BoardDetailController extends HttpServlet {
         }
         MemberVO loginMember = (MemberVO) obj;
 
+        String action = request.getParameter("action");
         String postIdStr = request.getParameter("postId");
-        String content = request.getParameter("content");
+        String commentIdStr = request.getParameter("commentId");
         int postId = 0;
+        int commentId = 0;
+
         try {
             postId = Integer.parseInt(postIdStr);
+            if(commentIdStr != null && !commentIdStr.isEmpty()) commentId = Integer.parseInt(commentIdStr);
         } catch (NumberFormatException | NullPointerException e) {
             response.sendRedirect(request.getContextPath() + "/board/list");
             return;
         }
 
-        if (content != null && !content.isBlank()) {
-            CommentDTO comment = new CommentDTO();
-            comment.setPostId(postId);
-            comment.setMemberId(loginMember.getMemberId());
-            comment.setContent(content);
+        switch (action) {
+            case "insert": // 댓글 / 대댓글 작성
+                String content = request.getParameter("content");
+                if (content != null && !content.isBlank()) {
+                    CommentDTO comment = new CommentDTO();
+                    comment.setPostId(postId);
+                    comment.setMemberId(loginMember.getMemberId());
+                    comment.setContent(content);
 
-            commentDAO.insertComment(comment);
+                    String parentIdStr = request.getParameter("parentCommentId");
+                    if (parentIdStr != null && !parentIdStr.isEmpty()) {
+                        comment.setParentCommentId(Integer.parseInt(parentIdStr));
+                    }
+
+                    commentDAO.insertComment(comment);
+                }
+                break;
+
+            case "delete": // 댓글 삭제
+                if(commentId > 0){
+                    commentDAO.deleteComment(commentId);
+                }
+                break;
+
+            case "like": // 댓글 좋아요
+                if(commentId > 0){
+                    commentDAO.likeComment(commentId, loginMember.getMemberId());
+                }
+                break;
+
+            case "dislike": // 댓글 싫어요
+                if(commentId > 0){
+                    commentDAO.dislikeComment(commentId, loginMember.getMemberId());
+                }
+                break;
+
+            case "report": // 댓글 신고
+                if(commentId > 0){
+                    String reason = request.getParameter("reason");
+                    if(reason != null && !reason.isBlank()){
+                        commentDAO.reportComment(commentId, loginMember.getMemberId(), reason);
+                    }
+                }
+                break;
+
+            default:
+                break;
         }
 
         response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
