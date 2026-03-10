@@ -31,7 +31,9 @@ public class BoardDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String postIdStr = request.getParameter("postId");
-        int postId = 0;
+        String category = request.getParameter("category");   
+        String page = request.getParameter("page");           
+        int postId;
 
         // 1️⃣ 파라미터 검증
         try {
@@ -81,6 +83,8 @@ public class BoardDetailController extends HttpServlet {
         // 6️⃣ JSP에 데이터 전달
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
+        request.setAttribute("category", category);   
+        request.setAttribute("page", page);          
         request.setAttribute("loginMember", loginMember);
         request.setAttribute("center", "boardDetail.jsp");
 
@@ -107,6 +111,8 @@ public class BoardDetailController extends HttpServlet {
         MemberVO loginMember = (MemberVO) obj;
 
         String action = request.getParameter("action");
+        String category = request.getParameter("category"); 
+        String page = request.getParameter("page");          
         String postIdStr = request.getParameter("postId");
         String commentIdStr = request.getParameter("commentId");
         int postId = 0;
@@ -169,6 +175,13 @@ public class BoardDetailController extends HttpServlet {
                 break;
         }
 
+        response.sendRedirect(
+        	    request.getContextPath() +
+        	    "/board/detail?postId=" + postId +
+        	    "&category=" + category +
+        	    "&page=" + page
+        	);
+        
         // 처리 후 다시 상세페이지로 리다이렉트
         response.sendRedirect(request.getContextPath() + "/board/detail?postId=" + postId);
     }
