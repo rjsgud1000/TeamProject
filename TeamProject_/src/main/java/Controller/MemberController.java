@@ -14,12 +14,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import Service.MemberService;
+import Service.ReportService;
 import Vo.MemberVO;
+import Vo.CommentReportVO;
 
 @WebServlet("/member/*")
 public class MemberController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final MemberService memberService = new MemberService();
+	private final ReportService reportService = new ReportService();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -50,6 +53,9 @@ public class MemberController extends HttpServlet {
 			return;
 		case "/admin/reportList.me":
 			showAdminReportBoard(request, response);
+			return;
+		case "/admin/report/process.me":
+			processAdminReport(request, response);
 			return;
 		case "/login.me":
 			request.setAttribute("center", "members/login.jsp");
@@ -405,9 +411,37 @@ public class MemberController extends HttpServlet {
 		if (admin == null) {
 			return;
 		}
+		List<CommentReportVO> reports = reportService.getCommentReports();
+		int pendingCount = 0;
+		int completedCount = 0;
+		for (CommentReportVO report : reports) {
+			if (report.isProcessed()) {
+				completedCount++;
+			} else {
+				pendingCount++;
+			}
+		}
 		request.setAttribute("adminMember", admin);
+		request.setAttribute("commentReportList", reports);
+		request.setAttribute("reportCount", reports.size());
+		request.setAttribute("pendingReportCount", pendingCount);
+		request.setAttribute("completedReportCount", completedCount);
 		request.setAttribute("center", "admin/reportBoard.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private void processAdminReport(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		MemberVO admin = requireAdminMember(request, response);
+		if (admin == null) {
+			return;
+		}
+		int reportId = 0;
+		try {
+			reportId = Integer.parseInt(request.getParameter("reportId"));
+		} catch (Exception ignore) {
+		}
+		reportService.processCommentReport(reportId);
+		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me");
 	}
 
 	private Map<String, String> buildRoleLabelMap() {
