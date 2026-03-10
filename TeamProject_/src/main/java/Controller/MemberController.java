@@ -14,12 +14,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import Service.MemberService;
+import Service.ReportService;
 import Vo.MemberVO;
+import Vo.CommentReportVO;
 
 @WebServlet("/member/*")
 public class MemberController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final MemberService memberService = new MemberService();
+	private final ReportService reportService = new ReportService();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -45,8 +48,14 @@ public class MemberController extends HttpServlet {
 		case "/admin/detail.me":
 			showAdminMemberDetail(request, response);
 			return;
+		case "/admin/updateStatus.me":
+			updateAdminMemberStatus(request, response);
+			return;
 		case "/admin/reportList.me":
 			showAdminReportBoard(request, response);
+			return;
+		case "/admin/report/process.me":
+			processAdminReport(request, response);
 			return;
 		case "/login.me":
 			request.setAttribute("center", "members/login.jsp");
@@ -170,7 +179,7 @@ public class MemberController extends HttpServlet {
 		session.setAttribute("loginName", loginMember.getNickname());
 		session.setAttribute("loginRole", loginMember.getRole());
 		session.setAttribute("isAdmin", isAdminRole(loginMember.getRole()));
-		session.setAttribute("loginFlash", "로그인하셨습니다.");
+		session.setAttribute("loginFlash", (result.flash != null && !result.flash.isBlank()) ? result.flash : "로그인하셨습니다.");
 
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
@@ -378,14 +387,61 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	private void updateAdminMemberStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		MemberVO admin = requireAdminMember(request, response);
+		if (admin == null) {
+			return;
+		}
+		String memberId = emptyToNull(request.getParameter("memberId"));
+		String status = emptyToNull(request.getParameter("status"));
+		String sanctionReason = emptyToNull(request.getParameter("sanctionReason"));
+		String sanctionEndAt = emptyToNull(request.getParameter("sanctionEndAt"));
+		String error = memberService.updateMemberStatusByAdmin(admin.getMemberId(), memberId, status, sanctionReason, sanctionEndAt);
+		HttpSession session = request.getSession();
+		if (error != null) {
+			session.setAttribute("adminMemberFlash", error);
+		} else {
+			session.setAttribute("adminMemberFlash", "회원 상태가 변경되었습니다.");
+		}
+		response.sendRedirect(request.getContextPath() + "/member/admin/detail.me?memberId=" + java.net.URLEncoder.encode(memberId == null ? "" : memberId, "UTF-8"));
+	}
+
 	private void showAdminReportBoard(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
 			return;
 		}
+		List<CommentReportVO> reports = reportService.getCommentReports();
+		int pendingCount = 0;
+		int completedCount = 0;
+		for (CommentReportVO report : reports) {
+			if (report.isProcessed()) {
+				completedCount++;
+			} else {
+				pendingCount++;
+			}
+		}
 		request.setAttribute("adminMember", admin);
+		request.setAttribute("commentReportList", reports);
+		request.setAttribute("reportCount", reports.size());
+		request.setAttribute("pendingReportCount", pendingCount);
+		request.setAttribute("completedReportCount", completedCount);
 		request.setAttribute("center", "admin/reportBoard.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private void processAdminReport(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		MemberVO admin = requireAdminMember(request, response);
+		if (admin == null) {
+			return;
+		}
+		int reportId = 0;
+		try {
+			reportId = Integer.parseInt(request.getParameter("reportId"));
+		} catch (Exception ignore) {
+		}
+		reportService.processCommentReport(reportId);
+		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me");
 	}
 
 	private Map<String, String> buildRoleLabelMap() {
@@ -399,6 +455,7 @@ public class MemberController extends HttpServlet {
 		Map<String, String> statusLabelMap = new LinkedHashMap<>();
 		statusLabelMap.put("ALL", "전체");
 		statusLabelMap.put("ACTIVE", "활성");
+		statusLabelMap.put("WARNING", "경고");
 		statusLabelMap.put("BANNED", "제재");
 		statusLabelMap.put("WITHDRAWN", "탈퇴");
 		return statusLabelMap;

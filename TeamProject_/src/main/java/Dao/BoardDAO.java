@@ -86,9 +86,9 @@ public class BoardDAO {
 
     // 3. 게시글 상세보기
     public BoardDTO selectPostById(int postId) {
-        String sql = "SELECT post_id, category, nickname, title, content, viewcount, create_at " +
-                     "FROM BOARD_POST " +
-                     "WHERE post_id = ? AND is_deleted = 0";
+    	String sql = "SELECT post_id, member_id, category, nickname, title, content, viewcount, create_at " +
+                "FROM BOARD_POST " +
+                "WHERE post_id = ? AND is_deleted = 0";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -99,6 +99,7 @@ public class BoardDAO {
                 if (rs.next()) {
                     BoardDTO dto = new BoardDTO();
                     dto.setPostId(rs.getInt("post_id"));
+                    dto.setMemberId(rs.getString("member_id"));
                     dto.setCategory(String.valueOf(rs.getInt("category")));
                     dto.setWriter(rs.getString("nickname"));
                     dto.setTitle(rs.getString("title"));
@@ -115,7 +116,6 @@ public class BoardDAO {
 
         return null;
     }
-
     // 4. 조회수 증가
     public void increaseViewCount(int postId) {
         String sql = "UPDATE BOARD_POST SET viewcount = viewcount + 1 WHERE post_id = ?";
@@ -130,7 +130,6 @@ public class BoardDAO {
             e.printStackTrace();
         }
     }
-
 	// 5. 게시글 작성
 	public int insertPost(BoardPostVO vo) {
 		int result = 0;
@@ -154,5 +153,157 @@ public class BoardDAO {
 		}
 
 		return result;
+	}
+	//6. 게시글 수정
+	public void updatePost(int postId, String title, String content) {
+
+		String sql = "UPDATE BOARD_POST SET title=?, content=?, updated_at=NOW() WHERE post_id=?";
+
+		try (Connection conn = DBCPUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setString(1, title);
+			pstmt.setString(2, content);
+			pstmt.setInt(3, postId);
+
+			pstmt.executeUpdate();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	//7. 게시글 삭제
+	public void deletePost(int postId) {
+
+	    String sql = "UPDATE BOARD_POST SET is_deleted = 1 WHERE post_id = ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, postId);
+	        pstmt.executeUpdate();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	//8.전체글 페이징 조회
+	public List<BoardPostVO> selectAllBoardListPaging(int startRow, int pageSize) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
+	                 "FROM BOARD_POST " +
+	                 "WHERE category IN (1, 2, 3) AND is_deleted = 0 " +
+	                 "ORDER BY post_id DESC " +
+	                 "LIMIT ?, ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, startRow);
+	        pstmt.setInt(2, pageSize);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	//9. 카테고리별 페이징 조회
+	public List<BoardPostVO> selectBoardListPaging(int category, int startRow, int pageSize) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
+	                 "FROM BOARD_POST " +
+	                 "WHERE category = ? AND is_deleted = 0 " +
+	                 "ORDER BY post_id DESC " +
+	                 "LIMIT ?, ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, category);
+	        pstmt.setInt(2, startRow);
+	        pstmt.setInt(3, pageSize);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	//10.전체 글수 구하기
+	public int getAllBoardCount() {
+	    int count = 0;
+
+	    String sql = "SELECT COUNT(*) FROM BOARD_POST " +
+	                 "WHERE category IN (1, 2, 3) AND is_deleted = 0";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql);
+	         ResultSet rs = pstmt.executeQuery()) {
+
+	        if (rs.next()) {
+	            count = rs.getInt(1);
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return count;
+	}
+	//11.카테고리별 글수 구하기
+	public int getBoardCount(int category) {
+	    int count = 0;
+
+	    String sql = "SELECT COUNT(*) FROM BOARD_POST " +
+	                 "WHERE category = ? AND is_deleted = 0";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, category);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                count = rs.getInt(1);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return count;
 	}
 }

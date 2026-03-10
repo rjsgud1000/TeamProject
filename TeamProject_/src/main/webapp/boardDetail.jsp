@@ -44,11 +44,21 @@
         </tr>
     </table>
 
-    <div style="margin-top:20px;">
-        <a href="${pageContext.request.contextPath}/board/list?category=${post.category}">목록으로</a>
-    </div>
+	<div style="margin-top: 20px;">
 
-    <!-- 댓글 영역 -->
+		<a href="${pageContext.request.contextPath}/board/list?category=${category}&page=${page}">목록으로</a>
+
+		<c:if test="${sessionScope.loginId == post.memberId}">
+        |
+        <a href="${pageContext.request.contextPath}/board/edit?postId=${post.postId}&category=${category}&page=${page}">수정</a>
+        |
+        <a href="${pageContext.request.contextPath}/board/delete?postId=${post.postId}&category=${category}&page=${page}"
+   		   onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
+		</c:if>
+
+	</div>
+
+	<!-- 댓글 영역 -->
     <div style="margin-top:50px;">
         <h3>댓글</h3>
 
