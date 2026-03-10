@@ -6,44 +6,114 @@ public class CommentDTO {
 
     private int commentId;
     private int postId;
-    private String memberId;  
+    private String memberId;
     private String content;
     private Timestamp createdAt;
     private Timestamp updatedAt;
     private boolean isDeleted;
 
     private String memberNickname;
+
+    private int likeCount;
+    private int dislikeCount;
+
     private boolean canEdit;
+
     private Integer parentCommentId;
 
-    // getter / setter
-    public int getCommentId() { return commentId; }
-    public void setCommentId(int commentId) { this.commentId = commentId; }
+    public int getCommentId() {
+        return commentId;
+    }
 
-    public int getPostId() { return postId; }
-    public void setPostId(int postId) { this.postId = postId; }
+    public void setCommentId(int commentId) {
+        this.commentId = commentId;
+    }
 
-    public String getMemberId() { return memberId; }
-    public void setMemberId(String memberId) { this.memberId = memberId; }
+    public int getPostId() {
+        return postId;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public void setPostId(int postId) {
+        this.postId = postId;
+    }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public String getMemberId() {
+        return memberId;
+    }
 
-    public Timestamp getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Timestamp updatedAt) { this.updatedAt = updatedAt; }
+    public void setMemberId(String memberId) {
+        this.memberId = memberId;
+    }
 
-    public boolean getIsDeleted() { return isDeleted; }
-    public void setIsDeleted(boolean isDeleted) { this.isDeleted = isDeleted; }
+    public String getContent() {
+        return content;
+    }
 
-    public String getMemberNickname() { return memberNickname; }
-    public void setMemberNickname(String memberNickname) { this.memberNickname = memberNickname; }
+    public void setContent(String content) {
+        this.content = content;
+    }
 
-    public boolean isCanEdit() { return canEdit; }
-    public void setCanEdit(boolean canEdit) { this.canEdit = canEdit; }
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
 
-    public Integer getParentCommentId() { return parentCommentId; }
-    public void setParentCommentId(Integer parentCommentId) { this.parentCommentId = parentCommentId; }
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public boolean getIsDeleted() {
+        return isDeleted;
+    }
+
+    public void setIsDeleted(boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public String getMemberNickname() {
+        return memberNickname;
+    }
+
+    public void setMemberNickname(String memberNickname) {
+        this.memberNickname = memberNickname;
+    }
+
+    public int getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public int getDislikeCount() {
+        return dislikeCount;
+    }
+
+    public void setDislikeCount(int dislikeCount) {
+        this.dislikeCount = dislikeCount;
+    }
+
+    public boolean isCanEdit() {
+        return canEdit;
+    }
+
+    public void setCanEdit(boolean canEdit) {
+        this.canEdit = canEdit;
+    }
+
+    public Integer getParentCommentId() {
+        return parentCommentId;
+    }
+
+    public void setParentCommentId(Integer parentCommentId) {
+        this.parentCommentId = parentCommentId;
+    }
 }

@@ -193,4 +193,25 @@ public class CommentDAO {
             return ps.executeUpdate() > 0;
         } catch (Exception e) { e.printStackTrace(); return false; }
     }
+    public int getPostIdByCommentId(int commentId){
+
+        String sql = "SELECT post_id FROM COMMENT WHERE comment_id=?";
+
+        try(Connection conn = DBCPUtil.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql)){
+
+            ps.setInt(1, commentId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if(rs.next()){
+                return rs.getInt("post_id");
+            }
+
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
 }
