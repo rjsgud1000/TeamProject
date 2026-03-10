@@ -19,11 +19,28 @@ public class BoardListController extends HttpServlet {
             throws ServletException, IOException {
 
         String categoryParam = request.getParameter("category");
+        String pageParam = request.getParameter("page");
+
+        int currentPage = 1;
+        int pageSize = 10;
+
+        if (pageParam != null && !pageParam.trim().isEmpty()) {
+            try {
+                currentPage = Integer.parseInt(pageParam);
+            } catch (NumberFormatException e) {
+                currentPage = 1;
+            }
+        }
+
+        int startRow = (currentPage - 1) * pageSize;
+
         List<BoardPostVO> list;
         String boardTitle;
+        int totalCount;
 
         if ("all".equals(categoryParam) || categoryParam == null || categoryParam.trim().isEmpty()) {
-            list = boardDAO.selectAllBoardList();   // 1~3만 조회
+            list = boardDAO.selectAllBoardListPaging(startRow, pageSize);
+            totalCount = boardDAO.getAllBoardCount();
             boardTitle = "전체보기";
             request.setAttribute("category", "all");
         } else {
@@ -34,7 +51,8 @@ public class BoardListController extends HttpServlet {
                 category = 1;
             }
 
-            list = boardDAO.selectBoardList(category);
+            list = boardDAO.selectBoardListPaging(category, startRow, pageSize);
+            totalCount = boardDAO.getBoardCount(category);
 
             switch (category) {
                 case 0: boardTitle = "공지사항"; break;
@@ -47,9 +65,25 @@ public class BoardListController extends HttpServlet {
             request.setAttribute("category", category);
         }
 
+        int totalPage = (int) Math.ceil((double) totalCount / pageSize);
+
+        int pageBlock = 5;
+        int startPage = ((currentPage - 1) / pageBlock) * pageBlock + 1;
+        int endPage = startPage + pageBlock - 1;
+
+        if (endPage > totalPage) {
+            endPage = totalPage;
+        }
+
         request.setAttribute("boardTitle", boardTitle);
         request.setAttribute("boardList", list);
-        request.setAttribute("center", "/boardList.jsp");
-        request.getRequestDispatcher("/main.jsp").forward(request, response);
+
+        request.setAttribute("currentPage", currentPage);
+        request.setAttribute("totalPage", totalPage);
+        request.setAttribute("startPage", startPage);
+        request.setAttribute("endPage", endPage);
+
+        request.setAttribute("center", "boardList.jsp");
+        request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
     }
 }
