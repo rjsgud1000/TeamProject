@@ -37,8 +37,8 @@
 						</c:choose></td>
 
 					<td style="padding: 10px; text-align: left;">
-					<a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}">
-					${post.title}</a>
+					<a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}">
+    				${post.title}</a>
 
 					<td style="padding: 10px; text-align: center;">${post.nickname}</td>
 					<td style="padding: 10px; text-align: center;">${post.viewcount}</td>
@@ -56,4 +56,32 @@
             </c:if>
         </tbody>
     </table>
+		<div style="text-align: center; margin-top: 20px;">
+	
+			<c:if test="${startPage > 1}">
+				<a
+					href="${pageContext.request.contextPath}/board/list?category=${category}&page=${startPage - 1}"
+					style="margin: 0 5px;">[이전]</a>
+			</c:if>
+	
+			<c:forEach var="i" begin="${startPage}" end="${endPage}">
+				<c:choose>
+					<c:when test="${i == currentPage}">
+						<strong style="margin: 0 8px; color: blue;">${i}</strong>
+					</c:when>
+					<c:otherwise>
+						<a
+							href="${pageContext.request.contextPath}/board/list?category=${category}&page=${i}"
+							style="margin: 0 8px;">${i}</a>
+					</c:otherwise>
+				</c:choose>
+			</c:forEach>
+	
+			<c:if test="${endPage < totalPage}">
+				<a
+					href="${pageContext.request.contextPath}/board/list?category=${category}&page=${endPage + 1}"
+					style="margin: 0 5px;">[다음]</a>
+			</c:if>
+	
+		</div>
 </div>

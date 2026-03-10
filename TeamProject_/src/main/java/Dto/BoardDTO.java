@@ -4,6 +4,7 @@ import java.sql.Timestamp;
 
 public class BoardDTO {
     private int postId;
+    private String memberId;
     private String category;
     private String title;
     private String writer;
@@ -19,6 +20,14 @@ public class BoardDTO {
 
     public void setPostId(int postId) {
         this.postId = postId;
+    }
+    
+    public String getMemberId() {
+        return memberId;
+    }
+
+    public void setMemberId(String memberId) {
+        this.memberId = memberId;
     }
 
     public String getCategory() {
@@ -68,4 +77,5 @@ public class BoardDTO {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
+    
 }

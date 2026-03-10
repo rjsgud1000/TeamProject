@@ -31,7 +31,9 @@ public class BoardDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String postIdStr = request.getParameter("postId");
-        int postId = 0;
+        String category = request.getParameter("category");   
+        String page = request.getParameter("page");           
+        int postId;
 
         try {
             postId = Integer.parseInt(postIdStr);
@@ -73,6 +75,8 @@ public class BoardDetailController extends HttpServlet {
 
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
+        request.setAttribute("category", category);   
+        request.setAttribute("page", page);          
         request.setAttribute("loginMember", loginMember);
         request.setAttribute("center", "boardDetail.jsp");
 
@@ -98,6 +102,8 @@ public class BoardDetailController extends HttpServlet {
         MemberVO loginMember = (MemberVO) obj;
 
         String action = request.getParameter("action");
+        String category = request.getParameter("category"); 
+        String page = request.getParameter("page");          
         String postIdStr = request.getParameter("postId");
         String commentIdStr = request.getParameter("commentId");
         int postId = 0;
