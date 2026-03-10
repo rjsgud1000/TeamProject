@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 @WebServlet("/board/detail")
-public class BoardDetailController extends HttpServlet {
+public class CommentDetailController extends HttpServlet {
 
     private BoardService boardService;
     private CommentDAO commentDAO;
