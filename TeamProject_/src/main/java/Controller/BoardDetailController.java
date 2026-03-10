@@ -147,14 +147,14 @@ public class BoardDetailController extends HttpServlet {
                 }
                 break;
 
-            case "delete": // 댓글 삭제
+            case "delete":
                 if(commentId > 0){
                     CommentDTO target = commentDAO.getCommentById(commentId);
                     if(target != null){
                         boolean isAuthor = target.getMemberId().equals(loginMember.getMemberId());
-                        boolean isAdmin = "ADMIN".equalsIgnoreCase(loginMember.getRole()); // role 체크
+                        boolean isAdmin = "ADMIN".equalsIgnoreCase(loginMember.getRole());
                         if(isAuthor || isAdmin){
-                            commentDAO.deleteComment(commentId);
+                            commentDAO.deleteCommentRecursive(commentId); // <- 변경
                         }
                     }
                 }
