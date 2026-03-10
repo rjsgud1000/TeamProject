@@ -78,8 +78,8 @@
                     </form>
 
                     <!-- 수정 버튼 (작성자 또는 ADMIN) -->
-                    <c:if test="${sessionScope.loginMember.memberId eq c.memberId 
-                                || sessionScope.loginMember.memberId eq 'ADMIN'}">
+                    <c:if test="${sessionScope.loginMember.role eq 'ADMIN' 
+           							 || sessionScope.loginMember.memberId eq c.memberId}">
                         <button type="button" onclick="toggleEdit(${c.commentId})">수정</button>
                         <div id="editForm-${c.commentId}" style="display:none; margin-top:5px;">
                             <form action="${pageContext.request.contextPath}/board/detail" method="post">
@@ -94,8 +94,8 @@
                     </c:if>
 
                     <!-- 삭제 버튼 (작성자 또는 ADMIN) -->
-                    <c:if test="${sessionScope.loginMember.memberId eq c.memberId 
-                                || sessionScope.loginMember.memberId eq 'ADMIN'}">
+                    <c:if test="${sessionScope.loginMember.role eq 'ADMIN' 
+           						 || sessionScope.loginMember.memberId eq c.memberId}">
                         <form action="${pageContext.request.contextPath}/board/detail" method="post" style="display:inline;">
                             <input type="hidden" name="action" value="delete"/>
                             <input type="hidden" name="commentId" value="${c.commentId}"/>

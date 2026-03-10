@@ -295,4 +295,37 @@ public class CommentDAO {
 
         return false;
     }
+    public CommentDTO getCommentById(int commentId) {
+        String sql = "SELECT c.*, m.nickname AS memberNickname " +
+                     "FROM COMMENT c " +
+                     "JOIN MEMBER m ON c.member_id = m.member_id " +
+                     "WHERE c.comment_id = ? AND c.is_deleted = 0";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, commentId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    CommentDTO dto = new CommentDTO();
+                    dto.setCommentId(rs.getInt("comment_id"));
+                    dto.setPostId(rs.getInt("post_id"));
+                    dto.setMemberId(rs.getString("member_id"));
+                    dto.setContent(rs.getString("content"));
+                    dto.setCreatedAt(rs.getTimestamp("created_at"));
+                    dto.setUpdatedAt(rs.getTimestamp("updated_at"));
+                    dto.setIsDeleted(rs.getBoolean("is_deleted"));
+                    dto.setParentCommentId(rs.getObject("parent_comment_id") != null ? rs.getInt("parent_comment_id") : null);
+                    dto.setMemberNickname(rs.getString("memberNickname"));
+                    return dto;
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }
