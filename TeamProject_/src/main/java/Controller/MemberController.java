@@ -5,6 +5,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import Comment.CommentDAO;
+import Comment.CommentDTO;
+import Dao.ReportDAO;
+import Vo.ReportVO;
+
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,6 +25,8 @@ import Vo.MemberVO;
 public class MemberController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private final MemberService memberService = new MemberService();
+	private final CommentDAO commentDAO = new CommentDAO();
+	private final ReportDAO reportDAO = new ReportDAO();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -383,9 +390,43 @@ public class MemberController extends HttpServlet {
 		if (admin == null) {
 			return;
 		}
+		Integer selectedCommentId = parseInteger(request.getParameter("commentId"));
+		CommentDTO selectedComment = null;
+		if (selectedCommentId != null) {
+			selectedComment = commentDAO.getCommentById(selectedCommentId);
+			if (selectedComment == null) {
+				request.setAttribute("reportBoardMessage", "선택한 신고 댓글을 찾을 수 없습니다.");
+			}
+		}
+		List<ReportVO> reportList = reportDAO.getCommentReports();
+		int totalReportCount = reportDAO.countCommentReports();
 		request.setAttribute("adminMember", admin);
+		request.setAttribute("reportList", reportList);
+		request.setAttribute("totalReportCount", totalReportCount);
+		request.setAttribute("selectedCommentId", selectedCommentId);
+		request.setAttribute("selectedComment", selectedComment);
+		request.setAttribute("selectedCommentCreatedAtText", formatTimestamp(selectedComment != null ? selectedComment.getCreatedAt() : null));
 		request.setAttribute("center", "admin/reportBoard.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private String formatTimestamp(java.sql.Timestamp value) {
+		if (value == null) {
+			return "-";
+		}
+		return value.toLocalDateTime().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+	}
+
+	private Integer parseInteger(String value) {
+		String v = emptyToNull(value);
+		if (v == null) {
+			return null;
+		}
+		try {
+			return Integer.valueOf(v);
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 
 	private Map<String, String> buildRoleLabelMap() {

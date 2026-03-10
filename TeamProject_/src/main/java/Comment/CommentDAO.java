@@ -193,25 +193,36 @@ public class CommentDAO {
             return ps.executeUpdate() > 0;
         } catch (Exception e) { e.printStackTrace(); return false; }
     }
-    public int getPostIdByCommentId(int commentId){
 
-        String sql = "SELECT post_id FROM COMMENT WHERE comment_id=?";
+    public CommentDTO getCommentById(int commentId) {
+        String sql = "SELECT c.*, m.nickname AS memberNickname " +
+                     "FROM `COMMENT` c " +
+                     "LEFT JOIN MEMBER m ON c.member_id = m.member_id " +
+                     "WHERE c.comment_id = ?";
 
-        try(Connection conn = DBCPUtil.getConnection();
-            PreparedStatement ps = conn.prepareStatement(sql)){
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, commentId);
 
-            ResultSet rs = ps.executeQuery();
-
-            if(rs.next()){
-                return rs.getInt("post_id");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    CommentDTO dto = new CommentDTO();
+                    dto.setCommentId(rs.getInt("comment_id"));
+                    dto.setPostId(rs.getInt("post_id"));
+                    dto.setMemberId(rs.getString("member_id"));
+                    dto.setContent(rs.getString("content"));
+                    dto.setCreatedAt(rs.getTimestamp("created_at"));
+                    dto.setUpdatedAt(rs.getTimestamp("updated_at"));
+                    dto.setIsDeleted(rs.getBoolean("is_deleted"));
+                    dto.setMemberNickname(rs.getString("memberNickname"));
+                    dto.setParentCommentId(rs.getObject("parent_comment_id") != null ? rs.getInt("parent_comment_id") : null);
+                    return dto;
+                }
             }
-
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        return 0;
+        return null;
     }
 }
