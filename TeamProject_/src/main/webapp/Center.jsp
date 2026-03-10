@@ -1,223 +1,512 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="Dao.mainDAO" %>
+<%@ page import="Vo.mainVO" %>
+<%@ page import="java.util.List" %>
+<%@ page import="Service.NaverTrendCacheService" %>
+<%@ page import="Vo.TrendGameVO" %>
+
+
 <main>
     <div class="container">
-      <section class="page">
-        <!-- Featured -->
-        <div class="section-title">
-          <h2>이번 주 인기 게임</h2>
-          <p>Weekly Top Games</p>
-        </div>
+<%
+    NaverTrendCacheService trendCacheService = NaverTrendCacheService.getInstance();
+    List<TrendGameVO> trendGames = trendCacheService.getCachedList();
+    int featuredCount = trendGames.size() >= 10 ? 10 : trendGames.size();
+%>
 
-        <div class="games">
-          <a class="game-card" href="#" aria-label="1위 Lost Ark">
-            <div class="game-card__bg bg-lostark"></div>
-            <div class="rank-badge"><span class="rank-circle">1</span> 1위</div>
-            <div class="game-card__content">
-              <div class="game-name">LOSTARK</div>
-              <div class="game-meta"><span class="meta-dot"></span> 5,412</div>
-            </div>
-          </a>
+<div class="section-title">
+  <h2>인기 게임</h2>
+  <p>Naver DataLab · PC 검색 기준</p>
+</div>
 
-          <a class="game-card" href="#" aria-label="2위 Valorant">
-            <div class="game-card__bg bg-valorant"></div>
-            <div class="rank-badge"><span class="rank-circle">2</span> 2위</div>
-            <div class="game-card__content">
-              <div class="game-name">VALORANT</div>
-              <div class="game-meta"><span class="meta-dot"></span> 3,876</div>
-            </div>
-          </a>
+<div class="featured-slider">
+  <% if (featuredCount > 0) { %>
+    <button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>
 
-          <a class="game-card" href="#" aria-label="3위 Zelda">
-            <div class="game-card__bg bg-zelda"></div>
-            <div class="rank-badge"><span class="rank-circle">3</span> 3위</div>
-            <div class="game-card__content">
-              <div class="game-name">ZELDA</div>
-              <div class="game-meta"><span class="meta-dot"></span> 2,965</div>
-            </div>
-          </a>
-        </div>
+    <div class="featured-slider__viewport">
+      <div class="featured-slider__track" data-total-slides="<%= featuredCount %>">
+			<% for (int i = 0; i < featuredCount; i++) {
+			     TrendGameVO item = trendGames.get(i);
+			
+			     String displayTitle = item.getTitle();
+			     if ("오버워치 2".equals(displayTitle) || "오버워치2".equals(displayTitle)) {
+			         displayTitle = "오버워치";
+			     }
+			%>
+			    <div class="featured-slide">
+			      <a class="game-card trend-card"
+			         href="#top10ChartPopup"
+			         style="background-image:url('<%= request.getContextPath() + "/img/rank_slide/" + java.net.URLEncoder.encode(displayTitle, "UTF-8").replace("+", "%20") + ".png" %>');">
+			        <div class="rank-badge">
+			          <span class="rank-circle"><%= item.getRank() %></span>
+			          <%= item.getRank() %>위
+			        </div>
+			
+			        <div class="game-card__content">
+			          <div>
+			            <div class="game-name"><%= displayTitle %></div>
+			            <div class="game-submeta">평균 점수 <%= String.format("%.1f", item.getScore()) %></div>
+			          </div>
+			
+			          <div class="game-meta">
+			            <span class="meta-dot"></span>
+			            <%= item.getSource() %>
+			          </div>
+			        </div>
+			      </a>
+			    </div>
+			<% } %>
+      </div>
+    </div>
 
-        <div class="center-link">
-          <span class="bar"></span>
-          <a href="#" style="font-weight:1000;">더보기</a>
-          <span class="arrow">›</span>
-        </div>
+    <button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>
+  <% } else { %>
+    <div class="featured-empty">
+      인기 게임 데이터를 불러오지 못했습니다.
+    </div>
+  <% } %>
+</div>
+
+<script>
+  (function () {
+    var slider = document.querySelector('.featured-slider');
+    if (!slider) return;
+
+    var track = slider.querySelector('.featured-slider__track');
+    var prevBtn = slider.querySelector('.featured-slider__btn--prev');
+    var nextBtn = slider.querySelector('.featured-slider__btn--next');
+    if (!track || !prevBtn || !nextBtn) return;
+
+    var currentIndex = 0;
+
+    function getVisibleCount() {
+      var width = window.innerWidth || document.documentElement.clientWidth;
+      if (width <= 640) return 1;
+      if (width <= 900) return 2;
+      return 3;
+    }
+
+    function updateSlider() {
+      var totalSlides = track.children.length;
+      var visibleCount = getVisibleCount();
+      var maxIndex = Math.max(totalSlides - visibleCount, 0);
+
+      if (currentIndex > maxIndex) {
+        currentIndex = maxIndex;
+      }
+
+      var translatePercent = (100 / visibleCount) * currentIndex;
+      track.style.transform = 'translateX(-' + translatePercent + '%)';
+
+      prevBtn.disabled = currentIndex <= 0;
+      nextBtn.disabled = currentIndex >= maxIndex;
+    }
+
+    prevBtn.addEventListener('click', function () {
+      if (currentIndex > 0) {
+        currentIndex -= 1;
+        updateSlider();
+      }
+    });
+
+    nextBtn.addEventListener('click', function () {
+      var maxIndex = Math.max(track.children.length - getVisibleCount(), 0);
+      if (currentIndex < maxIndex) {
+        currentIndex += 1;
+        updateSlider();
+      }
+    });
+
+    window.addEventListener('resize', updateSlider);
+    updateSlider();
+  })();
+</script>
+
+<div id="top10ChartPopup" class="chart-popup">
+  <a href="#" class="chart-popup__dim"></a>
+
+  <div class="chart-popup__panel">
+    <div class="chart-popup__head">
+      <div>
+        <h3>인기 게임 TOP 10</h3>
+        <p>Naver DataLab · 최근 7일 평균 · PC 기준</p>
+      </div>
+      <a href="#" class="chart-popup__close">✕</a>
+    </div>
+
+    <div class="chart-popup__body">
+      <table class="chart-table">
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>게임명</th>
+            <th>점수</th>
+            <th>기간</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%
+            if (trendGames != null && !trendGames.isEmpty()) {
+                for (TrendGameVO item : trendGames) {
+          %>
+            <tr>
+              <td class="rank-col"><%= item.getRank() %></td>
+              <td class="name-col"><%= item.getTitle() %></td>
+              <td><%= String.format("%.1f", item.getScore()) %></td>
+              <td><%= item.getPeriod() %></td>
+            </tr>
+          <%
+                }
+            } else {
+          %>
+            <tr>
+              <td colspan="4">차트 데이터를 불러오지 못했습니다.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
         <!-- Board header -->
-        <div class="board-header">
-          <div class="board-header__title">파티원 모집 게시판</div>
-          <div class="controls">
-            <select class="select" aria-label="게임 장르">
-              <option>플랫폼</option>
-              <option>PC</option>
-              <option>모바일</option>
-              <option>콘솔</option>
-              <option>기타</option>
-            </select>
+<div class="board-header">
+  <div class="board-header__title">최신 정보</div>
+  <div class="controls">
+    <select class="select" id="gameSelect" aria-label="게임 선택">
+      <option value="lol">리그 오브 레전드</option>
+      <option value="battleground">배틀그라운드</option>
+      <option value="valorant">발로란트</option>
+      <option value="suddenattack">서든 어택</option>
+      <option value="fconline">FC 온라인</option>
+      <option value="maplestory">메이플스토리</option>
+      <option value="aion2">아이온2</option>
+      <option value="dnf">던전앤파이터</option>
+      <option value="lostark">로스트아크</option>
+    </select>
 
-            <select class="select" aria-label="전체 목록">
-              <option>게임 장르</option>
-              <option>RTS</option>
-              <option>RPG</option>
-              <option>FPS</option>
-              <option>기타</option>
-            </select>
+    <select class="select" id="typeSelect" aria-label="정보 선택">
+      <option value="notice">공지사항</option>
+      <option value="patch">패치노트</option>
+      <option value="news">뉴스</option>
+    </select>
 
-            <button class="btn" type="button">검색</button>
-            <button class="btn secondary" type="button">전체글보기</button>
-          </div>
-        </div>
+    <button class="btn" type="button" id="crawlBtn">검색</button>
+  </div>
+</div>
+
+<style>
+  .crawl-result-box {
+    margin-top: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    background: #fff;
+  }
+  .crawl-result-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+    color: #6b7280;
+    font-size: 14px;
+  }
+  .crawl-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .crawl-item {
+    border: 1px solid #edf0f3;
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: #fafafa;
+  }
+  .crawl-item__title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .crawl-item__title a {
+    color: #111827;
+    text-decoration: none;
+  }
+  .crawl-item__title a:hover {
+    text-decoration: underline;
+  }
+  .crawl-item__date {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 6px;
+  }
+  .crawl-item__summary {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .crawl-message {
+    color: #374151;
+    line-height: 1.6;
+  }
+</style>
+
+<div id="crawlResult" class="crawl-result-box">
+  <p class="crawl-message">검색 조건을 선택한 뒤 검색 버튼을 눌러주세요.</p>
+</div>
+
+<script>
+(function () {
+  var crawlBtn = document.getElementById('crawlBtn');
+  var gameSelect = document.getElementById('gameSelect');
+  var typeSelect = document.getElementById('typeSelect');
+  var crawlResult = document.getElementById('crawlResult');
+
+  if (!crawlBtn || !gameSelect || !typeSelect || !crawlResult) {
+    return;
+  }
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderMessage(message) {
+    crawlResult.innerHTML = '<p class="crawl-message">' + escapeHtml(message) + '</p>';
+  }
+
+  function renderItems(data) {
+    var items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length) {
+      renderMessage('불러온 데이터가 없습니다.');
+      return;
+    }
+
+    var html = '';
+    html += '<div class="crawl-result-meta">';
+    html += '  <div>총 ' + items.length + '건</div>';
+    html += '  <div><a href="' + escapeHtml(data.sourceUrl || '#') + '" target="_blank" rel="noopener noreferrer">원본 페이지 바로가기</a></div>';
+    html += '</div>';
+    html += '<ul class="crawl-list">';
+
+    items.forEach(function (item) {
+      html += '<li class="crawl-item">';
+      html += '  <div class="crawl-item__title"><a href="' + escapeHtml(item.url || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title || '제목 없음') + '</a></div>';
+      if (item.date) {
+        html += '  <div class="crawl-item__date">등록일: ' + escapeHtml(item.date) + '</div>';
+      }
+      if (item.summary) {
+        html += '  <div class="crawl-item__summary">' + escapeHtml(item.summary) + '</div>';
+      }
+      html += '</li>';
+    });
+
+    html += '</ul>';
+    crawlResult.innerHTML = html;
+  }
+
+  crawlBtn.addEventListener('click', function () {
+    var game = gameSelect.value;
+    var type = typeSelect.value;
+    renderMessage('불러오는 중입니다...');
+
+    var url = '<%= request.getContextPath() %>/crawl/latest?game=' + encodeURIComponent(game) + '&type=' + encodeURIComponent(type);
+
+    fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    })
+    .then(function (response) {
+      if (!response.ok) {
+        throw new Error('서버 응답 오류: ' + response.status);
+      }
+      return response.json();
+    })
+    .then(function (data) {
+      if (!data.ok) {
+        renderMessage(data.message || '데이터를 불러오지 못했습니다.');
+        return;
+      }
+      renderItems(data);
+    })
+    .catch(function (error) {
+      renderMessage('크롤링 요청에 실패했습니다. ' + error.message);
+    });
+  });
+})();
+</script>
 
         <!-- 3 columns -->
         <div class="grid3">
-          <!-- Popular -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">인기 게시글</h3>
-              <span style="color:var(--sub); font-weight:900; font-size:12px;">TOP</span>
-            </div>
-            <div class="panel__body">
-              <ul class="list">
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 발로란트 듀오 같이 하실 분?</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 22</div>
-                </li>
+<!-- Popular -->
+<section class="panel">
+  <div class="panel__head">
+    <h3 class="panel__title">인기 게시글</h3>
+        <span style="color:red; font-weight:900; font-size:12px;">HOT!</span>
+  </div>
 
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 로스트아크 유저분들께 팁 공유</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 27</div>
-                </li>
+  <div class="panel__body">
+    <ul class="list">
+<%
+    mainDAO dao = new mainDAO();
+    ArrayList<mainVO> popularList = dao.popularList();
 
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도 스위치 추천 게임 알려주세요</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 21</div>
-                </li>
-
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 차지 후 회복스탯 버그 요안</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 19</div>
-                </li>
-
-                <li class="item">
-                  <span class="hot">🔥</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도의 미래 가능성 어떨까요?</div>
-                  </div>
-                  <div class="count"><span class="lock"></span> 17</div>
-                </li>
-              </ul>
-            </div>
-          </section>
+    if(popularList != null && !popularList.isEmpty()) {
+        for(mainVO vo : popularList) {
+%>
+      <li class="item">
+        <div class="item__text">
+          <div class="title">🔥 <%= vo.getMa_title() %></div>
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>추천수 <%= vo.getLike_count() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+        </div>
+      </li>
+<%
+        }
+    } else {
+%>
+      <li class="item">
+        <div class="item__text">
+          <div class="title">인기 게시글이 없습니다.</div>
+          <div class="meta">
+            <span>-</span>
+            <span>-</span>
+          </div>
+        </div>
+      </li>
+<%
+    }
+%>
+    </ul>
+  </div>
+</section>
 
           <!-- Latest -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">최신 게시글</h3>
-              <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW</span>
-            </div>
-            <div class="panel__body">
-              <ul class="list">
-                <li class="item">
-                  <span class="avatar">A</span>
-                  <div class="item__text">
-                    <div class="title">[협력] PSS 모 같이 하실 분 구합니다</div>
-                    <div class="meta"><span>루틴밍</span><span>방금 전</span></div>
-                  </div>
-                </li>
+<section class="panel">
+  <div class="panel__head">
+    <h3 class="panel__title">최신 게시글</h3>
+    <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW!</span>
+  </div>
 
-                <li class="item">
-                  <span class="avatar">B</span>
-                  <div class="item__text">
-                    <div class="title">[소식] 이번 게임 BJ 방송 논란이네요 ㅋㅋ</div>
-                    <div class="meta"><span>밤하늘토끼</span><span>17분 전</span></div>
-                  </div>
-                </li>
+  <div class="panel__body">
+    <ul class="list">
 
-                <li class="item">
-                  <span class="avatar">C</span>
-                  <div class="item__text">
-                    <div class="title">[질문] 발로란트 듀오 같이 하실 분?</div>
-                    <div class="meta"><span>BlueSky</span><span>1시간 전</span></div>
-                  </div>
-                </li>
+<%
+    mainDAO dao2 = new mainDAO();
+    ArrayList<mainVO> list = dao2.mainList();
 
-                <li class="item">
-                  <span class="avatar">D</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 로스트아크 유저분들께 팁 공유</div>
-                    <div class="meta"><span>Gamingring</span><span>2시간 전</span></div>
-                  </div>
-                </li>
+    if(list != null && !list.isEmpty()){
+        for(mainVO vo : list){
+%>
 
-                <li class="item">
-                  <span class="avatar">E</span>
-                  <div class="item__text">
-                    <div class="title">[자유] 닌텐도 스위치 추천 게임 알려주세요</div>
-                    <div class="meta"><span>Meun</span><span>6시간 전</span></div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </section>
+      <li class="item">
 
-          <!-- Notices -->
-          <section class="panel">
-            <div class="panel__head">
-              <h3 class="panel__title">공지사항</h3>
-              <div class="tabs" role="tablist" aria-label="공지 탭">
-                <button class="tab is-active" type="button" data-tab="notice">공지</button>
-                <button class="tab" type="button" data-tab="update">최신작업</button>
-              </div>
-            </div>
+        <div class="item__text">
+          <div class="title">
+            <%= vo.getMa_title() %>
+          </div>
 
-            <div class="notice" data-pane="notice">
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게시판 이용규칙 안내</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">새로운 커뮤니티 기능 업데이트</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게임 티어 이벤트 당첨자 발표</div>
-                <div class="date">2024.04.20</div>
-              </div>
-            </div>
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>조회수 <%= vo.getMa_viewcount() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+        </div>
 
-            <div class="notice" data-pane="update" style="display:none;">
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게시판 이용규칙 미세 수정</div>
-                <div class="date">2024.04.23</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">새로운 커뮤니티 감정 가이드</div>
-                <div class="date">2024.04.22</div>
-              </div>
-              <div class="notice-row">
-                <span class="bullet"></span>
-                <div class="notice-title">게임 티어 이벤트 당첨자 발표</div>
-                <div class="date">2024.04.20</div>
-              </div>
-            </div>
-          </section>
+      </li>
+
+<%
+        }
+    } else {
+%>
+
+      <li class="item">
+        <div class="item__text">
+          <div class="title">게시글이 없습니다.</div>
+        </div>
+      </li>
+
+<%
+    }
+%>
+
+    </ul>
+  </div>
+</section>
+
+ <!-- Notices -->
+<section class="panel">
+
+  <div class="panel__head">
+    <h3 class="panel__title">공지사항</h3>
+        <span style="color:var(--sub); font-weight:900; font-size:12px;">NOTICE</span>
+  </div>
+
+  <div class="panel__body">
+    <ul class="list">
+
+<%
+    mainDAO dao3 = new mainDAO();
+    ArrayList<mainVO> noticeList = dao3.noticeList();
+
+    if(noticeList != null && !noticeList.isEmpty()){
+
+        for(mainVO vo : noticeList){
+%>
+
+      <li class="item">
+
+        <div class="item__text">
+
+          <div class="title">
+            [공지] <%= vo.getMa_title() %>
+          </div>
+
+          <div class="meta">
+            <span><%= vo.getMa_nickname() %></span>
+            <span>조회수 <%= vo.getMa_viewcount() %></span>
+            <span><%= vo.getMa_create_at() %></span>
+          </div>
+
+        </div>
+
+      </li>
+
+<%
+        }
+
+    } else {
+%>
+
+      <li class="item">
+        <div class="item__text">
+          <div class="title">등록된 공지사항이 없습니다.</div>
+        </div>
+      </li>
+
+<%
+    }
+%>
+
+    </ul>
+  </div>
+
+</section>
         </div>
       </section>
     </div>

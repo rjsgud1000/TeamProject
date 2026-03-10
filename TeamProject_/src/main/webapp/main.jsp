@@ -20,6 +20,30 @@
   <title>G-UNIVERSE - 홈</title>
 
   <style>
+  .chart-popup__more-wrap{
+  display:flex;
+  justify-content:center;
+  margin-top:18px;
+}
+
+.chart-popup__more-btn{
+  min-width:160px;
+  height:44px;
+  padding:0 18px;
+  border:1px solid rgba(37, 99, 235, .18);
+  border-radius:999px;
+  background:#eff6ff;
+  color:#1d4ed8;
+  font-size:14px;
+  font-weight:1000;
+  cursor:pointer;
+  box-shadow:0 10px 24px rgba(15, 23, 42, .08);
+}
+
+.chart-popup__more-btn:hover{
+  background:#dbeafe;
+}
+  
     :root{
       --bgTop:#1f4a9a;
       --bgMid:#2c5db6;
@@ -554,11 +578,256 @@
       .grid3{ grid-template-columns: 1fr; }
       .foot-right{ text-align:left; margin-left:0; }
     }
+    
+    .featured-slider{
+      position:relative;
+      margin-top:10px;
+      padding:0 56px;
+    }
+
+    .featured-slider__viewport{
+      overflow:hidden;
+      border-radius:20px;
+      padding:10px 0;
+    }
+
+    .featured-slider__track{
+      display:flex;
+      transition:transform .35s ease;
+      will-change:transform;
+    }
+
+    .featured-slide{
+      flex:0 0 calc(100% / 3);
+      min-width:calc(100% / 3);
+      padding:8px;
+    }
+
+    .featured-slider__btn{
+      position:absolute;
+      top:50%;
+      transform:translateY(-50%);
+      width:42px;
+      height:42px;
+      border:1px solid rgba(37, 99, 235, .18);
+      border-radius:999px;
+      background:#fff;
+      color:#1d4ed8;
+      font-size:22px;
+      font-weight:1000;
+      box-shadow:0 10px 24px rgba(15, 23, 42, .12);
+      cursor:pointer;
+      z-index:2;
+    }
+
+    .featured-slider__btn:hover{
+      background:#eff6ff;
+    }
+
+    .featured-slider__btn:disabled{
+      opacity:.4;
+      cursor:default;
+      box-shadow:none;
+    }
+
+    .featured-slider__btn--prev{ left:0; }
+    .featured-slider__btn--next{ right:0; }
+
+		.trend-card{
+		  display:block;
+		  min-height:180px;
+		  padding:24px;
+		  border-radius:20px;
+		  color:#fff;
+		  position:relative;
+		  overflow:hidden;
+		  box-shadow:0 18px 40px rgba(37, 99, 235, .25);
+		
+		  background-size:cover;
+		  background-position:center;
+		  background-repeat:no-repeat;
+		}
+
+		.trend-card::before{
+		  content:"";
+		  position:absolute;
+		  inset:auto -30px -30px auto;
+		  width:180px;
+		  height:180px;
+		  border-radius:999px;
+		  background:rgba(255,255,255,.08);
+		}
+
+    .game-submeta{
+      margin-top:8px;
+      color:rgba(255,255,255,.88);
+      font-size:13px;
+      font-weight:800;
+    }
+
+    .featured-empty{
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:20px;
+      padding:40px 20px;
+      text-align:center;
+      font-weight:800;
+      color:#64748b;
+      box-shadow:0 10px 25px rgba(15, 23, 42, .06);
+    }
+
+    .chart-popup{
+      position:fixed;
+      inset:0;
+      z-index:999;
+      display:none;
+    }
+
+    .chart-popup:target{
+      display:block;
+    }
+
+    .chart-popup__dim{
+      position:absolute;
+      inset:0;
+      background:rgba(2, 6, 23, .58);
+      backdrop-filter:blur(4px);
+    }
+
+    .chart-popup__panel{
+      position:relative;
+      width:min(920px, calc(100% - 32px));
+      margin:70px auto;
+      background:#fff;
+      border-radius:24px;
+      box-shadow:0 24px 60px rgba(2, 18, 52, .25);
+      border:1px solid #e5e7eb;
+      overflow:hidden;
+    }
+
+    .chart-popup__head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:22px 24px 18px;
+      border-bottom:1px solid #e5e7eb;
+      background:linear-gradient(180deg, #f8fbff, #eef4fd);
+    }
+
+    .chart-popup__head h3{
+      margin:0;
+      font-size:24px;
+      font-weight:1000;
+    }
+
+    .chart-popup__head p{
+      margin:6px 0 0;
+      color:#64748b;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .chart-popup__close{
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      display:grid;
+      place-items:center;
+      font-size:18px;
+      font-weight:1000;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      text-decoration:none;
+      color:#0f172a;
+    }
+
+    .chart-popup__body{
+      padding:18px 24px 24px;
+      max-height:70vh;
+      overflow:auto;
+    }
+
+    .chart-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:14px;
+      background:#fff;
+    }
+
+    .chart-table thead th{
+      position:sticky;
+      top:0;
+      background:#f8fafc;
+      color:#0f172a;
+      padding:14px 12px;
+      text-align:center;
+      border-bottom:1px solid #e5e7eb;
+      font-size:13px;
+      font-weight:1000;
+    }
+
+    .chart-table tbody td{
+      padding:14px 12px;
+      border-bottom:1px solid #eef2f7;
+      text-align:center;
+      font-weight:700;
+      color:#334155;
+    }
+
+    .chart-table tbody tr:hover{
+      background:#f8fbff;
+    }
+
+    .chart-table .rank-col{
+      font-weight:1000;
+      color:#2563eb;
+    }
+
+    .chart-table .name-col{
+      text-align:left;
+      font-weight:900;
+      color:#0f172a;
+    }
+
+    .chart-table .name-col a{
+      color:#0f172a;
+      text-decoration:none;
+    }
+
+    .chart-table .name-col a:hover{
+      text-decoration:underline;
+    }
+
+    @media (max-width: 900px){
+      .featured-slider{ padding:0 48px; }
+      .featured-slide{
+        flex:0 0 50%;
+        min-width:50%;
+      }
+    }
+
+    @media (max-width: 640px){
+      .featured-slider{ padding:0 42px; }
+      .featured-slide{
+        flex:0 0 100%;
+        min-width:100%;
+      }
+      .featured-slider__btn{
+        width:36px;
+        height:36px;
+        font-size:18px;
+      }
+    }
+
   </style>
 </head>
 
 <body>
  <c:set var="center" value="${requestScope.center}" />
+ <c:if test="${empty requestScope.isAdmin}">
+   <c:set var="isAdmin" value="${sessionScope.isAdmin or sessionScope.loginRole eq 'ADMIN'}" scope="request"/>
+ </c:if>
  
  
   <c:if test="${empty center}">
