@@ -46,7 +46,8 @@
 ## Frontend
 - HTML5
 - CSS3
-- JavaScript
+- Vanlia JS
+- JQuery
 
 ## Database
 - MySQL
@@ -55,7 +56,7 @@
 - Apache Tomcat
 
 ## External API
-- Steam Web API (인기 게임 정보)
+- Naver Web API (인기 게임 정보)
 
 ## Libraries
 - json-simple
@@ -90,7 +91,7 @@
 - 게시글 조회
 
 ## 게임 정보 기능
-- **Steam API**를 활용한 인기 게임 정보 조회
+- **Naver API**를 활용한 인기 게임 정보 조회
 
 ---
 
