@@ -20,6 +20,21 @@ public class BoardListController extends HttpServlet {
 
         String categoryParam = request.getParameter("category");
         String pageParam = request.getParameter("page");
+        String sort = request.getParameter("sort");
+        String searchType = request.getParameter("searchType");
+        String keyword = request.getParameter("keyword");
+
+        if (searchType == null || searchType.isEmpty()) {
+            searchType = "title";
+        }
+        if (keyword == null) {
+            keyword = "";
+        }
+        keyword = keyword.trim();
+        
+        if (sort == null || sort.isEmpty()) {
+            sort = "latest";
+        }
 
         int currentPage = 1;
         int pageSize = 10;
@@ -38,11 +53,21 @@ public class BoardListController extends HttpServlet {
         String boardTitle;
         int totalCount;
 
+        boolean isSearch = !keyword.isEmpty();
+
         if ("all".equals(categoryParam) || categoryParam == null || categoryParam.trim().isEmpty()) {
-            list = boardDAO.selectAllBoardListPaging(startRow, pageSize);
-            totalCount = boardDAO.getAllBoardCount();
+
+            if (isSearch) {
+                list = boardDAO.searchAllBoardListPaging(startRow, pageSize, sort, searchType, keyword);
+                totalCount = boardDAO.getSearchAllBoardCount(searchType, keyword);
+            } else {
+                list = boardDAO.selectAllBoardListPaging(startRow, pageSize, sort);
+                totalCount = boardDAO.getAllBoardCount();
+            }
+
             boardTitle = "전체보기";
             request.setAttribute("category", "all");
+
         } else {
             int category;
             try {
@@ -51,8 +76,13 @@ public class BoardListController extends HttpServlet {
                 category = 1;
             }
 
-            list = boardDAO.selectBoardListPaging(category, startRow, pageSize);
-            totalCount = boardDAO.getBoardCount(category);
+            if (isSearch) {
+                list = boardDAO.searchBoardListPaging(category, startRow, pageSize, sort, searchType, keyword);
+                totalCount = boardDAO.getSearchBoardCount(category, searchType, keyword);
+            } else {
+                list = boardDAO.selectBoardListPaging(category, startRow, pageSize, sort);
+                totalCount = boardDAO.getBoardCount(category);
+            }
 
             switch (category) {
                 case 0: boardTitle = "공지사항"; break;
@@ -82,6 +112,11 @@ public class BoardListController extends HttpServlet {
         request.setAttribute("totalPage", totalPage);
         request.setAttribute("startPage", startPage);
         request.setAttribute("endPage", endPage);
+        request.setAttribute("sort", sort);
+        
+        request.setAttribute("sort", sort);
+        request.setAttribute("searchType", searchType);
+        request.setAttribute("keyword", keyword);
 
         request.setAttribute("center", "boardList.jsp");
         request.getRequestDispatcher("/GameMain.jsp").forward(request, response);

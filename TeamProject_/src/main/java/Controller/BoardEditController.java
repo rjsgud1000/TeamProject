@@ -13,21 +13,23 @@ public class BoardEditController extends HttpServlet {
 
     private final BoardDAO boardDAO = new BoardDAO();
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+	@Override
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
 
-        int postId = Integer.parseInt(request.getParameter("postId"));
-        String category = request.getParameter("category");
+		int postId = Integer.parseInt(request.getParameter("postId"));
+		String category = request.getParameter("category");
+		String page = request.getParameter("page");
 
-        BoardDTO post = boardDAO.selectPostById(postId);
+		BoardDTO post = boardDAO.selectPostById(postId);
 
-        request.setAttribute("post", post);
-        request.setAttribute("category", category);
-        request.setAttribute("center", "boardEdit.jsp");
+		request.setAttribute("post", post);
+		request.setAttribute("category", category);
+		request.setAttribute("page", page); // 추가
 
-        request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
-    }
+		request.setAttribute("center", "boardEdit.jsp");
+		request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
+	}
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -40,6 +42,9 @@ public class BoardEditController extends HttpServlet {
         String content = request.getParameter("content");
         String category = request.getParameter("category");
         String page = request.getParameter("page");
+        
+        if (category == null) category = "1";
+        if (page == null) page = "1";
 
         boardDAO.updatePost(postId, title, content);
 
