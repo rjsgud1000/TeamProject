@@ -11,6 +11,134 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>신고처리 게시판</title>
 <link rel="stylesheet" href="${contextPath}/css/admin-member.css" />
+<style>
+	.report-board.member-admin{
+		max-width: 1180px;
+	}
+	.report-board .table-card{
+		overflow: visible;
+	}
+	.report-board .report-table{
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+	}
+	.report-board .report-table th,
+	.report-board .report-table td{
+		padding: 14px 16px;
+		border-bottom: 1px solid #eef2f7;
+		font-size: 14px;
+		text-align: left;
+		vertical-align: top;
+		overflow: visible;
+	}
+	.report-board .report-table__comment-col,
+	.report-board .report-table__reason-col{
+		width: 18%;
+	}
+	.report-board .report-table__content{
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.55;
+	}
+	.report-board .report-table__preview{
+		position: relative;
+		display: block;
+		max-width: 100%;
+		padding-bottom: 2px;
+	}
+	.report-board .report-table__preview::after{
+		display: none !important;
+		content: none !important;
+	}
+	.report-board .report-table__preview-text{
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		overflow: hidden;
+		line-height: 1.55;
+		max-height: 4.65em;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+	.report-board .report-table__preview-text::after{
+		content: none;
+		display: none;
+	}
+	.report-board .report-table__hover-card{
+		display: none;
+		position: absolute;
+		left: 0;
+		top: calc(100% + 8px);
+		z-index: 50;
+		width: max-content;
+		min-width: 220px;
+		max-width: 420px;
+		max-height: 260px;
+		overflow-y: auto;
+		pointer-events: auto;
+		padding: 12px 14px;
+		border: 1px solid #cbd5e1;
+		border-radius: 14px;
+		background: #fff;
+		box-shadow: 0 18px 40px rgba(15, 23, 42, .18);
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.6;
+	}
+	.report-board .report-table__preview:hover .report-table__hover-card,
+	.report-board .report-table__preview:focus .report-table__hover-card,
+	.report-board .report-table__preview:focus-within .report-table__hover-card{
+		display: block !important;
+	}
+	.report-board .report-table__status-cell,
+	.report-board .report-table__action-cell{
+		text-align: center !important;
+		vertical-align: middle !important;
+		white-space: nowrap !important;
+	}
+	.report-board .report-table__status-cell .badge,
+	.report-board .report-table__action-cell .btn,
+	.report-board .report-table__action-cell .report-table__dash,
+	.report-board .report-table__action-cell form{
+		margin: 0 auto;
+	}
+	.report-board .report-table__action-form{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0;
+		width: 100%;
+	}
+	.report-board .report-table__action-btn.btn{
+		display: inline-flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		height: 38px !important;
+		min-width: 96px !important;
+		padding: 0 14px !important;
+		border-radius: 10px !important;
+		font-size: 13px !important;
+		line-height: 1 !important;
+		white-space: nowrap !important;
+	}
+	@media (max-width: 900px){
+		.report-board .report-table{
+			table-layout: auto;
+		}
+		.report-board .report-table__preview-text{
+			display: block;
+			-webkit-line-clamp: initial;
+			max-height: none;
+		}
+		.report-board .report-table__hover-card{
+			display: none !important;
+		}
+	}
+</style>
 </head>
 <body>
 <div class="member-admin report-board">
@@ -49,8 +177,8 @@
 							<th>신고자</th>
 							<th>대상자</th>
 							<th>게시글</th>
-							<th>댓글 내용</th>
-							<th>신고 사유</th>
+							<th class="report-table__comment-col">댓글 내용</th>
+							<th class="report-table__reason-col">신고 사유</th>
 							<th>접수일</th>
 							<th>처리상태</th>
 							<th>처리</th>
@@ -64,23 +192,33 @@
 								<td><c:out value="${report.reportMemberId}" /></td>
 								<td><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${report.targetMemberId}"><c:out value="${report.targetMemberId}" /></a></td>
 								<td><c:out value="${report.postTitle}" /></td>
-								<td><c:out value="${report.commentContent}" /></td>
-								<td><c:out value="${report.reason}" /></td>
+								<td class="report-table__content">
+									<div class="report-table__preview" tabindex="0" title="${report.commentContent}">
+										<div class="report-table__preview-text"><c:out value="${report.commentContent}" /></div>
+										<div class="report-table__hover-card"><c:out value="${report.commentContent}" /></div>
+									</div>
+								</td>
+								<td class="report-table__content">
+									<div class="report-table__preview" tabindex="0" title="${report.reason}">
+										<div class="report-table__preview-text"><c:out value="${report.reason}" /></div>
+										<div class="report-table__hover-card"><c:out value="${report.reason}" /></div>
+									</div>
+								</td>
 								<td><c:out value="${report.createdAt}" /></td>
-								<td>
+								<td class="report-table__status-cell">
 									<c:choose>
-										<c:when test="${report.processed}">처리됨</c:when>
-										<c:otherwise>처리안됨</c:otherwise>
+										<c:when test="${report.processed}"><span class="badge badge--done">처리됨</span></c:when>
+										<c:otherwise><span class="badge badge--pending">처리안됨</span></c:otherwise>
 									</c:choose>
 								</td>
-								<td>
+								<td class="report-table__action-cell">
 									<c:if test="${not report.processed}">
-										<form method="post" action="${contextPath}/member/admin/report/process.me" style="margin:0;">
+										<form method="post" action="${contextPath}/member/admin/report/process.me" class="report-table__action-form">
 											<input type="hidden" name="reportId" value="${report.reportId}">
-											<button class="btn" type="submit">처리완료</button>
+											<button class="btn report-table__action-btn" type="submit">처리완료</button>
 										</form>
 									</c:if>
-									<c:if test="${report.processed}">-</c:if>
+									<c:if test="${report.processed}"><span class="report-table__dash">-</span></c:if>
 								</td>
 							</tr>
 						</c:forEach>

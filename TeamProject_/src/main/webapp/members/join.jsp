@@ -19,6 +19,89 @@
 <title>회원가입</title>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/auth.css" />
+<style>
+.email-verify-card{
+	margin-top:10px;
+	padding:16px;
+	border:1px solid #dbe7f8;
+	border-radius:16px;
+	background:linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+	box-shadow:0 10px 24px rgba(37, 99, 235, .06);
+}
+.email-verify-head{
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:12px;
+	margin-bottom:10px;
+	flex-wrap:wrap;
+}
+.email-verify-title{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	font-weight:900;
+	font-size:14px;
+	color:#0f172a;
+}
+.email-verify-step{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	min-width:28px;
+	height:28px;
+	padding:0 8px;
+	border-radius:999px;
+	background:#dbeafe;
+	color:#1d4ed8;
+	font-size:12px;
+	font-weight:900;
+}
+.email-verify-chip{
+	display:inline-flex;
+	align-items:center;
+	gap:6px;
+	padding:7px 10px;
+	border-radius:999px;
+	background:#eef2f7;
+	color:#475569;
+	font-size:12px;
+	font-weight:900;
+}
+.email-verify-chip.is-success{
+	background:#dcfce7;
+	color:#15803d;
+}
+.email-verify-chip.is-pending{
+	background:#dbeafe;
+	color:#1d4ed8;
+}
+.email-verify-copy{
+	font-size:12px;
+	color:#64748b;
+	line-height:1.5;
+	margin-bottom:12px;
+}
+.email-verify-wrap{
+	display:grid;
+	gap:12px;
+}
+.email-verify-row{
+	display:grid;
+	grid-template-columns: 1fr 140px;
+	gap:10px;
+}
+.email-verify-status{
+	font-size:12px;
+	font-weight:700;
+	margin-top:2px;
+}
+@media (max-width: 640px){
+	.email-verify-row{
+		grid-template-columns:1fr;
+	}
+}
+</style>
 
 </head>
 <body>
@@ -49,7 +132,8 @@
 		</div>
 
 		<div class="join-body">
-			<form action="<%=contextPath%>/member/joinPro.me" method="post">
+			<form action="<%=contextPath%>/member/joinPro.me" method="post" id="joinForm">
+				<input type="hidden" id="emailVerified" name="emailVerified" value="false">
 
 				<div class="section-title">이용약관</div>
 				<div class="help-hint">서비스 이용을 위해 약관 동의가 필요합니다.</div>
@@ -175,9 +259,29 @@
 				<div class="grid">
 					<div>
 						<div class="field">
-							<label class="label" for="email">Email</label>
-							<input type="email" id="email" name="email" placeholder="example@domain.com">
-							<p id="emailInput" class="form-text"></p>
+							<label class="label" for="email">Email <span class="req">*</span></label>
+							<div class="email-verify-card">
+								<div class="email-verify-head">
+									<div class="email-verify-title">
+										<span class="email-verify-step">1</span>
+										<span>이메일 인증</span>
+									</div>
+									<div id="emailVerifyChip" class="email-verify-chip">인증 전</div>
+								</div>
+								<div class="email-verify-copy">가입할 이메일로 인증번호를 발송합니다. 이메일을 변경하면 인증 상태가 초기화됩니다.</div>
+								<div class="email-verify-wrap">
+									<div class="input-row">
+										<input type="email" id="email" name="email" placeholder="example@domain.com">
+										<button class="btn btn-outline-primary" type="button" id="sendEmailCodeBtn" onclick="sendJoinEmailCode()">인증번호 받기</button>
+									</div>
+									<div class="email-verify-row">
+										<input type="text" id="emailVerificationCode" placeholder="메일로 받은 인증번호를 입력해 주세요">
+										<button class="btn btn-outline-primary" type="button" id="verifyEmailCodeBtn" onclick="verifyJoinEmailCode()">이메일 인증</button>
+									</div>
+								</div>
+								<p id="emailInput" class="form-text"></p>
+								<p id="emailVerifyStatus" class="email-verify-status form-text"></p>
+							</div>
 						</div>
 					</div>
 					<div>
