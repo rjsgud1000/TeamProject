@@ -171,7 +171,7 @@
   </div>
 </div>
 
-        <!-- Board header -->
+<!-- Board header -->
 <div class="board-header">
   <div class="board-header__title">최신 정보</div>
   <div class="controls">
@@ -179,10 +179,8 @@
       <option value="lol">리그 오브 레전드</option>
       <option value="battleground">배틀그라운드</option>
       <option value="valorant">발로란트</option>
-      <option value="suddenattack">서든 어택</option>
       <option value="fconline">FC 온라인</option>
       <option value="maplestory">메이플스토리</option>
-      <option value="aion2">아이온2</option>
       <option value="dnf">던전앤파이터</option>
       <option value="lostark">로스트아크</option>
     </select>

@@ -2,6 +2,8 @@ package Controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,14 +32,28 @@ import org.json.simple.JSONObject;
 @WebServlet("/crawl/latest")
 public class GameNewsCrawlerController extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36";
 
-    private static final Pattern ISO_DATE_PATTERN = Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z)");
-    private static final Pattern DATE_DOT_PATTERN = Pattern.compile("(20\\d{2}\\.\\d{2}\\.\\d{2})");
-    private static final Pattern DATE_DASH_PATTERN = Pattern.compile("(20\\d{2}-\\d{2}-\\d{2})");
-    private static final Pattern FC_UPDATE_DATE_PREFIX_PATTERN = Pattern.compile("^(20\\d{2})\\s*(\\d{2}\\.\\d{2})\\s+(.+)$");
-    private static final Pattern AION_JSON_ITEM_PATTERN = Pattern.compile("\\\"title\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*?\\\"(?:createDate|createdDate|registerDate|regDate|date)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*?(?:\\\"linkUrl\\\"|\\\"url\\\"|\\\"path\\\")\\s*:\\s*\\\"([^\\\"]+)\\\"", Pattern.DOTALL);
-    private static final Pattern AION_TEXT_ITEM_PATTERN = Pattern.compile("(\\[안내\\]\\s*.+?)\\s*[·•]\\s*(20\\d{2}-\\d{2}-\\d{2})");
+    private static final String USER_AGENT =
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            + "(KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36";
+
+    private static final Pattern ISO_DATE_PATTERN =
+            Pattern.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z)");
+    private static final Pattern DATE_DOT_PATTERN =
+            Pattern.compile("(20\\d{2}\\.\\d{2}\\.\\d{2})");
+    private static final Pattern DATE_DASH_PATTERN =
+            Pattern.compile("(20\\d{2}-\\d{2}-\\d{2})");
+    private static final Pattern RELATIVE_DATE_PATTERN =
+            Pattern.compile("(\\d+\\s*(?:분|시간|일)\\s*전)");
+    private static final Pattern FC_UPDATE_DATE_PREFIX_PATTERN =
+            Pattern.compile("^(20\\d{2})\\s*(\\d{2}\\.\\d{2})\\s+(.+)$");
+    private static final Pattern AION_JSON_ITEM_PATTERN =
+            Pattern.compile("\\\"title\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*?"
+                    + "\\\"(?:createDate|createdDate|registerDate|regDate|date)\\\"\\s*:\\s*\\\"([^\\\"]+)\\\".*?"
+                    + "(?:\\\"linkUrl\\\"|\\\"url\\\"|\\\"path\\\")\\s*:\\s*\\\"([^\\\"]+)\\\"",
+                    Pattern.DOTALL);
+    private static final Pattern AION_TEXT_ITEM_PATTERN =
+            Pattern.compile("(\\[안내\\]\\s*.+?)\\s*[·•]\\s*(20\\d{2}-\\d{2}-\\d{2})");
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -96,6 +112,20 @@ public class GameNewsCrawlerController extends HttpServlet {
     }
 
     private String resolveSourceUrl(String game, String type) {
+        if ("news".equals(type)) {
+            String query = resolveNewsQuery(game);
+            if (isBlank(query)) {
+                return "";
+            }
+
+            try {
+                return "https://search.naver.com/search.naver?ssc=tab.news.all&where=news&sm=tab_jum&query="
+                        + URLEncoder.encode(query, "UTF-8");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
         if ("lol".equals(game)) {
             if ("notice".equals(type)) return "https://www.leagueoflegends.com/ko-kr/news/notices/";
             if ("patch".equals(type)) return "https://www.leagueoflegends.com/ko-kr/news/game-updates/";
@@ -112,6 +142,10 @@ public class GameNewsCrawlerController extends HttpServlet {
             if ("notice".equals(type)) return "https://sa.nexon.com/news/notice/list.aspx";
             if ("patch".equals(type)) return "https://sa.nexon.com/news/update/list.aspx";
         }
+        if ("aion2".equals(game)) {
+            if ("notice".equals(type)) return "https://aion2.plaync.com/ko-kr/board/notice/list";
+            if ("patch".equals(type)) return "https://aion2.plaync.com/ko-kr/board/update/list";
+        }
         if ("fconline".equals(game)) {
             if ("notice".equals(type)) return "https://fconline.nexon.com/news/notice/list";
             if ("patch".equals(type)) return "https://fconline.nexon.com/news/update/list";
@@ -119,10 +153,6 @@ public class GameNewsCrawlerController extends HttpServlet {
         if ("maplestory".equals(game)) {
             if ("notice".equals(type)) return "https://maplestory.nexon.com/News/Notice";
             if ("patch".equals(type)) return "https://maplestory.nexon.com/News/Update";
-        }
-        if ("aion2".equals(game)) {
-            if ("notice".equals(type)) return "https://aion2.plaync.com/ko-kr/board/notice/list";
-            if ("patch".equals(type)) return "https://aion2.plaync.com/ko-kr/board/update/list";
         }
         if ("dnf".equals(game)) {
             if ("notice".equals(type)) return "https://df.nexon.com/community/news/notice/list";
@@ -135,7 +165,25 @@ public class GameNewsCrawlerController extends HttpServlet {
         return "";
     }
 
+    private String resolveNewsQuery(String game) {
+        if ("lol".equals(game)) return "리그 오브 레전드";
+        if ("battleground".equals(game)) return "배틀그라운드";
+        if ("valorant".equals(game)) return "발로란트";
+        if ("suddenattack".equals(game)) return "서든어택";
+        if ("aion2".equals(game)) return "아이온2";
+        if ("fconline".equals(game)) return "FC 온라인";
+        if ("maplestory".equals(game)) return "메이플스토리";
+        if ("dnf".equals(game)) return "던전앤파이터";
+        if ("lostark".equals(game)) return "로스트아크";
+        return "";
+    }
+
     private List<NewsItem> crawlByGame(String game, String type, String sourceUrl) throws IOException {
+        if ("news".equals(type)) {
+            String query = resolveNewsQuery(game);
+            return crawlNaverNews(sourceUrl, query);
+        }
+
         if ("lol".equals(game)) {
             return crawlLol(sourceUrl);
         }
@@ -143,7 +191,8 @@ public class GameNewsCrawlerController extends HttpServlet {
             return crawlPubgTextOnly(sourceUrl, "patch".equals(type) ? "패치노트" : "공지");
         }
         if ("valorant".equals(game)) {
-            return crawlValorant(sourceUrl, "notice".equals(type) ? "/ko-kr/news/announcements/" : "/ko-kr/news/game-updates/");
+            return crawlValorant(sourceUrl,
+                    "notice".equals(type) ? "/ko-kr/news/announcements/" : "/ko-kr/news/game-updates/");
         }
         if ("suddenattack".equals(game)) {
             return crawlSuddenAttack(sourceUrl);
@@ -164,6 +213,308 @@ public class GameNewsCrawlerController extends HttpServlet {
             return crawlLostArk(sourceUrl, type);
         }
         return new ArrayList<NewsItem>();
+    }
+
+    private List<NewsItem> crawlNaverNews(String url, String query) throws IOException {
+        List<NewsItem> items = new ArrayList<NewsItem>();
+        Document doc = connect(url);
+        Set<String> seen = new LinkedHashSet<String>();
+
+        Elements newsBlocks = doc.select(
+                "div.news_wrap, " +
+                "div.news_area, " +
+                "div.group_news li.bx, " +
+                "ul.list_news > li, " +
+                "div[class*=news_wrap], " +
+                "div[class*=news_area]"
+        );
+
+        for (Element block : newsBlocks) {
+            Element titleLink = findNewsTitleLink(block);
+            if (titleLink == null) continue;
+
+            String href = normalizeNewsHref(titleLink.absUrl("href"));
+            if (!isRealNewsResultLink(href)) continue;
+            if (!seen.add(href)) continue;
+
+            String title = cleanTitleNoise(firstNonBlank(
+                    titleLink.attr("title"),
+                    titleLink.text(),
+                    titleLink.attr("aria-label")
+            ));
+            if (isBlank(title) || title.length() < 4) continue;
+            if (isFixedNoiseTitle(title)) continue;
+
+            String date = firstNonBlank(
+                    extractNewsDate(block),
+                    extractDateAround(titleLink),
+                    extractDateAround(block)
+            );
+
+            String summary = firstNonBlank(
+                    firstText(block, ".news_dsc"),
+                    firstText(block, ".dsc_wrap"),
+                    firstText(block, ".api_txt_lines"),
+                    firstText(block, ".news_desc"),
+                    firstText(block, ".news_contents .dsc_txt_wrap"),
+                    extractSummaryAround(block)
+            );
+
+            addItem(items, title, date, summary, href, 10);
+            if (items.size() >= 10) {
+                return items;
+            }
+        }
+
+        Elements links = doc.select("a[href]");
+        for (Element a : links) {
+            String href = normalizeNewsHref(a.absUrl("href"));
+            if (!isRealNewsResultLink(href)) continue;
+            if (!seen.add(href)) continue;
+
+            String title = cleanTitleNoise(firstNonBlank(
+                    a.attr("title"),
+                    a.text(),
+                    a.attr("aria-label")
+            ));
+            if (isBlank(title) || title.length() < 8) continue;
+            if (isFixedNoiseTitle(title)) continue;
+
+            Element block = findNewsContainer(a);
+
+            String date = firstNonBlank(
+                    extractNewsDate(block),
+                    extractDateAround(a),
+                    extractDateAround(block)
+            );
+
+            String summary = firstNonBlank(
+                    firstText(block, ".news_dsc"),
+                    firstText(block, ".dsc_wrap"),
+                    firstText(block, ".api_txt_lines"),
+                    firstText(block, ".news_desc"),
+                    firstText(block, ".news_contents .dsc_txt_wrap"),
+                    extractSummaryAround(block)
+            );
+
+            if (isBlank(date) && isBlank(summary) && !containsLooseKeyword(title, query)) {
+                continue;
+            }
+
+            addItem(items, title, date, summary, href, 10);
+            if (items.size() >= 10) {
+                break;
+            }
+        }
+
+        return items;
+    }
+
+    private Element findNewsTitleLink(Element block) {
+        if (block == null) return null;
+
+        Element found = firstExisting(block,
+                "a.news_tit",
+                "a.news_title",
+                "a.api_txt_lines.total_tit",
+                "a.api_txt_lines",
+                "a[href*='news.naver.com']",
+                "a[href*='n.news.naver.com']",
+                "a[href*='oid='][href*='aid=']"
+        );
+        if (found != null) return found;
+
+        Elements links = block.select("a[href]");
+        for (Element a : links) {
+            String href = normalizeNewsHref(a.absUrl("href"));
+            String title = cleanText(firstNonBlank(a.attr("title"), a.text()));
+            if (!isRealNewsResultLink(href)) continue;
+            if (isBlank(title) || title.length() < 8) continue;
+            if (isFixedNoiseTitle(title)) continue;
+            return a;
+        }
+        return null;
+    }
+
+    private String normalizeNewsHref(String href) {
+        if (isBlank(href)) return "";
+
+        href = href.trim();
+        try {
+            int idx = href.indexOf("url=");
+            if (idx >= 0) {
+                String encoded = href.substring(idx + 4);
+                int amp = encoded.indexOf('&');
+                if (amp >= 0) {
+                    encoded = encoded.substring(0, amp);
+                }
+                return URLDecoder.decode(encoded, "UTF-8");
+            }
+        } catch (Exception ignore) {
+        }
+        return href;
+    }
+
+    private Element findNewsContainer(Element base) {
+        Element cur = base;
+        int guard = 0;
+
+        while (cur != null && guard < 6) {
+            String cls = cleanText(cur.className());
+            if (cur.hasClass("news_wrap")
+                    || cur.hasClass("news_area")
+                    || cls.contains("news_wrap")
+                    || cls.contains("news_area")
+                    || "li".equalsIgnoreCase(cur.tagName())
+                    || "article".equalsIgnoreCase(cur.tagName())) {
+                return cur;
+            }
+            cur = cur.parent();
+            guard++;
+        }
+
+        return base != null ? base.parent() : null;
+    }
+
+    private boolean isRealNewsResultLink(String href) {
+        if (isBlank(href)) return false;
+
+        String lower = href.toLowerCase(Locale.ROOT);
+
+        if (lower.contains("search.naver.com")) return false;
+        if (lower.contains("dict.naver.com")) return false;
+        if (lower.contains("terms.naver.com")) return false;
+        if (lower.contains("academic.naver.com")) return false;
+        if (lower.contains("keep.naver.com")) return false;
+        if (lower.contains("shopping.naver.com")) return false;
+        if (lower.contains("blog.naver.com")) return false;
+        if (lower.contains("cafe.naver.com")) return false;
+        if (lower.contains("kin.naver.com")) return false;
+        if (lower.contains("/sports")) return false;
+        if (lower.contains("/entertain")) return false;
+
+        if (lower.contains("news.naver.com")) return true;
+        if (lower.contains("n.news.naver.com")) return true;
+        if (lower.contains("oid=") && lower.contains("aid=")) return true;
+
+        if (lower.startsWith("http://") || lower.startsWith("https://")) {
+            if (lower.contains("naver.com")) return false;
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean isFixedNoiseTitle(String title) {
+        if (isBlank(title)) return true;
+
+        String t = title.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+
+        if (t.equals("naver")) return true;
+        if (t.contains("어학사전")) return true;
+        if (t.contains("지식백과")) return true;
+        if (t.contains("학술정보")) return true;
+        if (t.contains("옵션가이드")) return true;
+        if (t.contains("네이버뉴스")) return true;
+        if (t.contains("keep에바로가기")) return true;
+        if (t.contains("언론사선정")) return true;
+
+        return false;
+    }
+
+    private String extractNewsDate(Element block) {
+        if (block == null) return "";
+
+        Elements infos = block.select(".info_group span.info, .news_info .info, span.info");
+        for (Element info : infos) {
+            String text = cleanText(info.text());
+            if (isBlank(text)) continue;
+
+            if (text.matches(".*\\d{4}\\.\\d{2}\\.\\d{2}.*")) return text;
+            if (text.matches(".*\\d{4}-\\d{2}-\\d{2}.*")) return text;
+            if (text.matches(".*\\d+일\\s*전.*")) return text;
+            if (text.matches(".*\\d+시간\\s*전.*")) return text;
+            if (text.matches(".*\\d+분\\s*전.*")) return text;
+        }
+
+        return "";
+    }
+
+    private Element firstExisting(Element base, String... selectors) {
+        if (base == null || selectors == null) return null;
+
+        for (String selector : selectors) {
+            if (isBlank(selector)) continue;
+            Element found = base.selectFirst(selector);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private String extractSummaryAround(Element base) {
+        if (base == null) return "";
+
+        String summary = firstNonBlank(
+                firstText(base, ".news_dsc"),
+                firstText(base, ".dsc_wrap"),
+                firstText(base, ".api_txt_lines"),
+                firstText(base, ".news_desc"),
+                firstText(base, ".news_contents .dsc_txt_wrap")
+        );
+
+        if (!isBlank(summary)) {
+            return cleanText(summary);
+        }
+
+        String text = cleanText(base.text());
+        if (isBlank(text)) return "";
+
+        if (text.length() > 140) {
+            return text.substring(0, 140) + "...";
+        }
+        return text;
+    }
+
+    private boolean containsLooseKeyword(String title, String query) {
+        if (isBlank(title) || isBlank(query)) return false;
+
+        String normalizedTitle = title.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+        String normalizedQuery = query.replaceAll("\\s+", "").toLowerCase(Locale.ROOT);
+
+        if (normalizedTitle.contains(normalizedQuery)) {
+            return true;
+        }
+
+        String[] parts = query.split("\\s+");
+        for (String part : parts) {
+            String token = part.trim().toLowerCase(Locale.ROOT);
+            if (token.length() < 2) continue;
+            if (normalizedTitle.contains(token)) {
+                return true;
+            }
+        }
+
+        if ("리그 오브 레전드".equals(query)) {
+            return normalizedTitle.contains("롤")
+                    || normalizedTitle.contains("lol")
+                    || normalizedTitle.contains("lck")
+                    || normalizedTitle.contains("리그오브레전드");
+        }
+        if ("로스트아크".equals(query)) {
+            return normalizedTitle.contains("로스트아크")
+                    || normalizedTitle.contains("로아");
+        }
+        if ("던전앤파이터".equals(query)) {
+            return normalizedTitle.contains("던전앤파이터")
+                    || normalizedTitle.contains("던파");
+        }
+        if ("배틀그라운드".equals(query)) {
+            return normalizedTitle.contains("배틀그라운드")
+                    || normalizedTitle.contains("배그")
+                    || normalizedTitle.contains("pubg");
+        }
+
+        return false;
     }
 
     private List<NewsItem> crawlLol(String url) throws IOException {
@@ -509,23 +860,90 @@ public class GameNewsCrawlerController extends HttpServlet {
             return items;
         }
 
-        for (Element a : doc.select("a[href]")) {
+        Set<String> seen = new LinkedHashSet<String>();
+
+        Elements scopedLinks = doc.select(
+                "section a[href*=/News/Update/View], " +
+                "section a[href*=/News/Notice/View], " +
+                "article a[href*=/News/Update/View], " +
+                "article a[href*=/News/Notice/View], " +
+                "main a[href*=/News/Update/View], " +
+                "main a[href*=/News/Notice/View], " +
+                "div a[href*=/News/Update/View], " +
+                "div a[href*=/News/Notice/View]"
+        );
+
+        for (Element a : scopedLinks) {
             String href = a.absUrl("href");
-            String title = cleanText(a.text());
+            if (isBlank(href)) continue;
+            if (!seen.add(href)) continue;
+
+            if ("patch".equals(type) && !href.contains("/News/Update/View")) continue;
+            if ("notice".equals(type) && !href.contains("/News/Notice/View")) continue;
+
+            String title = cleanTitleNoise(cleanText(a.text()));
             if (isBlank(title) || title.length() < 4) continue;
-            if (!(href.contains("/News/Notice/View") || href.contains("/News/Update/View"))) continue;
+
+            if (title.contains("이벤트 모아보기")
+                    || title.contains("자동재생")
+                    || title.contains("정지")) {
+                continue;
+            }
+
             String date = extractDateAround(a);
-            addItem(items, title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", ""), date, "", href, 10);
+
+            if (isBlank(date)) {
+                Element parent = a.parent();
+                int guard = 0;
+                while (parent != null && guard < 3 && isBlank(date)) {
+                    date = extractDateAround(parent);
+                    parent = parent.parent();
+                    guard++;
+                }
+            }
+
+            addItem(items,
+                    title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", ""),
+                    date,
+                    "",
+                    href,
+                    10);
+
+            if (items.size() >= 10) {
+                break;
+            }
         }
 
-        if (!items.isEmpty()) return items;
-
-        Matcher m = Pattern.compile("(?:공지|점검|상점|이벤트)?\\s*(.+?)\\s+(20\\d{2}\\.\\d{2}\\.\\d{2})").matcher(text);
-        while (m.find() && items.size() < 10) {
-            String title = cleanTitleNoise(m.group(1));
-            if (title.contains("새소식") || title.contains("공지사항") || title.contains("업데이트")) continue;
-            addItem(items, title, m.group(2), "", url, 10);
+        if (!items.isEmpty()) {
+            return items;
         }
+
+        Elements fallbackLinks = doc.select("a[href*=/News/Update/View], a[href*=/News/Notice/View]");
+        for (Element a : fallbackLinks) {
+            String href = a.absUrl("href");
+            if (isBlank(href)) continue;
+            if (!seen.add(href)) continue;
+
+            if ("patch".equals(type) && !href.contains("/News/Update/View")) continue;
+            if ("notice".equals(type) && !href.contains("/News/Notice/View")) continue;
+
+            String title = cleanTitleNoise(cleanText(a.text()));
+            if (isBlank(title) || title.length() < 4) continue;
+
+            String date = extractDateAround(a);
+
+            addItem(items,
+                    title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", ""),
+                    date,
+                    "",
+                    href,
+                    10);
+
+            if (items.size() >= 10) {
+                break;
+            }
+        }
+
         return items;
     }
 
@@ -710,22 +1128,24 @@ public class GameNewsCrawlerController extends HttpServlet {
         if (dot.find()) return dot.group(1);
         Matcher dash = DATE_DASH_PATTERN.matcher(text);
         if (dash.find()) return dash.group(1);
-        Matcher rel = Pattern.compile("(\\d+\\s*(?:분|시간|일)\\s*전)").matcher(text);
+        Matcher rel = RELATIVE_DATE_PATTERN.matcher(text);
         if (rel.find()) return cleanText(rel.group(1));
         return "";
     }
 
     private String extractRelativeDate(String text) {
-        Matcher rel = Pattern.compile("(\\d+\\s*(?:분|시간|일)\\s*전)").matcher(cleanText(text));
+        Matcher rel = RELATIVE_DATE_PATTERN.matcher(cleanText(text));
         return rel.find() ? cleanText(rel.group(1)) : "";
     }
 
     private void addItem(List<NewsItem> items, String title, String date, String summary, String url, int limit) {
         title = cleanTitleNoise(title);
         if (isBlank(title)) return;
+
         for (NewsItem existing : items) {
             if (existing.title.equals(title)) return;
         }
+
         items.add(new NewsItem(title, cleanText(date), cleanText(summary), cleanText(url)));
         if (items.size() > limit) {
             items.remove(items.size() - 1);
@@ -761,7 +1181,11 @@ public class GameNewsCrawlerController extends HttpServlet {
 
     private String unescapeJson(String value) {
         if (value == null) return "";
-        return value.replace("\\/", "/").replace("\\u002F", "/").replace("\\u003A", ":").replace("\\u0026", "&").replace("\\\"", "\"");
+        return value.replace("\\/", "/")
+                .replace("\\u002F", "/")
+                .replace("\\u003A", ":")
+                .replace("\\u0026", "&")
+                .replace("\\\"", "\"");
     }
 
     private String cleanText(String text) {
