@@ -1,5 +1,6 @@
 package util;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.concurrent.ThreadLocalRandom;
@@ -17,9 +18,16 @@ import jakarta.mail.internet.MimeMessage;
 
 public final class NaverMailSend {
 
-	private final String host = "smtp.naver.com";
-	private final String user = "112tkwk@naver.com";
-	private final String password = "978YY38Q5XW3";
+	private final String host;
+	private final String user;
+	private final String password;
+
+	public NaverMailSend() {
+		Properties appProps = loadApplicationProperties();
+		this.host = valueOrDefault(appProps.getProperty("mail.smtp.host"), "smtp.naver.com");
+		this.user = trimToNull(appProps.getProperty("mail.smtp.user"));
+		this.password = trimToNull(appProps.getProperty("mail.smtp.password"));
+	}
 
 	public String sendEmail(String to) throws Exception {
 		String authenCode = makeAuthenticationCode();
@@ -48,7 +56,7 @@ public final class NaverMailSend {
 			throw new IllegalArgumentException("수신 이메일 주소가 올바르지 않습니다.");
 		}
 		if (isBlank(user) || isBlank(password)) {
-			throw new IllegalStateException("메일 발송 계정 설정이 비어 있습니다.");
+			throw new IllegalStateException("메일 발송 계정 설정이 비어 있습니다. application.properties의 mail.smtp.user / mail.smtp.password를 확인해 주세요.");
 		}
 
 		Properties props = new Properties();
@@ -106,6 +114,19 @@ public final class NaverMailSend {
 		return sb.toString();
 	}
 
+	private Properties loadApplicationProperties() {
+		Properties props = new Properties();
+		try (InputStream in = NaverMailSend.class.getClassLoader().getResourceAsStream("application.properties")) {
+			if (in == null) {
+				throw new IllegalStateException("application.properties 파일을 클래스패스에서 찾을 수 없습니다.");
+			}
+			props.load(in);
+			return props;
+		} catch (Exception e) {
+			throw new IllegalStateException("application.properties 로딩에 실패했습니다.", e);
+		}
+	}
+
 	private String normalizeEmail(String value) {
 		if (value == null) {
 			return null;
@@ -125,6 +146,19 @@ public final class NaverMailSend {
 
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
+	}
+
+	private String trimToNull(String value) {
+		if (value == null) {
+			return null;
+		}
+		String trimmed = value.trim();
+		return trimmed.isEmpty() ? null : trimmed;
+	}
+
+	private String valueOrDefault(String value, String defaultValue) {
+		String trimmed = trimToNull(value);
+		return trimmed == null ? defaultValue : trimmed;
 	}
 
 	private String safeMessage(Exception e) {
