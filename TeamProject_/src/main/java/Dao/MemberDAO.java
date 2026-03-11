@@ -584,6 +584,24 @@ public class MemberDAO {
 		}
 	}
 
+	public MemberVO findByMemberIdAndEmail(String memberId, String email) {
+		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status "
+				+ "FROM MEMBER WHERE member_id=? AND email=?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			pstmt.setString(2, email);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return mapMember(rs);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	private MemberVO mapMember(ResultSet rs) throws Exception {
 		MemberVO vo = new MemberVO();
 		vo.setMemberId(rs.getString("member_id"));

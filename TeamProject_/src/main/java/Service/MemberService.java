@@ -2,6 +2,7 @@ package Service;
 
 import Dao.MemberDAO;
 import Vo.MemberVO;
+import util.NaverMailSend;
 import util.PasswordUtil;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.LinkedHashMap;
 
 public class MemberService {
 	private final MemberDAO memberDAO = new MemberDAO();
+	private final NaverMailSend mailSender = new NaverMailSend();
 
 	public static class LoginResult {
 		public final MemberVO member;
@@ -20,6 +22,16 @@ public class MemberService {
 			this.member = member;
 			this.error = error;
 			this.flash = flash;
+		}
+	}
+
+	public static class PasswordRecoveryCandidate {
+		public final MemberVO member;
+		public final String error;
+
+		public PasswordRecoveryCandidate(MemberVO member, String error) {
+			this.member = member;
+			this.error = error;
 		}
 	}
 
@@ -342,6 +354,82 @@ public class MemberService {
 
 		boolean updated = memberDAO.updateMemberStatusWithSanction(memberId, adminId, nextStatus, sanctionType, reason, startAt, endAt, endPreviousSanctions);
 		return updated ? null : "회원 상태 변경 또는 SANCTION 처리에 실패했습니다.";
+	}
+
+	public PasswordRecoveryCandidate validatePasswordRecoveryTarget(String memberId, String email) {
+		String id = trimToNull(memberId);
+		String mail = trimToNull(email);
+		if (id == null) {
+			return new PasswordRecoveryCandidate(null, "아이디를 입력해 주세요.");
+		}
+		if (mail == null) {
+			return new PasswordRecoveryCandidate(null, "이메일을 입력해 주세요.");
+		}
+		if (!mail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+			return new PasswordRecoveryCandidate(null, "이메일 형식이 올바르지 않습니다.");
+		}
+
+		MemberVO member = memberDAO.findByMemberIdAndEmail(id, mail);
+		if (member == null) {
+			return new PasswordRecoveryCandidate(null, "입력한 아이디와 이메일이 일치하는 계정을 찾을 수 없습니다.");
+		}
+
+		String status = trimToNull(member.getStatus());
+		if ("WITHDRAWN".equalsIgnoreCase(status)) {
+			return new PasswordRecoveryCandidate(null, "탈퇴한 계정은 비밀번호를 찾을 수 없습니다.");
+		}
+
+		return new PasswordRecoveryCandidate(member, null);
+	}
+
+	public String sendPasswordRecoveryCode(String email) throws Exception {
+		String mail = trimToNull(email);
+		if (mail == null) {
+			throw new IllegalArgumentException("이메일 정보가 올바르지 않습니다.");
+		}
+		String code = mailSender.makeAuthenticationCode();
+		mailSender.sendVerificationCode(mail, code);
+		return code;
+	}
+
+	public String issueTemporaryPassword(String memberId, String email) throws Exception {
+		PasswordRecoveryCandidate candidate = validatePasswordRecoveryTarget(memberId, email);
+		if (candidate.error != null || candidate.member == null) {
+			throw new IllegalArgumentException(candidate.error != null ? candidate.error : "회원 정보를 찾을 수 없습니다.");
+		}
+
+		String tempPassword = mailSender.makeTemporaryPassword();
+		int updated = memberDAO.updatePasswordHash(candidate.member.getMemberId(), PasswordUtil.hash(tempPassword));
+		if (updated != 1) {
+			throw new IllegalStateException("임시 비밀번호 저장에 실패했습니다.");
+		}
+		mailSender.sendTemporaryPassword(candidate.member.getEmail(), tempPassword);
+		return tempPassword;
+	}
+
+	public PasswordRecoveryCandidate validateJoinEmailTarget(String email) {
+		String mail = trimToNull(email);
+		if (mail == null) {
+			return new PasswordRecoveryCandidate(null, "이메일을 입력해 주세요.");
+		}
+		if (!mail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+			return new PasswordRecoveryCandidate(null, "이메일 형식이 올바르지 않습니다.");
+		}
+		if (memberDAO.existsEmail(mail)) {
+			return new PasswordRecoveryCandidate(null, "이미가입된 이메일입니다.");
+		}
+		return new PasswordRecoveryCandidate(null, null);
+	}
+
+	public String sendJoinEmailVerificationCode(String email) throws Exception {
+		PasswordRecoveryCandidate candidate = validateJoinEmailTarget(email);
+		if (candidate.error != null) {
+			throw new IllegalArgumentException(candidate.error);
+		}
+		String mail = trimToNull(email);
+		String code = mailSender.makeAuthenticationCode();
+		mailSender.sendJoinVerificationCode(mail, code);
+		return code;
 	}
 
 	private java.time.LocalDateTime parseDateTimeLocal(String value) {

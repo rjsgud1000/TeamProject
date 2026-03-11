@@ -21,6 +21,16 @@ import Vo.CommentReportVO;
 @WebServlet("/member/*")
 public class MemberController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static final String RECOVERY_MEMBER_ID_SESSION_KEY = "passwordRecoveryMemberId";
+	private static final String RECOVERY_EMAIL_SESSION_KEY = "passwordRecoveryEmail";
+	private static final String RECOVERY_CODE_SESSION_KEY = "passwordRecoveryCode";
+	private static final String RECOVERY_EXPIRE_AT_SESSION_KEY = "passwordRecoveryExpireAt";
+	private static final long RECOVERY_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	private static final String JOIN_EMAIL_SESSION_KEY = "joinEmailVerificationEmail";
+	private static final String JOIN_EMAIL_CODE_SESSION_KEY = "joinEmailVerificationCode";
+	private static final String JOIN_EMAIL_EXPIRE_AT_SESSION_KEY = "joinEmailVerificationExpireAt";
+	private static final String JOIN_EMAIL_VERIFIED_SESSION_KEY = "joinEmailVerificationVerified";
+	private static final long JOIN_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
 
@@ -74,6 +84,16 @@ public class MemberController extends HttpServlet {
 		case "/joinPro.me":
 			joinPro(request, response);
 			return;
+		case "/findPasswordForm.me":
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		case "/findPassword.me":
+			sendPasswordRecoveryCode(request, response);
+			return;
+		case "/verifyPasswordCode.me":
+			verifyPasswordRecoveryCode(request, response);
+			return;
 		case "/mypage.me":
 			showMyPage(request, response);
 			return;
@@ -97,6 +117,12 @@ public class MemberController extends HttpServlet {
 			return;
 		case "/checkProfileNickname.me":
 			checkProfileNickname(request, response);
+			return;
+		case "/sendJoinEmailCode.me":
+			sendJoinEmailCode(request, response);
+			return;
+		case "/verifyJoinEmailCode.me":
+			verifyJoinEmailCode(request, response);
 			return;
 		default:
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -205,6 +231,13 @@ public class MemberController extends HttpServlet {
 		String pass = request.getParameter("pass");
 		String name = request.getParameter("name");
 		String nickname = request.getParameter("nickname");
+		String email = request.getParameter("email");
+		if (!isJoinEmailVerified(request.getSession(false), email)) {
+			request.setAttribute("joinError", "이메일 인증을 완료해 주세요.");
+			request.setAttribute("center", "members/join.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
 
 		String zipcode = request.getParameter("address1");
 		String addr1 = request.getParameter("address2");
@@ -213,7 +246,6 @@ public class MemberController extends HttpServlet {
 		String addr4 = request.getParameter("address5");
 
 		String gender = request.getParameter("gender");
-		String email = request.getParameter("email");
 		String hp = request.getParameter("hp");
 
 		MemberVO vo = new MemberVO();
@@ -241,8 +273,229 @@ public class MemberController extends HttpServlet {
 		}
 
 		HttpSession session = request.getSession(true);
+		clearJoinEmailVerificationSession(session);
 		session.setAttribute("joinFlash", "회원가입에 성공하셨습니다");
 		response.sendRedirect(request.getContextPath() + "/member/login.me");
+	}
+
+	private void sendJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		String email = emptyToNull(request.getParameter("email"));
+		try {
+			String code = memberService.sendJoinEmailVerificationCode(email);
+			HttpSession session = request.getSession(true);
+			session.setAttribute(JOIN_EMAIL_SESSION_KEY, email);
+			session.setAttribute(JOIN_EMAIL_CODE_SESSION_KEY, code);
+			session.setAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY, System.currentTimeMillis() + JOIN_EMAIL_CODE_EXPIRE_MILLIS);
+			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write("{\"ok\":true,\"message\":\"인증번호를 메일로 발송했습니다.\"}");
+		} catch (IllegalArgumentException e) {
+			response.getWriter().write(toJsonError(e.getMessage()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().write(toJsonError(e.getMessage() != null ? e.getMessage() : "인증번호 발송에 실패했습니다."));
+		}
+	}
+
+	private void verifyJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		HttpSession session = request.getSession(false);
+		String email = emptyToNull(request.getParameter("email"));
+		String code = emptyToNull(request.getParameter("verificationCode"));
+		if (email == null) {
+			response.getWriter().write(toJsonError("이메일을 입력해 주세요."));
+			return;
+		}
+		if (code == null) {
+			response.getWriter().write(toJsonError("인증번호를 입력해 주세요."));
+			return;
+		}
+		if (session == null) {
+			response.getWriter().write(toJsonError("인증 세션이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+
+		String sessionEmail = (String) session.getAttribute(JOIN_EMAIL_SESSION_KEY);
+		String sessionCode = (String) session.getAttribute(JOIN_EMAIL_CODE_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (sessionEmail == null || sessionCode == null || expireAt == null) {
+			response.getWriter().write(toJsonError("인증번호를 먼저 요청해 주세요."));
+			return;
+		}
+		if (!sessionEmail.equals(email)) {
+			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증 요청한 이메일과 현재 이메일이 다릅니다."));
+			return;
+		}
+		if (System.currentTimeMillis() > expireAt.longValue()) {
+			clearJoinEmailVerificationSession(session);
+			response.getWriter().write(toJsonError("인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+		if (!sessionCode.equals(code)) {
+			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증번호가 올바르지 않습니다."));
+			return;
+		}
+
+		session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.TRUE);
+		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
+	}
+
+	private boolean isJoinEmailVerified(HttpSession session, String email) {
+		String mail = emptyToNull(email);
+		if (session == null || mail == null) {
+			return false;
+		}
+		String verifiedEmail = (String) session.getAttribute(JOIN_EMAIL_SESSION_KEY);
+		Object verifiedObj = session.getAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (!(verifiedObj instanceof Boolean) || !((Boolean) verifiedObj).booleanValue()) {
+			return false;
+		}
+		if (verifiedEmail == null || !mail.equals(verifiedEmail)) {
+			return false;
+		}
+		if (expireAt == null || System.currentTimeMillis() > expireAt.longValue()) {
+			clearJoinEmailVerificationSession(session);
+			return false;
+		}
+		return true;
+	}
+
+	private void clearJoinEmailVerificationSession(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(JOIN_EMAIL_SESSION_KEY);
+		session.removeAttribute(JOIN_EMAIL_CODE_SESSION_KEY);
+		session.removeAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY);
+		session.removeAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY);
+	}
+
+	private String toJsonError(String message) {
+		String safe = message == null ? "요청 처리에 실패했습니다." : message.replace("\\", "\\\\").replace("\"", "\\\"");
+		return "{\"ok\":false,\"message\":\"" + safe + "\"}";
+	}
+
+	private void sendPasswordRecoveryCode(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		String memberId = emptyToNull(request.getParameter("findId"));
+		String email = emptyToNull(request.getParameter("findEmail"));
+		MemberService.PasswordRecoveryCandidate candidate = memberService.validatePasswordRecoveryTarget(memberId, email);
+		if (candidate.error != null || candidate.member == null) {
+			request.setAttribute("passwordFindError", candidate.error != null ? candidate.error : "회원 정보를 찾을 수 없습니다.");
+			request.setAttribute("passwordFindId", memberId == null ? "" : memberId);
+			request.setAttribute("passwordFindEmail", email == null ? "" : email);
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		try {
+			String code = memberService.sendPasswordRecoveryCode(candidate.member.getEmail());
+			HttpSession session = request.getSession(true);
+			session.setAttribute(RECOVERY_MEMBER_ID_SESSION_KEY, candidate.member.getMemberId());
+			session.setAttribute(RECOVERY_EMAIL_SESSION_KEY, candidate.member.getEmail());
+			session.setAttribute(RECOVERY_CODE_SESSION_KEY, code);
+			session.setAttribute(RECOVERY_EXPIRE_AT_SESSION_KEY, System.currentTimeMillis() + RECOVERY_CODE_EXPIRE_MILLIS);
+			request.setAttribute("passwordFindMessage", "인증번호를 메일로 발송했습니다. 5분 안에 인증을 완료해 주세요.");
+			request.setAttribute("passwordFindId", candidate.member.getMemberId());
+			request.setAttribute("passwordFindEmail", candidate.member.getEmail());
+			request.setAttribute("passwordCodeSent", true);
+		} catch (IllegalArgumentException e) {
+			request.setAttribute("passwordFindError", e.getMessage());
+			request.setAttribute("passwordFindId", memberId == null ? "" : memberId);
+			request.setAttribute("passwordFindEmail", email == null ? "" : email);
+		} catch (Exception e) {
+			e.printStackTrace();
+			request.setAttribute("passwordFindError", e.getMessage() != null ? e.getMessage() : "메일 발송에 실패했습니다.");
+			request.setAttribute("passwordFindId", memberId == null ? "" : memberId);
+			request.setAttribute("passwordFindEmail", email == null ? "" : email);
+		}
+		request.setAttribute("center", "members/findPassword.jsp");
+		forward(request, response, "/main.jsp");
+	}
+
+	private void verifyPasswordRecoveryCode(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		String memberId = emptyToNull(request.getParameter("findId"));
+		String email = emptyToNull(request.getParameter("findEmail"));
+		String inputCode = emptyToNull(request.getParameter("verificationCode"));
+		request.setAttribute("passwordCodeSent", true);
+		request.setAttribute("passwordFindId", memberId == null ? "" : memberId);
+		request.setAttribute("passwordFindEmail", email == null ? "" : email);
+
+		if (inputCode == null) {
+			request.setAttribute("passwordFindError", "인증번호를 입력해 주세요.");
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		HttpSession session = request.getSession(false);
+		if (session == null) {
+			request.setAttribute("passwordFindError", "인증 세션이 만료되었습니다. 다시 시도해 주세요.");
+			request.setAttribute("passwordCodeSent", false);
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		String sessionMemberId = (String) session.getAttribute(RECOVERY_MEMBER_ID_SESSION_KEY);
+		String sessionEmail = (String) session.getAttribute(RECOVERY_EMAIL_SESSION_KEY);
+		String sessionCode = (String) session.getAttribute(RECOVERY_CODE_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(RECOVERY_EXPIRE_AT_SESSION_KEY);
+		if (sessionMemberId == null || sessionEmail == null || sessionCode == null || expireAt == null) {
+			request.setAttribute("passwordFindError", "인증 정보가 없습니다. 다시 인증번호를 요청해 주세요.");
+			request.setAttribute("passwordCodeSent", false);
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+		if (System.currentTimeMillis() > expireAt.longValue()) {
+			clearPasswordRecoverySession(session);
+			request.setAttribute("passwordFindError", "인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요.");
+			request.setAttribute("passwordCodeSent", false);
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+		if (!sessionMemberId.equals(memberId) || !sessionEmail.equals(email)) {
+			request.setAttribute("passwordFindError", "인증 요청 정보와 입력값이 일치하지 않습니다.");
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+		if (!sessionCode.equals(inputCode)) {
+			request.setAttribute("passwordFindError", "인증번호가 올바르지 않습니다.");
+			request.setAttribute("center", "members/findPassword.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		try {
+			memberService.issueTemporaryPassword(memberId, email);
+			clearPasswordRecoverySession(session);
+			request.setAttribute("passwordCodeSent", false);
+			request.setAttribute("passwordFindMessage", "인증이 완료되었습니다. 임시 비밀번호를 메일로 발송했습니다.");
+		} catch (IllegalArgumentException e) {
+			request.setAttribute("passwordFindError", e.getMessage());
+		} catch (Exception e) {
+			e.printStackTrace();
+			request.setAttribute("passwordFindError", e.getMessage() != null ? e.getMessage() : "임시 비밀번호 발급에 실패했습니다.");
+		}
+
+		request.setAttribute("center", "members/findPassword.jsp");
+		forward(request, response, "/main.jsp");
+	}
+
+	private void clearPasswordRecoverySession(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(RECOVERY_MEMBER_ID_SESSION_KEY);
+		session.removeAttribute(RECOVERY_EMAIL_SESSION_KEY);
+		session.removeAttribute(RECOVERY_CODE_SESSION_KEY);
+		session.removeAttribute(RECOVERY_EXPIRE_AT_SESSION_KEY);
 	}
 
 	private void showMyPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -568,4 +821,5 @@ public class MemberController extends HttpServlet {
 		}
 		return merged;
 	}
+
 }
