@@ -46,7 +46,7 @@
 ## Frontend
 - HTML5
 - CSS3
-- Vanlia JS
+- Vanilla JS
 - JQuery
 
 ## Database
