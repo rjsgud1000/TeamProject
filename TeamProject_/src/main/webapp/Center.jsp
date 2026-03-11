@@ -349,16 +349,18 @@
 </script>
 
         <!-- 3 columns -->
+        <!-- 각종 게시글 정렬 및 게시판 링크 추가 -->
         <div class="grid3">
-<!-- Popular -->
-<section class="panel">
-  <div class="panel__head">
-    <h3 class="panel__title">인기 게시글</h3>
-        <span style="color:red; font-weight:900; font-size:12px;">HOT!</span>
-  </div>
 
-  <div class="panel__body">
-    <ul class="list">
+          <!-- Popular -->
+          <section class="panel">
+            <div class="panel__head">
+              <h3 class="panel__title">인기 게시글</h3>
+              <span style="color:red; font-weight:900; font-size:12px;">HOT!</span>
+            </div>
+
+            <div class="panel__body">
+              <ul class="list">
 <%
     mainDAO dao = new mainDAO();
     ArrayList<mainVO> popularList = dao.popularList();
@@ -366,46 +368,53 @@
     if(popularList != null && !popularList.isEmpty()) {
         for(mainVO vo : popularList) {
 %>
-      <li class="item">
-        <div class="item__text">
-          <div class="title">🔥 <%= vo.getMa_title() %></div>
-          <div class="meta">
-            <span><%= vo.getMa_nickname() %></span>
-            <span>추천수 <%= vo.getLike_count() %></span>
-            <span><%= vo.getMa_create_at() %></span>
-          </div>
-        </div>
-      </li>
+                <li class="item">
+                  <div class="item__text">
+                    <!-- 인기글 제목 클릭 시 상세페이지 이동 -->
+                    <div class="title">
+                      🔥
+                      <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
+                         style="text-decoration: none; color: inherit;">
+                        <%=vo.getMa_title()%>
+                      </a>
+                    </div>
+
+                    <div class="meta">
+                      <span><%= vo.getMa_nickname() %></span>
+                      <span>추천수 <%= vo.getLike_count() %></span>
+                      <span><%= vo.getMa_create_at() %></span>
+                    </div>
+                  </div>
+                </li>
 <%
         }
     } else {
 %>
-      <li class="item">
-        <div class="item__text">
-          <div class="title">인기 게시글이 없습니다.</div>
-          <div class="meta">
-            <span>-</span>
-            <span>-</span>
-          </div>
-        </div>
-      </li>
+                <li class="item">
+                  <div class="item__text">
+                    <div class="title">인기 게시글이 없습니다.</div>
+                    <div class="meta">
+                      <span>-</span>
+                      <span>-</span>
+                    </div>
+                  </div>
+                </li>
 <%
     }
 %>
-    </ul>
-  </div>
-</section>
+              </ul>
+            </div>
+          </section>
 
           <!-- Latest -->
-<section class="panel">
-  <div class="panel__head">
-    <h3 class="panel__title">최신 게시글</h3>
-    <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW!</span>
-  </div>
+          <section class="panel">
+            <div class="panel__head">
+              <h3 class="panel__title">최신 게시글</h3>
+              <span style="color:var(--sub); font-weight:900; font-size:12px;">NEW!</span>
+            </div>
 
-  <div class="panel__body">
-    <ul class="list">
-
+            <div class="panel__body">
+              <ul class="list">
 <%
     mainDAO dao2 = new mainDAO();
     ArrayList<mainVO> list = dao2.mainList();
@@ -413,101 +422,88 @@
     if(list != null && !list.isEmpty()){
         for(mainVO vo : list){
 %>
+                <li class="item">
+                  <div class="item__text">
+                    <!-- 최신 게시글 제목 클릭 시 상세페이지 이동 -->
+                    <div class="title">
+                      <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
+                         style="text-decoration: none; color: inherit;">
+                        <%=vo.getMa_title()%>
+                      </a>
+                    </div>
 
-      <li class="item">
-
-        <div class="item__text">
-          <div class="title">
-            <%= vo.getMa_title() %>
-          </div>
-
-          <div class="meta">
-            <span><%= vo.getMa_nickname() %></span>
-            <span>조회수 <%= vo.getMa_viewcount() %></span>
-            <span><%= vo.getMa_create_at() %></span>
-          </div>
-        </div>
-
-      </li>
-
+                    <div class="meta">
+                      <span><%= vo.getMa_nickname() %></span>
+                      <span>조회수 <%= vo.getMa_viewcount() %></span>
+                      <span><%= vo.getMa_create_at() %></span>
+                    </div>
+                  </div>
+                </li>
 <%
         }
     } else {
 %>
-
-      <li class="item">
-        <div class="item__text">
-          <div class="title">게시글이 없습니다.</div>
-        </div>
-      </li>
-
+                <li class="item">
+                  <div class="item__text">
+                    <div class="title">게시글이 없습니다.</div>
+                  </div>
+                </li>
 <%
     }
 %>
+              </ul>
+            </div>
+          </section>
 
-    </ul>
-  </div>
-</section>
+          <!-- Notices -->
+          <section class="panel">
+            <div class="panel__head">
+              <h3 class="panel__title">공지사항</h3>
+              <span style="color:var(--sub); font-weight:900; font-size:12px;">NOTICE</span>
+            </div>
 
- <!-- Notices -->
-<section class="panel">
-
-  <div class="panel__head">
-    <h3 class="panel__title">공지사항</h3>
-        <span style="color:var(--sub); font-weight:900; font-size:12px;">NOTICE</span>
-  </div>
-
-  <div class="panel__body">
-    <ul class="list">
-
+            <div class="panel__body">
+              <ul class="list">
 <%
     mainDAO dao3 = new mainDAO();
     ArrayList<mainVO> noticeList = dao3.noticeList();
 
     if(noticeList != null && !noticeList.isEmpty()){
-
         for(mainVO vo : noticeList){
 %>
+                <li class="item">
+                  <div class="item__text">
+                    <!-- 공지사항 제목 클릭 시 상세페이지 이동 -->
+                    <div class="title">
+                      <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
+                         style="text-decoration: none; color: inherit;">
+                        [공지] <%= vo.getMa_title() %>
+                      </a>
+                    </div>
 
-      <li class="item">
-
-        <div class="item__text">
-
-          <div class="title">
-            [공지] <%= vo.getMa_title() %>
-          </div>
-
-          <div class="meta">
-            <span><%= vo.getMa_nickname() %></span>
-            <span>조회수 <%= vo.getMa_viewcount() %></span>
-            <span><%= vo.getMa_create_at() %></span>
-          </div>
-
-        </div>
-
-      </li>
-
+                    <div class="meta">
+                      <span><%= vo.getMa_nickname() %></span>
+                      <span>조회수 <%= vo.getMa_viewcount() %></span>
+                      <span><%= vo.getMa_create_at() %></span>
+                    </div>
+                  </div>
+                </li>
 <%
         }
-
     } else {
 %>
-
-      <li class="item">
-        <div class="item__text">
-          <div class="title">등록된 공지사항이 없습니다.</div>
-        </div>
-      </li>
-
+                <li class="item">
+                  <div class="item__text">
+                    <div class="title">등록된 공지사항이 없습니다.</div>
+                  </div>
+                </li>
 <%
     }
 %>
+              </ul>
+            </div>
+          </section>
 
-    </ul>
-  </div>
-
-</section>
-        </div>
-      </section>
-    </div>
-  </main>
+        </div> <!-- /.grid3 -->
+      </div> <!-- /.container -->
+    </main>

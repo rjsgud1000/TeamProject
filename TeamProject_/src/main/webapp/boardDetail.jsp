@@ -48,7 +48,7 @@
 
 		<a href="${pageContext.request.contextPath}/board/list?category=${category}&page=${page}">목록으로</a>
 
-		<c:if test="${sessionScope.loginId == post.memberId}">
+		<c:if test="${sessionScope.loginMember != null && sessionScope.loginMember.memberId == post.memberId}">
         |
         <a href="${pageContext.request.contextPath}/board/edit?postId=${post.postId}&category=${category}&page=${page}">수정</a>
         |
@@ -56,6 +56,29 @@
    		   onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
 		</c:if>
 
+	</div>
+	<div style="margin-top: 20px;">
+		<c:if test="${sessionScope.loginMember != null}">
+			<form action="${pageContext.request.contextPath}/board/like"
+				method="post" style="display: inline-block;">
+				<input type="hidden" name="postId" value="${post.postId}"> <input
+					type="hidden" name="category" value="${category}"> <input
+					type="hidden" name="page" value="${page}">
+
+				<button type="submit">
+					<c:choose>
+						<c:when test="${liked}">추천 취소</c:when>
+						<c:otherwise>추천</c:otherwise>
+					</c:choose>
+				</button>
+			</form>
+		</c:if>
+
+		<span style="margin-left: 10px;">추천 수: ${likeCount}</span>
+
+		<c:if test="${sessionScope.loginMember == null}">
+			<span style="margin-left: 10px; color: gray;">추천은 로그인 후 가능합니다.</span>
+		</c:if>
 	</div>
 
 	<!-- 댓글 영역 -->

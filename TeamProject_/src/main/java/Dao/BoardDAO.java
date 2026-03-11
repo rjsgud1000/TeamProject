@@ -187,14 +187,25 @@ public class BoardDAO {
 	    }
 	}
 	//8.전체글 페이징 조회
-	public List<BoardPostVO> selectAllBoardListPaging(int startRow, int pageSize) {
+	public List<BoardPostVO> selectAllBoardListPaging(int startRow, int pageSize, String sort) {
 	    List<BoardPostVO> list = new ArrayList<>();
 
-	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
-	                 "FROM BOARD_POST " +
-	                 "WHERE category IN (1, 2, 3) AND is_deleted = 0 " +
-	                 "ORDER BY post_id DESC " +
-	                 "LIMIT ?, ?";
+	    String orderBy = "ORDER BY bp.post_id DESC";
+	    if ("view".equals(sort)) {
+	        orderBy = "ORDER BY bp.viewcount DESC, bp.post_id DESC";
+	    } else if ("like".equals(sort)) {
+	        orderBy = "ORDER BY like_count DESC, bp.post_id DESC";
+	    }
+
+	    String sql =
+	        "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+	        "bp.viewcount, bp.create_at, COUNT(pl.post_id) AS like_count " +
+	        "FROM BOARD_POST bp " +
+	        "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
+	        "WHERE bp.category IN (1,2,3) AND bp.is_deleted = 0 " +
+	        "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+	        orderBy + " " +
+	        "LIMIT ?, ?";
 
 	    try (Connection conn = DBCPUtil.getConnection();
 	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -213,6 +224,7 @@ public class BoardDAO {
 	                vo.setContent(rs.getString("content"));
 	                vo.setViewcount(rs.getInt("viewcount"));
 	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                vo.setLikeCount(rs.getInt("like_count"));
 	                list.add(vo);
 	            }
 	        }
@@ -224,14 +236,25 @@ public class BoardDAO {
 	    return list;
 	}
 	//9. 카테고리별 페이징 조회
-	public List<BoardPostVO> selectBoardListPaging(int category, int startRow, int pageSize) {
+	public List<BoardPostVO> selectBoardListPaging(int category, int startRow, int pageSize, String sort) {
 	    List<BoardPostVO> list = new ArrayList<>();
 
-	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
-	                 "FROM BOARD_POST " +
-	                 "WHERE category = ? AND is_deleted = 0 " +
-	                 "ORDER BY post_id DESC " +
-	                 "LIMIT ?, ?";
+	    String orderBy = "ORDER BY bp.post_id DESC";
+	    if ("view".equals(sort)) {
+	        orderBy = "ORDER BY bp.viewcount DESC, bp.post_id DESC";
+	    } else if ("like".equals(sort)) {
+	        orderBy = "ORDER BY like_count DESC, bp.post_id DESC";
+	    }
+
+	    String sql =
+	        "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+	        "bp.viewcount, bp.create_at, COUNT(pl.post_id) AS like_count " +
+	        "FROM BOARD_POST bp " +
+	        "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
+	        "WHERE bp.category = ? AND bp.is_deleted = 0 " +
+	        "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+	        orderBy + " " +
+	        "LIMIT ?, ?";
 
 	    try (Connection conn = DBCPUtil.getConnection();
 	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -251,6 +274,7 @@ public class BoardDAO {
 	                vo.setContent(rs.getString("content"));
 	                vo.setViewcount(rs.getInt("viewcount"));
 	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                vo.setLikeCount(rs.getInt("like_count"));
 	                list.add(vo);
 	            }
 	        }
@@ -305,5 +329,333 @@ public class BoardDAO {
 	    }
 
 	    return count;
+	}
+	//12. 게시글 추천 여부 확인
+	public boolean isLikedByMember(int postId, String memberId) {
+		String sql = "SELECT COUNT(*) FROM POST_LIKE WHERE post_id = ? AND member_id = ?";
+
+		try (Connection conn = DBCPUtil.getConnection(); PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+			pstmt.setInt(1, postId);
+			pstmt.setString(2, memberId);
+
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1) > 0;
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+	//13. 추천 추가
+	public int insertLike(int postId, String memberId) {
+	    String sql = "INSERT INTO POST_LIKE (post_id, member_id) VALUES (?, ?)";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, postId);
+	        pstmt.setString(2, memberId);
+
+	        return pstmt.executeUpdate();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return 0;
+	}
+	//14. 추천 취소
+	public int deleteLike(int postId, String memberId) {
+	    String sql = "DELETE FROM POST_LIKE WHERE post_id = ? AND member_id = ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, postId);
+	        pstmt.setString(2, memberId);
+
+	        return pstmt.executeUpdate();
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return 0;
+	}
+	//15. 추천 수 조회
+	public int getLikeCount(int postId) {
+	    String sql = "SELECT COUNT(*) FROM POST_LIKE WHERE post_id = ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, postId);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                return rs.getInt(1);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return 0;
+	}
+	//16. 추천 토글
+	public boolean toggleLike(int postId, String memberId) {
+	    if (isLikedByMember(postId, memberId)) {
+	        deleteLike(postId, memberId);
+	        return false; // 추천 취소
+	    } else {
+	        insertLike(postId, memberId);
+	        return true; // 추천 완료
+	    }
+	}
+	//17.게시판 검색
+	private String getSearchColumn(String searchType) {
+	    switch (searchType) {
+	        case "writer":
+	            return "nickname";
+	        case "content":
+	            return "content";
+	        case "title":
+	        default:
+	            return "title";
+	    }
+	}
+	//18.전체보기 + 게시판 검색
+	public List<BoardPostVO> searchAllBoardListPaging(int startRow, int pageSize, String sort, String searchType, String keyword) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String orderBy = "ORDER BY post_id DESC";
+	    if ("view".equals(sort)) {
+	        orderBy = "ORDER BY viewcount DESC";
+	    }
+
+	    String column = getSearchColumn(searchType);
+
+	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
+	                 "FROM BOARD_POST " +
+	                 "WHERE category IN (1,2,3) AND is_deleted = 0 " +
+	                 "AND " + column + " LIKE ? " +
+	                 orderBy + " " +
+	                 "LIMIT ?, ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setString(1, "%" + keyword + "%");
+	        pstmt.setInt(2, startRow);
+	        pstmt.setInt(3, pageSize);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	//19.카테고리별 검색 + 게시판
+	public List<BoardPostVO> searchBoardListPaging(int category, int startRow, int pageSize, String sort, String searchType, String keyword) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String orderBy = "ORDER BY post_id DESC";
+	    if ("view".equals(sort)) {
+	        orderBy = "ORDER BY viewcount DESC";
+	    }
+
+	    String column = getSearchColumn(searchType);
+
+	    String sql = "SELECT post_id, member_id, nickname, category, title, content, viewcount, create_at " +
+	                 "FROM BOARD_POST " +
+	                 "WHERE category = ? AND is_deleted = 0 " +
+	                 "AND " + column + " LIKE ? " +
+	                 orderBy + " " +
+	                 "LIMIT ?, ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, category);
+	        pstmt.setString(2, "%" + keyword + "%");
+	        pstmt.setInt(3, startRow);
+	        pstmt.setInt(4, pageSize);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	//20.전체보기 검색 결과개수 + 게시판
+	public int getSearchAllBoardCount(String searchType, String keyword) {
+	    int count = 0;
+	    String column = getSearchColumn(searchType);
+
+	    String sql = "SELECT COUNT(*) FROM BOARD_POST " +
+	                 "WHERE category IN (1,2,3) AND is_deleted = 0 " +
+	                 "AND " + column + " LIKE ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setString(1, "%" + keyword + "%");
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                count = rs.getInt(1);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return count;
+	}
+	//21.카테고리별 검색 결과 개수 + 게시판
+	public int getSearchBoardCount(int category, String searchType, String keyword) {
+	    int count = 0;
+	    String column = getSearchColumn(searchType);
+
+	    String sql = "SELECT COUNT(*) FROM BOARD_POST " +
+	                 "WHERE category = ? AND is_deleted = 0 " +
+	                 "AND " + column + " LIKE ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, category);
+	        pstmt.setString(2, "%" + keyword + "%");
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                count = rs.getInt(1);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return count;
+	}
+	//22.인기글기준 top5
+	public List<BoardPostVO> selectHotPostsByLike(int limit) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String sql =
+	        "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+	        "bp.viewcount, bp.create_at, COUNT(pl.post_id) AS like_count " +
+	        "FROM BOARD_POST bp " +
+	        "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
+	        "WHERE bp.category IN (1,2,3) AND bp.is_deleted = 0 " +
+	        "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+	        "ORDER BY like_count DESC, bp.viewcount DESC, bp.post_id DESC " +
+	        "LIMIT ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, limit);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                vo.setLikeCount(rs.getInt("like_count"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
+	}
+	//23. 조회수 기준 top5
+	public List<BoardPostVO> selectHotPostsByView(int limit) {
+	    List<BoardPostVO> list = new ArrayList<>();
+
+	    String sql =
+	        "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+	        "bp.viewcount, bp.create_at, COUNT(pl.post_id) AS like_count " +
+	        "FROM BOARD_POST bp " +
+	        "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
+	        "WHERE bp.category IN (1,2,3) AND bp.is_deleted = 0 " +
+	        "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+	        "ORDER BY bp.viewcount DESC, like_count DESC, bp.post_id DESC " +
+	        "LIMIT ?";
+
+	    try (Connection conn = DBCPUtil.getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+	        pstmt.setInt(1, limit);
+
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                BoardPostVO vo = new BoardPostVO();
+	                vo.setPostId(rs.getInt("post_id"));
+	                vo.setMemberId(rs.getString("member_id"));
+	                vo.setNickname(rs.getString("nickname"));
+	                vo.setCategory(rs.getInt("category"));
+	                vo.setTitle(rs.getString("title"));
+	                vo.setContent(rs.getString("content"));
+	                vo.setViewcount(rs.getInt("viewcount"));
+	                vo.setCreateAt(rs.getTimestamp("create_at"));
+	                vo.setLikeCount(rs.getInt("like_count"));
+	                list.add(vo);
+	            }
+	        }
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+
+	    return list;
 	}
 }

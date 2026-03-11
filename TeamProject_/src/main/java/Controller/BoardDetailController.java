@@ -19,6 +19,7 @@ public class BoardDetailController extends HttpServlet {
 
     private BoardService boardService;
     private CommentDAO commentDAO;
+    private final BoardDAO boardDAO = new BoardDAO();
 
     @Override
     public void init() throws ServletException {
@@ -63,15 +64,19 @@ public class BoardDetailController extends HttpServlet {
             e.printStackTrace();
             comments = Collections.emptyList();
         }
-
+        
         HttpSession session = request.getSession(false);
-        MemberVO loginMember = null;
-        if (session != null) {
-            Object obj = session.getAttribute("loginMember");
-            if (obj instanceof MemberVO) {
-                loginMember = (MemberVO) obj;
-            }
+        MemberVO loginMember = (session != null) ? (MemberVO) session.getAttribute("loginMember") : null;
+
+        int likeCount = boardDAO.getLikeCount(postId);
+        boolean liked = false;
+
+        if (loginMember != null) {
+            liked = boardDAO.isLikedByMember(postId, loginMember.getMemberId());
         }
+
+        request.setAttribute("likeCount", likeCount);
+        request.setAttribute("liked", liked);
 
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);

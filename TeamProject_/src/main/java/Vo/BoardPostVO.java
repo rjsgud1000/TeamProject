@@ -11,6 +11,10 @@ public class BoardPostVO {
     private String content;
     private int viewcount;
     private Timestamp createAt;
+    private int likeCount;
+
+	public int getLikeCount() {return likeCount;}
+	public void setLikeCount(int likeCount) {this.likeCount = likeCount;}
 
     public int getPostId() { return postId; }
     public void setPostId(int postId) { this.postId = postId; }
