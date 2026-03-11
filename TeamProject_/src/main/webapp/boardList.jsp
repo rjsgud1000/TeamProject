@@ -6,11 +6,26 @@
 
     <h2>${boardTitle}</h2>
 
-	<!-- 게시판 글쓰기 탭 -->
+	<!-- 게시판 글쓰기 탭(공지사항 관리자권한넣기) -->
 	<div style="text-align: right; margin: 10px 0 15px 0;">
-		<a href="${pageContext.request.contextPath}/board/write?category=${category}"
-		   style="display: inline-block; padding: 10px 16px; background: #2d6cdf; color: white; text-decoration: none; border-radius: 4px;">
-		   글쓰기 </a>
+		<c:choose>
+			<c:when test="${category == 0}">
+				<c:if
+					test="${sessionScope.loginMember != null && sessionScope.loginMember.role eq 'ADMIN'}">
+					<a
+						href="${pageContext.request.contextPath}/board/write?category=${category}"
+						style="display: inline-block; padding: 10px 16px; background: #2d6cdf; color: white; text-decoration: none; border-radius: 4px;">
+						글쓰기 </a>
+				</c:if>
+			</c:when>
+
+			<c:otherwise>
+				<a
+					href="${pageContext.request.contextPath}/board/write?category=${category}"
+					style="display: inline-block; padding: 10px 16px; background: #2d6cdf; color: white; text-decoration: none; border-radius: 4px;">
+					글쓰기 </a>
+			</c:otherwise>
+		</c:choose>
 	</div>
 	<!-- 게시판 조회(드롭다운) -->
 	<div style="margin-bottom: 15px;">

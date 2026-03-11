@@ -19,10 +19,16 @@ public class BoardWriteController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
 
+        // 로그인 안 한 경우 차단
         if (session == null || session.getAttribute("loginId") == null) {
             response.sendRedirect(request.getContextPath() + "/member/login.me");
             return;
         }
+
+        String memberId = (String) session.getAttribute("loginId");
+
+        // ★ 관리자 여부 체크 (현재는 admin 아이디 기준으로 처리)
+        boolean isAdmin = "admin".equalsIgnoreCase(memberId);
 
         String categoryParam = request.getParameter("category");
         int category = 1;
@@ -33,6 +39,12 @@ public class BoardWriteController extends HttpServlet {
             } catch (NumberFormatException e) {
                 category = 1;
             }
+        }
+
+        // ★ 공지사항(category=0)은 관리자만 작성 가능
+        if (category == 0 && !isAdmin) {
+            response.sendRedirect(request.getContextPath() + "/board/list?category=0");
+            return;
         }
 
         request.setAttribute("category", category);
@@ -48,6 +60,7 @@ public class BoardWriteController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
 
+        // 로그인 안 한 경우 차단
         if (session == null || session.getAttribute("loginId") == null) {
             response.sendRedirect(request.getContextPath() + "/member/login.me");
             return;
@@ -55,6 +68,9 @@ public class BoardWriteController extends HttpServlet {
 
         String memberId = (String) session.getAttribute("loginId");
         String nickname = (String) session.getAttribute("loginName");
+
+        // ★ 관리자 여부 체크
+        boolean isAdmin = "admin".equalsIgnoreCase(memberId);
 
         String title = request.getParameter("title");
         String content = request.getParameter("content");
@@ -65,6 +81,12 @@ public class BoardWriteController extends HttpServlet {
             category = Integer.parseInt(categoryParam);
         } catch (Exception e) {
             category = 1;
+        }
+
+        // ★ 공지사항(category=0)은 관리자만 작성 가능
+        if (category == 0 && !isAdmin) {
+            response.sendRedirect(request.getContextPath() + "/board/list?category=0");
+            return;
         }
 
         if (title == null || title.trim().isEmpty() ||
