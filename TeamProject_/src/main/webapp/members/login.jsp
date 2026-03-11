@@ -16,6 +16,14 @@
 .alert{
 	white-space: pre-line;
 }
+.login-links{
+	margin-top: 14px;
+	text-align: right;
+}
+.login-links a{
+	font-size: 13px;
+	text-decoration: underline;
+}
 </style>
 
 </head>
@@ -24,7 +32,6 @@
 <%
 	String contextPath = request.getContextPath();
 
-	// 회원가입 성공 메시지(1회성)
 	String joinFlash = null;
 	javax.servlet.http.HttpSession flashSession = request.getSession(false);
 	if (flashSession != null) {
@@ -49,7 +56,6 @@
 		</div>
 
 		<div class="login-body">
-			<%-- 로그인 실패 메시지 출력 --%>
 			<%
 			String loginError = (String) request.getAttribute("loginError");
 			if (loginError != null) {
@@ -57,7 +63,6 @@
 				<div class="alert" role="alert"><%= loginError %></div>
 			<% } %>
 
-			<%-- MemberController 서블릿에 로그인 처리 요청: id/pass 전달 --%>
 			<form class="form-signin" method="post"
 				action="<%=contextPath%>/member/loginPro.me" id="join">
 
@@ -73,6 +78,10 @@
 						<button class="pw-toggle" type="button" id="pwToggle" aria-label="비밀번호 보기/숨기기" title="비밀번호 보기/숨기기">👁</button>
 					</div>
 					<div class="notice" id="capsNotice" role="status">CapsLock이 켜져 있어요</div>
+				</div>
+
+				<div class="login-links">
+					<a href="<%=contextPath%>/member/findPasswordForm.me">비밀번호를 잊으셨나요?</a>
 				</div>
 
 				<button class="btn-login" type="submit">로그인</button>
