@@ -12,15 +12,25 @@ import util.DBCPUtil;
 
 public class ReportDAO {
 	public List<CommentReportVO> findCommentReports() {
+		return findCommentReports("ALL");
+	}
+
+	public List<CommentReportVO> findCommentReports(String filter) {
 		List<CommentReportVO> reports = new ArrayList<>();
-		String sql = "SELECT cr.report_id, cr.comment_id, c.post_id, cr.member_id AS report_member_id, "
+		StringBuilder sql = new StringBuilder(
+				"SELECT cr.report_id, cr.comment_id, c.post_id, cr.member_id AS report_member_id, "
 				+ "c.member_id AS target_member_id, cr.reason, c.content AS comment_content, bp.title AS post_title, cr.created_at, cr.is_processed "
 				+ "FROM COMMENT_REPORT cr "
 				+ "JOIN COMMENT c ON cr.comment_id = c.comment_id "
-				+ "JOIN BOARD_POST bp ON c.post_id = bp.post_id "
-				+ "ORDER BY cr.created_at DESC, cr.report_id DESC";
+				+ "JOIN BOARD_POST bp ON c.post_id = bp.post_id ");
+		if ("PENDING".equals(filter)) {
+			sql.append("WHERE cr.is_processed = 0 ");
+		} else if ("COMPLETED".equals(filter)) {
+			sql.append("WHERE cr.is_processed = 1 ");
+		}
+		sql.append("ORDER BY cr.created_at DESC, cr.report_id DESC");
 		try (Connection con = DBCPUtil.getConnection();
-				 PreparedStatement pstmt = con.prepareStatement(sql);
+				 PreparedStatement pstmt = con.prepareStatement(sql.toString());
 				 ResultSet rs = pstmt.executeQuery()) {
 			while (rs.next()) {
 				CommentReportVO vo = new CommentReportVO();

@@ -9,7 +9,22 @@ public class ReportService {
 	private final ReportDAO reportDAO = new ReportDAO();
 
 	public List<CommentReportVO> getCommentReports() {
-		return reportDAO.findCommentReports();
+		return getCommentReports("ALL");
+	}
+
+	public List<CommentReportVO> getCommentReports(String filter) {
+		return reportDAO.findCommentReports(normalizeFilter(filter));
+	}
+
+	public String normalizeFilter(String filter) {
+		if (filter == null) {
+			return "ALL";
+		}
+		String normalized = filter.trim().toUpperCase();
+		if ("PENDING".equals(normalized) || "COMPLETED".equals(normalized)) {
+			return normalized;
+		}
+		return "ALL";
 	}
 
 	public boolean processCommentReport(int reportId) {

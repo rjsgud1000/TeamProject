@@ -851,10 +851,12 @@ public class MemberController extends HttpServlet {
 		if (admin == null) {
 			return;
 		}
-		List<CommentReportVO> reports = reportService.getCommentReports();
+		String filter = reportService.normalizeFilter(request.getParameter("filter"));
+		List<CommentReportVO> reports = reportService.getCommentReports(filter);
+		List<CommentReportVO> allReports = reportService.getCommentReports();
 		int pendingCount = 0;
 		int completedCount = 0;
-		for (CommentReportVO report : reports) {
+		for (CommentReportVO report : allReports) {
 			if (report.isProcessed()) {
 				completedCount++;
 			} else {
@@ -863,9 +865,11 @@ public class MemberController extends HttpServlet {
 		}
 		request.setAttribute("adminMember", admin);
 		request.setAttribute("commentReportList", reports);
-		request.setAttribute("reportCount", reports.size());
+		request.setAttribute("reportCount", allReports.size());
 		request.setAttribute("pendingReportCount", pendingCount);
 		request.setAttribute("completedReportCount", completedCount);
+		request.setAttribute("filteredReportCount", reports.size());
+		request.setAttribute("selectedReportFilter", filter);
 		request.setAttribute("center", "admin/reportBoard.jsp");
 		forward(request, response, "/main.jsp");
 	}
@@ -882,7 +886,8 @@ public class MemberController extends HttpServlet {
 		} catch (Exception ignore) {
 		}
 		reportService.processCommentReport(reportId);
-		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me");
+		String filter = reportService.normalizeFilter(request.getParameter("filter"));
+		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me?filter=" + java.net.URLEncoder.encode(filter, "UTF-8"));
 	}
 
 	// 권한 라벨 맵 생성 메소드
