@@ -84,29 +84,59 @@
 
 	<!-- 추천하기 및 취소 탭 : 공지사항(category=0)에서는 숨김 -->
 	<c:if test="${post.category != '0' && post.category != 0}">
-		<div style="margin-top: 20px;">
-			<c:if test="${sessionScope.loginMember != null}">
-				<form action="${pageContext.request.contextPath}/board/like"
-					method="post" style="display: inline-block;">
-					<input type="hidden" name="postId" value="${post.postId}">
-					<input type="hidden" name="category" value="${category}"> <input
-						type="hidden" name="page" value="${page}">
+		<div style="margin-top: 20px; text-align: center;">
 
-					<button type="submit">
-						<c:choose>
-							<c:when test="${liked}">추천 취소</c:when>
-							<c:otherwise>추천</c:otherwise>
-						</c:choose>
-					</button>
-				</form>
-			</c:if>
+			<c:choose>
+				<c:when test="${sessionScope.loginMember == null}">
+					<div
+						style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border: 1px solid #cbd5e1; border-radius: 999px; background: #f8fafc; color: #334155; font-weight: 600;">
+						<span style="font-size: 18px;">👍</span> <span>추천
+							${likeCount}</span>
+					</div>
 
-			<span style="margin-left: 10px;">추천 수: ${likeCount}</span>
+					<div style="margin-top: 8px; color: gray; font-size: 14px;">
+						로그인 후 추천 가능합니다.</div>
+				</c:when>
 
-			<c:if test="${sessionScope.loginMember == null}">
-				<span style="margin-left: 10px; color: gray;">추천은 로그인 후
-					가능합니다.</span>
-			</c:if>
+				<c:otherwise>
+					<form action="${pageContext.request.contextPath}/board/like"
+						method="post" style="display: inline-block; margin: 0;">
+						<input type="hidden" name="postId" value="${post.postId}">
+						<input type="hidden" name="category" value="${category}">
+						<input type="hidden" name="page" value="${page}">
+
+						<button type="submit"
+							style="
+                                display: inline-flex;
+                                align-items: center;
+                                gap: 8px;
+                                padding: 10px 18px;
+                                border-radius: 999px;
+                                font-size: 15px;
+                                font-weight: 700;
+                                cursor: pointer;
+                                border: 1px solid ${liked ? '#2563eb' : '#cbd5e1'};
+                                background: ${liked ? '#2563eb' : '#ffffff'};
+                                color: ${liked ? '#ffffff' : '#334155'};
+                                transition: all 0.2s ease;
+                            "
+							onmouseover="this.style.opacity='0.9'"
+							onmouseout="this.style.opacity='1'">
+
+							<span style="font-size: 18px;">👍</span> <span> <c:choose>
+									<c:when test="${liked}">
+                                    추천됨 ${likeCount}
+                                </c:when>
+									<c:otherwise>
+                                    추천 ${likeCount}
+                                </c:otherwise>
+								</c:choose>
+							</span>
+						</button>
+					</form>
+				</c:otherwise>
+			</c:choose>
+
 		</div>
 	</c:if>
 

@@ -12,9 +12,13 @@ public class BoardPostVO {
     private int viewcount;
     private Timestamp createAt;
     private int likeCount;
+    private int commentCount;
 
 	public int getLikeCount() {return likeCount;}
 	public void setLikeCount(int likeCount) {this.likeCount = likeCount;}
+	
+	public int getCommentCount() { return commentCount; }
+    public void setCommentCount(int commentCount) { this.commentCount = commentCount; }
 
     public int getPostId() { return postId; }
     public void setPostId(int postId) { this.postId = postId; }
