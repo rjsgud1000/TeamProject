@@ -18,10 +18,14 @@ import jakarta.mail.internet.MimeMessage;
 
 public final class NaverMailSend {
 
+	// 메일 서버 호스트 정보
 	private final String host;
+	// 발신 메일 계정 아이디
 	private final String user;
+	// 발신 메일 계정 비밀번호
 	private final String password;
 
+	// 메일 설정 로딩 생성자
 	public NaverMailSend() {
 		Properties appProps = loadApplicationProperties();
 		this.host = valueOrDefault(appProps.getProperty("mail.smtp.host"), "smtp.naver.com");
@@ -29,27 +33,32 @@ public final class NaverMailSend {
 		this.password = trimToNull(appProps.getProperty("mail.smtp.password"));
 	}
 
+	// 인증번호 메일 발송 메소드
 	public String sendEmail(String to) throws Exception {
 		String authenCode = makeAuthenticationCode();
 		sendVerificationCode(to, authenCode);
 		return authenCode;
 	}
 
+	// 회원가입 인증 메일 발송 메소드
 	public void sendJoinVerificationCode(String to, String authenCode) throws Exception {
 		sendMail(to, "G-UNIVERSE :: 회원가입 이메일 인증번호입니다.",
 				"회원가입 이메일 인증번호는 [ " + authenCode + " ] 입니다.\n5분 안에 인증을 완료해 주세요.");
 	}
 
+	// 비밀번호 찾기 인증 메일 발송 메소드
 	public void sendVerificationCode(String to, String authenCode) throws Exception {
 		sendMail(to, "G-UNIVERSE :: 비밀번호 찾기 인증번호입니다.",
 				"비밀번호 찾기 인증번호는 [ " + authenCode + " ] 입니다.\n5분 안에 인증을 완료해 주세요.");
 	}
 
+	// 임시 비밀번호 메일 발송 메소드
 	public void sendTemporaryPassword(String to, String tempPassword) throws Exception {
 		sendMail(to, "G-UNIVERSE :: 임시 비밀번호 안내입니다.",
 				"임시 비밀번호는 [ " + tempPassword + " ] 입니다.\n로그인 후 반드시 비밀번호를 변경해 주세요.");
 	}
 
+	// 공통 메일 발송 메소드
 	private void sendMail(String to, String subject, String text) throws Exception {
 		String recipient = normalizeEmail(to);
 		if (recipient == null) {
@@ -95,14 +104,17 @@ public final class NaverMailSend {
 		}
 	}
 
+	// 인증번호 생성 메소드
 	public String makeAuthenticationCode() {
 		return makeRandomValue(8, true);
 	}
 
+	// 임시 비밀번호 생성 메소드
 	public String makeTemporaryPassword() {
 		return makeRandomValue(10, false);
 	}
 
+	// 랜덤 문자열 생성 메소드
 	private String makeRandomValue(int length, boolean includeSpecial) {
 		String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 		String specials = "!@#$%^&*()";
@@ -114,6 +126,7 @@ public final class NaverMailSend {
 		return sb.toString();
 	}
 
+	// application.properties 로딩 메소드
 	private Properties loadApplicationProperties() {
 		Properties props = new Properties();
 		try (InputStream in = NaverMailSend.class.getClassLoader().getResourceAsStream("application.properties")) {
@@ -127,6 +140,7 @@ public final class NaverMailSend {
 		}
 	}
 
+	// 이메일 형식 정규화 메소드
 	private String normalizeEmail(String value) {
 		if (value == null) {
 			return null;
@@ -144,10 +158,12 @@ public final class NaverMailSend {
 		}
 	}
 
+	// 공백 문자열 확인 메소드
 	private boolean isBlank(String value) {
 		return value == null || value.trim().isEmpty();
 	}
 
+	// 공백 문자열 null 변환 메소드
 	private String trimToNull(String value) {
 		if (value == null) {
 			return null;
@@ -156,11 +172,13 @@ public final class NaverMailSend {
 		return trimmed.isEmpty() ? null : trimmed;
 	}
 
+	// 기본값 적용 메소드
 	private String valueOrDefault(String value, String defaultValue) {
 		String trimmed = trimToNull(value);
 		return trimmed == null ? defaultValue : trimmed;
 	}
 
+	// 안전한 예외 메시지 변환 메소드
 	private String safeMessage(Exception e) {
 		String msg = e.getMessage();
 		return (msg == null || msg.isBlank()) ? e.getClass().getSimpleName() : msg;

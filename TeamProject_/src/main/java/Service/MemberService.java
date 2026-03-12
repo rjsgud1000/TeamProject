@@ -10,9 +10,12 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 
 public class MemberService {
+	// 회원 DAO 객체
 	private final MemberDAO memberDAO = new MemberDAO();
+	// 메일 발송 유틸 객체
 	private final NaverMailSend mailSender = new NaverMailSend();
 
+	// 로그인 결과 전달용 내부 클래스
 	public static class LoginResult {
 		public final MemberVO member;
 		public final String error;
@@ -25,6 +28,7 @@ public class MemberService {
 		}
 	}
 
+	// 비밀번호 찾기 대상 검증 결과 클래스
 	public static class PasswordRecoveryCandidate {
 		public final MemberVO member;
 		public final String error;
@@ -35,6 +39,7 @@ public class MemberService {
 		}
 	}
 
+	// 로그인 처리 메소드
 	public LoginResult loginWithReason(String memberId, String password) {
 		if (memberId == null || memberId.isBlank() || password == null || password.isBlank()) {
 			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
@@ -103,12 +108,14 @@ public class MemberService {
 		return ok ? new LoginResult(memberDAO.findByMemberId(id), null, flash) : new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
 	}
 
+	// 로그인 호환 메소드
 	public MemberVO login(String memberId, String password) {
 		// 기존 호출부 호환: 이유 없이 member만 반환
 		LoginResult r = loginWithReason(memberId, password);
 		return r.member;
 	}
 
+	// 회원가입 처리 메소드
 	public String join(MemberVO vo) {
 		if (vo == null || vo.getMemberId() == null || vo.getMemberId().isBlank()) {
 			return "아이디는 필수입니다.";
@@ -170,6 +177,7 @@ public class MemberService {
 		return inserted == 1 ? null : "회원가입에 실패했습니다.";
 	}
 
+	// 회원 상세 조회 메소드
 	public MemberVO getMemberDetail(String memberId) {
 		String id = trimToNull(memberId);
 		if (id == null) {
@@ -178,6 +186,7 @@ public class MemberService {
 		return memberDAO.findByMemberId(id);
 	}
 
+	// 회원정보 수정 처리 메소드
 	public String updateProfile(MemberVO vo, String newPassword) {
 		if (vo == null) {
 			return "잘못된 요청입니다.";
@@ -237,6 +246,7 @@ public class MemberService {
 		return null;
 	}
 
+	// 회원탈퇴 처리 메소드
 	public String withdrawMember(String memberId, String password) {
 		String id = trimToNull(memberId);
 		String rawPassword = trimToNull(password);
@@ -270,10 +280,12 @@ public class MemberService {
 		return updated == 1 ? null : "회원탈퇴 처리에 실패했습니다.";
 	}
 
+	// 관리자 회원 목록 조회 메소드
 	public List<MemberVO> getMembersForAdmin(String keyword, String status) {
 		return memberDAO.findMembers(trimToNull(keyword), normalizeStatusFilter(status));
 	}
 
+	// 관리자 회원 상태 요약 조회 메소드
 	public Map<String, Integer> getMemberStatusSummary() {
 		Map<String, Integer> summary = new LinkedHashMap<>();
 		summary.put("ALL", memberDAO.countMembers());
@@ -285,6 +297,7 @@ public class MemberService {
 		return summary;
 	}
 
+	// 관리자 회원 상세 조회 메소드
 	public MemberVO getMemberDetailForAdmin(String memberId) {
 		String id = trimToNull(memberId);
 		if (id == null) {
@@ -293,6 +306,7 @@ public class MemberService {
 		return memberDAO.findMemberDetailForAdmin(id);
 	}
 
+	// 관리자 회원 상태 변경 메소드
 	public String updateMemberStatusByAdmin(String adminMemberId, String targetMemberId, String status, String sanctionReason, String sanctionEndAtText) {
 		String adminId = trimToNull(adminMemberId);
 		String memberId = trimToNull(targetMemberId);
@@ -356,6 +370,7 @@ public class MemberService {
 		return updated ? null : "회원 상태 변경 또는 SANCTION 처리에 실패했습니다.";
 	}
 
+	// 비밀번호 찾기 대상 검증 메소드
 	public PasswordRecoveryCandidate validatePasswordRecoveryTarget(String memberId, String email) {
 		String id = trimToNull(memberId);
 		String mail = trimToNull(email);
@@ -382,6 +397,7 @@ public class MemberService {
 		return new PasswordRecoveryCandidate(member, null);
 	}
 
+	// 비밀번호 찾기 인증번호 발송 메소드
 	public String sendPasswordRecoveryCode(String email) throws Exception {
 		String mail = trimToNull(email);
 		if (mail == null) {
@@ -392,6 +408,7 @@ public class MemberService {
 		return code;
 	}
 
+	// 임시 비밀번호 발급 메소드
 	public String issueTemporaryPassword(String memberId, String email) throws Exception {
 		PasswordRecoveryCandidate candidate = validatePasswordRecoveryTarget(memberId, email);
 		if (candidate.error != null || candidate.member == null) {
@@ -407,6 +424,7 @@ public class MemberService {
 		return tempPassword;
 	}
 
+	// 회원가입 이메일 검증 대상 확인 메소드
 	public PasswordRecoveryCandidate validateJoinEmailTarget(String email) {
 		String mail = trimToNull(email);
 		if (mail == null) {
@@ -421,6 +439,7 @@ public class MemberService {
 		return new PasswordRecoveryCandidate(null, null);
 	}
 
+	// 회원가입 이메일 인증번호 발송 메소드
 	public String sendJoinEmailVerificationCode(String email) throws Exception {
 		PasswordRecoveryCandidate candidate = validateJoinEmailTarget(email);
 		if (candidate.error != null) {
@@ -432,6 +451,7 @@ public class MemberService {
 		return code;
 	}
 
+	// 날짜 문자열 변환 메소드
 	private java.time.LocalDateTime parseDateTimeLocal(String value) {
 		if (value == null) {
 			return null;
@@ -443,6 +463,7 @@ public class MemberService {
 		}
 	}
 
+	// 관리자 상태 필터 정규화 메소드
 	private String normalizeStatusFilter(String status) {
 		String value = trimToNull(status);
 		if (value == null) {
@@ -462,6 +483,7 @@ public class MemberService {
 		}
 	}
 
+	// 관리자 변경 상태 정규화 메소드
 	private String normalizeAdminStatus(String status) {
 		String value = trimToNull(status);
 		if (value == null) {
@@ -479,6 +501,7 @@ public class MemberService {
 		}
 	}
 
+	// 공백 문자열 null 변환 메소드
 	private static String trimToNull(String s) {
 		if (s == null)
 			return null;

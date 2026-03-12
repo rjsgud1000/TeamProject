@@ -11,10 +11,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public final class RecaptchaUtil {
+	// 구글 reCAPTCHA 검증 URL
 	private static final String VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
+	// reCAPTCHA 사이트 키
 	private final String siteKey;
+	// reCAPTCHA 시크릿 키
 	private final String secretKey;
 
+	// reCAPTCHA 검증 결과 전달 클래스
 	public static final class VerificationResult {
 		public final boolean success;
 		public final String message;
@@ -25,20 +29,24 @@ public final class RecaptchaUtil {
 		}
 	}
 
+	// reCAPTCHA 설정 로딩 생성자
 	public RecaptchaUtil() {
 		Properties props = loadApplicationProperties();
 		this.siteKey = trimToNull(props.getProperty("recaptcha.site.key"));
 		this.secretKey = trimToNull(props.getProperty("recaptcha.secret.key"));
 	}
 
+	// 사이트 키 반환 메소드
 	public String getSiteKey() {
 		return siteKey;
 	}
 
+	// reCAPTCHA 설정 여부 확인 메소드
 	public boolean isConfigured() {
 		return isUsableKey(siteKey) && isUsableKey(secretKey);
 	}
 
+	// reCAPTCHA 응답 검증 메소드
 	public VerificationResult verify(String responseToken, String remoteIp) {
 		String token = trimToNull(responseToken);
 		if (!isConfigured()) {
@@ -93,6 +101,7 @@ public final class RecaptchaUtil {
 		}
 	}
 
+	// application.properties 로딩 메소드
 	private Properties loadApplicationProperties() {
 		Properties props = new Properties();
 		try (InputStream in = RecaptchaUtil.class.getClassLoader().getResourceAsStream("application.properties")) {
@@ -106,6 +115,7 @@ public final class RecaptchaUtil {
 		}
 	}
 
+	// InputStream 문자열 변환 메소드
 	private String readAll(InputStream inputStream) throws Exception {
 		if (inputStream == null) {
 			return "";
@@ -120,6 +130,7 @@ public final class RecaptchaUtil {
 		return sb.toString();
 	}
 
+	// 공백 문자열 null 변환 메소드
 	private String trimToNull(String value) {
 		if (value == null) {
 			return null;
@@ -128,11 +139,13 @@ public final class RecaptchaUtil {
 		return trimmed.isEmpty() ? null : trimmed;
 	}
 
+	// 기본 키 값 여부 확인 메소드
 	private boolean isUsableKey(String value) {
 		String trimmed = trimToNull(value);
 		return trimmed != null && !"site_key".equals(trimmed) && !"secret_key".equals(trimmed);
 	}
 
+	// 검증 실패 메시지 변환 메소드
 	private String buildFailureMessage(String responseBody) {
 		String body = responseBody == null ? "" : responseBody;
 		if (body.contains("invalid-input-secret")) {
