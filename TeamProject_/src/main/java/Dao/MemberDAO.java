@@ -13,6 +13,7 @@ import util.DBCPUtil;
 
 public class MemberDAO {
 
+	// 로그인 회원 조회 메소드
 	public MemberVO login(String memberId, String password) {
 		String sql = "SELECT member_id, username, password_hash, nickname, role, status "
 				+ "FROM MEMBER "
@@ -44,6 +45,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 아이디 중복 확인 메소드
 	public boolean existsMemberId(String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -58,6 +60,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 이름 중복 확인 메소드
 	public boolean existsUsername(String username) {
 		String sql = "SELECT 1 FROM MEMBER WHERE username=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -72,6 +75,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 닉네임 중복 확인 메소드
 	public boolean existsNickname(String nickname) {
 		String sql = "SELECT 1 FROM MEMBER WHERE nickname=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -86,6 +90,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 본인 제외 닉네임 중복 확인 메소드
 	public boolean existsNicknameExceptMemberId(String nickname, String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE nickname=? AND member_id<>?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -101,6 +106,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 이메일 중복 확인 메소드
 	public boolean existsEmail(String email) {
 		String sql = "SELECT 1 FROM MEMBER WHERE email=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -115,6 +121,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 본인 제외 이메일 중복 확인 메소드
 	public boolean existsEmailExceptMemberId(String email, String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE email=? AND member_id<>?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -130,6 +137,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 전화번호 중복 확인 메소드
 	public boolean existsPhone(String phone) {
 		String sql = "SELECT 1 FROM MEMBER WHERE phone=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -144,6 +152,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 본인 제외 전화번호 중복 확인 메소드
 	public boolean existsPhoneExceptMemberId(String phone, String memberId) {
 		String sql = "SELECT 1 FROM MEMBER WHERE phone=? AND member_id<>?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -159,6 +168,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 회원가입 정보 저장 메소드
 	public int insertMember(MemberVO vo) {
 		String sql = "INSERT INTO MEMBER (member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, updated_at) "
 				+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW())";
@@ -188,6 +198,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 아이디로 회원 정보 조회 메소드
 	public MemberVO findByMemberId(String memberId) {
 		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status "
 				+ "FROM MEMBER WHERE member_id=?";
@@ -205,6 +216,7 @@ public class MemberDAO {
 		return null;
 	}
 	
+	// 회원정보 수정 메소드
 	public int updateProfile(MemberVO vo) {
 		String sql = "UPDATE MEMBER SET nickname=?, zipcode=?, addr1=?, addr2=?, addr3=?, addr4=?, gender=?, email=?, phone=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -227,6 +239,7 @@ public class MemberDAO {
 		}
 	}
 	
+	// 비밀번호 해시 변경 메소드
 	public int updatePasswordHash(String memberId, String newPasswordHash) {
 		String sql = "UPDATE MEMBER SET password_hash=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -269,6 +282,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 활성 제재 여부 확인 메소드
 	public boolean hasActiveBannedSanction(String memberId) {
 		String sql = "SELECT 1 FROM SANCTION WHERE target_member_id=? AND member_status='BANNED' AND start_at<=NOW() AND end_at>=NOW() LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
@@ -283,6 +297,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 최근 제재 만료 여부 확인 메소드
 	public boolean isLatestBannedSanctionExpired(String memberId) {
 		String sql = "SELECT end_at FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
@@ -301,6 +316,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 최근 제재 정보 조회 메소드
 	public SanctionInfo findLatestBannedSanction(String memberId) {
 		String sql = "SELECT TYPE, REASON, end_at, member_status FROM SANCTION WHERE target_member_id=? AND TYPE='BAN' ORDER BY action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
@@ -323,6 +339,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 회원 상태 활성화 메소드
 	public int activateMember(String memberId) {
 		String sql = "UPDATE MEMBER SET status='ACTIVE', updated_at=NOW() WHERE member_id=? AND status<>'ACTIVE'";
 		try (Connection con = DBCPUtil.getConnection();
@@ -335,6 +352,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 경고 제재 종료 메소드
 	public int endWarningSanctions(String targetMemberId) {
 		String sql = "UPDATE SANCTION SET member_status='END' WHERE target_member_id=? AND member_status='WARNING'";
 		try (Connection con = DBCPUtil.getConnection();
@@ -347,6 +365,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 활성 제재 종료 메소드
 	public int endActiveSanctions(String targetMemberId) {
 		String sql = "UPDATE SANCTION SET member_status='END', end_at=NOW() WHERE target_member_id=? AND member_status IN ('WARNING','BANNED')";
 		try (Connection con = DBCPUtil.getConnection();
@@ -359,6 +378,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 회원 탈퇴 처리 메소드
 	public int withdrawMember(String memberId) {
 		String sql = "UPDATE MEMBER SET status='WITHDRAWN', updated_at=NOW() WHERE member_id=? AND status<>'WITHDRAWN'";
 		try (Connection con = DBCPUtil.getConnection();
@@ -371,6 +391,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 관리자용 회원 목록 조회 메소드
 	public List<MemberVO> findMembers(String keyword, String status) {
 		List<MemberVO> members = new ArrayList<>();
 		StringBuilder sql = new StringBuilder(
@@ -411,6 +432,7 @@ public class MemberDAO {
 		return members;
 	}
 
+	// 상태별 회원 수 조회 메소드
 	public int countMembersByStatus(String status) {
 		String sql = "SELECT COUNT(*) FROM MEMBER WHERE status=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -425,6 +447,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 전체 회원 수 조회 메소드
 	public int countMembers() {
 		String sql = "SELECT COUNT(*) FROM MEMBER";
 		try (Connection con = DBCPUtil.getConnection();
@@ -437,6 +460,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 관리자용 회원 상세 조회 메소드
 	public MemberVO findMemberDetailForAdmin(String memberId) {
 		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status, created_at, updated_at "
 				+ "FROM MEMBER WHERE member_id=?";
@@ -472,6 +496,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 회원 제재 횟수 조회 메소드
 	public int[] countSanctions(String memberId) {
 		String sql = "SELECT TYPE, COUNT(*) cnt FROM SANCTION WHERE target_member_id=? GROUP BY TYPE";
 		int warningCount = 0;
@@ -496,6 +521,7 @@ public class MemberDAO {
 		return new int[] { warningCount, bannedCount };
 	}
 
+	// 가장 최근 제재 정보 조회 메소드
 	public SanctionInfo findLatestSanction(String memberId) {
 		String sql = "SELECT TYPE, REASON, end_at, member_status FROM SANCTION WHERE target_member_id=? ORDER BY create_at DESC, action_id DESC LIMIT 1";
 		try (Connection con = DBCPUtil.getConnection();
@@ -518,6 +544,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 관리자 회원 상태 변경 메소드
 	public int updateMemberStatus(String memberId, String status) {
 		String sql = "UPDATE MEMBER SET status=?, updated_at=NOW() WHERE member_id=?";
 		try (Connection con = DBCPUtil.getConnection();
@@ -531,6 +558,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 관리자 제재 포함 상태 변경 메소드
 	public boolean updateMemberStatusWithSanction(String targetMemberId, String adminMemberId, String nextStatus,
 			String sanctionType, String reason, LocalDateTime startAt, LocalDateTime endAt, boolean endPreviousSanctions) {
 		String updateMemberSql = "UPDATE MEMBER SET status=?, updated_at=NOW() WHERE member_id=?";
@@ -584,6 +612,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 아이디와 이메일로 회원 조회 메소드
 	public MemberVO findByMemberIdAndEmail(String memberId, String email) {
 		String sql = "SELECT member_id, username, password_hash, nickname, zipcode, addr1, addr2, addr3, addr4, gender, email, phone, role, status "
 				+ "FROM MEMBER WHERE member_id=? AND email=?";
@@ -602,6 +631,7 @@ public class MemberDAO {
 		return null;
 	}
 
+	// ResultSet -> MemberVO 매핑 메소드
 	private MemberVO mapMember(ResultSet rs) throws Exception {
 		MemberVO vo = new MemberVO();
 		vo.setMemberId(rs.getString("member_id"));
@@ -631,6 +661,7 @@ public class MemberDAO {
 		return vo;
 	}
 
+	// 안전한 Timestamp 조회 메소드
 	private Timestamp safeTimestamp(ResultSet rs, String columnLabel) {
 		try {
 			return rs.getTimestamp(columnLabel);
@@ -639,6 +670,7 @@ public class MemberDAO {
 		}
 	}
 
+	// 공백 문자열 null 변환 메소드
 	private String trimToNull(String s) {
 		if (s == null) {
 			return null;
@@ -647,6 +679,7 @@ public class MemberDAO {
 		return v.isEmpty() ? null : v;
 	}
 
+	// 제재 정보 전달용 내부 클래스
 	public static class SanctionInfo {
 		public String type;
 		public String reason;

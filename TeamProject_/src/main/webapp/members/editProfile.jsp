@@ -9,6 +9,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원정보 수정</title>
 <link rel="stylesheet" href="${contextPath}/css/auth.css" />
+<style>
+.email-verify-card{
+	margin-top:10px;
+	padding:16px;
+	border:1px solid #dbe7f8;
+	border-radius:16px;
+	background:linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
+	box-shadow:0 10px 24px rgba(37, 99, 235, .06);
+}
+.email-verify-head{
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:12px;
+	margin-bottom:10px;
+	flex-wrap:wrap;
+}
+.email-verify-title{
+	display:flex;
+	align-items:center;
+	gap:8px;
+	font-weight:900;
+	font-size:14px;
+	color:#0f172a;
+}
+.email-verify-step{
+	display:inline-flex;
+	align-items:center;
+	justify-content:center;
+	min-width:28px;
+	height:28px;
+	padding:0 8px;
+	border-radius:999px;
+	background:#dbeafe;
+	color:#1d4ed8;
+	font-size:12px;
+	font-weight:900;
+}
+.email-verify-chip{
+	display:inline-flex;
+	align-items:center;
+	gap:6px;
+	padding:7px 10px;
+	border-radius:999px;
+	background:#eef2f7;
+	color:#475569;
+	font-size:12px;
+	font-weight:900;
+}
+.email-verify-chip.is-success{
+	background:#dcfce7;
+	color:#15803d;
+}
+.email-verify-chip.is-pending{
+	background:#dbeafe;
+	color:#1d4ed8;
+}
+.email-verify-copy{
+	font-size:12px;
+	color:#64748b;
+	line-height:1.5;
+	margin-bottom:12px;
+}
+.email-verify-wrap{
+	display:grid;
+	gap:12px;
+}
+.email-verify-row{
+	display:grid;
+	grid-template-columns: 1fr 140px;
+	gap:10px;
+}
+.email-verify-status{
+	font-size:12px;
+	font-weight:700;
+	margin-top:2px;
+}
+@media (max-width: 640px){
+	.email-verify-row{
+		grid-template-columns:1fr;
+	}
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -32,6 +115,7 @@
 			</c:if>
 
 			<form action="${contextPath}/member/updateProfile.me" method="post" id="editProfileForm">
+				<input type="hidden" id="profileEmailVerified" name="profileEmailVerified" value="false">
 				<div class="section-title">기본 정보</div>
 				<div class="grid">
 					<div>
@@ -105,7 +189,27 @@
 					<div>
 						<div class="field">
 							<label class="label" for="email">Email</label>
-							<input type="email" id="email" name="email" value="${member.email}" placeholder="example@domain.com">
+							<div class="email-verify-card">
+								<div class="email-verify-head">
+									<div class="email-verify-title">
+										<span class="email-verify-step">1</span>
+										<span>이메일 인증</span>
+									</div>
+									<div id="emailVerifyChip" class="email-verify-chip">변경 없음</div>
+								</div>
+								<div class="email-verify-copy">이메일을 변경하면 인증번호를 받아 인증을 완료해야 저장할 수 있습니다.</div>
+								<div class="email-verify-wrap">
+									<div class="input-row">
+										<input type="email" id="email" name="email" value="${member.email}" placeholder="example@domain.com">
+										<button class="btn btn-outline-primary" type="button" id="sendProfileEmailCodeBtn">인증번호 받기</button>
+									</div>
+									<div class="email-verify-row">
+										<input type="text" id="emailVerificationCode" placeholder="메일로 받은 인증번호를 입력해 주세요">
+										<button class="btn btn-outline-primary" type="button" id="verifyProfileEmailCodeBtn">이메일 인증</button>
+									</div>
+								</div>
+								<p id="emailVerifyStatus" class="email-verify-status form-text"></p>
+							</div>
 						</div>
 					</div>
 					<div>
@@ -154,10 +258,19 @@
 	(function() {
 		var contextPath = '${contextPath}';
 		var originalNickname = '${member.nickname}';
+		var originalEmail = '${member.email}';
 		var nicknameInput = document.getElementById('nickname');
+		var emailInput = document.getElementById('email');
+		var emailCodeInput = document.getElementById('emailVerificationCode');
+		var emailVerifyStatus = document.getElementById('emailVerifyStatus');
+		var emailVerifyChip = document.getElementById('emailVerifyChip');
+		var emailVerifiedField = document.getElementById('profileEmailVerified');
+		var sendEmailCodeBtn = document.getElementById('sendProfileEmailCodeBtn');
+		var verifyEmailCodeBtn = document.getElementById('verifyProfileEmailCodeBtn');
 		var msgEl = document.getElementById('nickDupMsg');
 		var form = document.getElementById('editProfileForm');
 		var nickDupOk = true;
+		var emailVerified = false;
 
 		function setMsg(msg, ok) {
 			if (!msgEl) return;
@@ -165,12 +278,37 @@
 			msgEl.className = ok ? 'form-text text-success' : 'form-text text-danger';
 		}
 
+		function setEmailStatus(msg, ok) {
+			if (!emailVerifyStatus) return;
+			emailVerifyStatus.textContent = msg || '';
+			emailVerifyStatus.className = ok ? 'email-verify-status form-text text-success' : 'email-verify-status form-text text-danger';
+		}
+
+		function updateEmailChip(text, state) {
+			if (!emailVerifyChip) return;
+			emailVerifyChip.textContent = text;
+			emailVerifyChip.className = 'email-verify-chip';
+			if (state === 'success') {
+				emailVerifyChip.classList.add('is-success');
+			} else if (state === 'pending') {
+				emailVerifyChip.classList.add('is-pending');
+			}
+		}
+
 		function trimmedNickname() {
 			return nicknameInput ? nicknameInput.value.trim() : '';
 		}
 
+		function trimmedEmail() {
+			return emailInput ? emailInput.value.trim() : '';
+		}
+
 		function isOriginalNickname() {
 			return trimmedNickname() === (originalNickname || '').trim();
+		}
+
+		function isOriginalEmail() {
+			return trimmedEmail() === (originalEmail || '').trim();
 		}
 
 		function isValidEmail(email) {
@@ -179,6 +317,36 @@
 
 		function isValidPhone(phone) {
 			return !phone || /^\d{10,11}$/.test(phone);
+		}
+
+		function resetEmailVerificationState(silent) {
+			emailVerified = false;
+			if (emailVerifiedField) {
+				emailVerifiedField.value = 'false';
+			}
+			if (emailCodeInput) {
+				emailCodeInput.value = '';
+			}
+			if (isOriginalEmail()) {
+				updateEmailChip('변경 없음');
+				if (!silent) {
+					setEmailStatus('현재 이메일을 유지하면 추가 인증 없이 저장할 수 있습니다.', true);
+				}
+			} else {
+				updateEmailChip('인증 전', 'pending');
+				if (!silent) {
+					setEmailStatus('이메일을 변경했습니다. 인증번호를 받아 인증을 완료해 주세요.', false);
+				}
+			}
+		}
+
+		function markEmailVerified() {
+			emailVerified = true;
+			if (emailVerifiedField) {
+				emailVerifiedField.value = 'true';
+			}
+			updateEmailChip('인증 완료', 'success');
+			setEmailStatus('이메일 인증이 완료되었습니다. 저장할 수 있습니다.', true);
 		}
 
 		function checkProfileNickname() {
@@ -214,6 +382,86 @@
 			});
 		}
 
+		function sendProfileEmailCode() {
+			var email = trimmedEmail();
+			if (!email) {
+				setEmailStatus('이메일을 입력해 주세요.', false);
+				emailInput && emailInput.focus();
+				return;
+			}
+			if (!isValidEmail(email)) {
+				setEmailStatus('이메일 형식이 올바르지 않습니다.', false);
+				emailInput && emailInput.focus();
+				return;
+			}
+			if (isOriginalEmail()) {
+				setEmailStatus('현재 이메일과 동일합니다. 이메일을 변경한 경우에만 인증이 필요합니다.', false);
+				return;
+			}
+
+			resetEmailVerificationState(true);
+			fetch(contextPath + '/member/sendProfileEmailCode.me', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+					'Accept': 'application/json'
+				},
+				body: 'email=' + encodeURIComponent(email)
+			})
+			.then(function(res) { return res.json(); })
+			.then(function(data) {
+				if (data && data.ok) {
+					updateEmailChip('인증 대기', 'pending');
+					setEmailStatus(data.message || '인증번호를 메일로 발송했습니다.', true);
+				} else {
+					setEmailStatus((data && data.message) ? data.message : '인증번호 발송에 실패했습니다.', false);
+				}
+			})
+			.catch(function() {
+				setEmailStatus('인증번호 발송 중 오류가 발생했습니다.', false);
+			});
+		}
+
+		function verifyProfileEmailCode() {
+			var email = trimmedEmail();
+			var code = emailCodeInput ? emailCodeInput.value.trim() : '';
+			if (!email) {
+				setEmailStatus('이메일을 입력해 주세요.', false);
+				emailInput && emailInput.focus();
+				return;
+			}
+			if (!code) {
+				setEmailStatus('인증번호를 입력해 주세요.', false);
+				emailCodeInput && emailCodeInput.focus();
+				return;
+			}
+
+			fetch(contextPath + '/member/verifyProfileEmailCode.me', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+					'Accept': 'application/json'
+				},
+				body: 'email=' + encodeURIComponent(email) + '&verificationCode=' + encodeURIComponent(code)
+			})
+			.then(function(res) { return res.json(); })
+			.then(function(data) {
+				if (data && data.ok) {
+					markEmailVerified();
+				} else {
+					emailVerified = false;
+					if (emailVerifiedField) {
+						emailVerifiedField.value = 'false';
+					}
+					updateEmailChip('인증 전', 'pending');
+					setEmailStatus((data && data.message) ? data.message : '이메일 인증에 실패했습니다.', false);
+				}
+			})
+			.catch(function() {
+				setEmailStatus('이메일 인증 중 오류가 발생했습니다.', false);
+			});
+		}
+
 		if (nicknameInput) {
 			setMsg('닉네임을 변경하면 중복확인을 다시 해주세요.', true);
 			nicknameInput.addEventListener('input', function() {
@@ -227,15 +475,28 @@
 			});
 		}
 
+		if (emailInput) {
+			resetEmailVerificationState(false);
+			emailInput.addEventListener('input', function() {
+				resetEmailVerificationState(false);
+			});
+		}
+
 		var btn = document.getElementById('checkNicknameBtn');
 		if (btn) {
 			btn.addEventListener('click', checkProfileNickname);
+		}
+		if (sendEmailCodeBtn) {
+			sendEmailCodeBtn.addEventListener('click', sendProfileEmailCode);
+		}
+		if (verifyEmailCodeBtn) {
+			verifyEmailCodeBtn.addEventListener('click', verifyProfileEmailCode);
 		}
 
 		if (form) {
 			form.addEventListener('submit', function(e) {
 				var nick = trimmedNickname();
-				var email = document.getElementById('email');
+				var email = trimmedEmail();
 				var phone = document.getElementById('phone');
 				var newPassword = document.getElementById('newPassword');
 
@@ -251,9 +512,15 @@
 					e.preventDefault();
 					return;
 				}
-				if (email && !isValidEmail(email.value.trim())) {
+				if (emailInput && !isValidEmail(email)) {
 					alert('이메일 형식이 올바르지 않습니다.');
-					email.focus();
+					emailInput.focus();
+					e.preventDefault();
+					return;
+				}
+				if (!isOriginalEmail() && !emailVerified) {
+					alert('이메일을 변경한 경우 이메일 인증을 완료해 주세요.');
+					emailInput && emailInput.focus();
 					e.preventDefault();
 					return;
 				}

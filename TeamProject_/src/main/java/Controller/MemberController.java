@@ -17,33 +17,47 @@ import Service.MemberService;
 import Service.ReportService;
 import Vo.MemberVO;
 import Vo.CommentReportVO;
+import util.RecaptchaUtil;
 
 @WebServlet("/member/*")
 public class MemberController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	// 비밀번호 찾기 인증 세션 키
 	private static final String RECOVERY_MEMBER_ID_SESSION_KEY = "passwordRecoveryMemberId";
 	private static final String RECOVERY_EMAIL_SESSION_KEY = "passwordRecoveryEmail";
 	private static final String RECOVERY_CODE_SESSION_KEY = "passwordRecoveryCode";
 	private static final String RECOVERY_EXPIRE_AT_SESSION_KEY = "passwordRecoveryExpireAt";
 	private static final long RECOVERY_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	// 회원가입 이메일 인증 세션 키
 	private static final String JOIN_EMAIL_SESSION_KEY = "joinEmailVerificationEmail";
 	private static final String JOIN_EMAIL_CODE_SESSION_KEY = "joinEmailVerificationCode";
 	private static final String JOIN_EMAIL_EXPIRE_AT_SESSION_KEY = "joinEmailVerificationExpireAt";
 	private static final String JOIN_EMAIL_VERIFIED_SESSION_KEY = "joinEmailVerificationVerified";
 	private static final long JOIN_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	// 회원정보 수정 이메일 인증 세션 키
+	private static final String PROFILE_EMAIL_SESSION_KEY = "profileEmailVerificationEmail";
+	private static final String PROFILE_EMAIL_CODE_SESSION_KEY = "profileEmailVerificationCode";
+	private static final String PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY = "profileEmailVerificationExpireAt";
+	private static final String PROFILE_EMAIL_VERIFIED_SESSION_KEY = "profileEmailVerificationVerified";
+	private static final long PROFILE_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	// 회원/신고/리캡차 서비스 객체
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
+	private final RecaptchaUtil recaptchaUtil = new RecaptchaUtil();
 
+	// GET 요청 처리 메소드
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doHandle(request, response);
 	}
 
+	// POST 요청 처리 메소드
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doHandle(request, response);
 	}
 
+	// 회원 관련 공통 라우팅 메소드
 	private void doHandle(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		request.setCharacterEncoding("UTF-8");
 		String action = request.getPathInfo();
@@ -124,12 +138,19 @@ public class MemberController extends HttpServlet {
 		case "/verifyJoinEmailCode.me":
 			verifyJoinEmailCode(request, response);
 			return;
+		case "/sendProfileEmailCode.me":
+			sendProfileEmailCode(request, response);
+			return;
+		case "/verifyProfileEmailCode.me":
+			verifyProfileEmailCode(request, response);
+			return;
 		default:
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
 	}
 
+	// 회원가입 아이디 중복확인 메소드
 	private void checkId(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String id = emptyToNull(request.getParameter("id"));
 		response.setContentType("application/json; charset=UTF-8");
@@ -146,6 +167,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 회원가입 닉네임 중복확인 메소드
 	private void checkNickname(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String nickname = emptyToNull(request.getParameter("nickname"));
 		response.setContentType("application/json; charset=UTF-8");
@@ -162,6 +184,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 회원정보 수정 닉네임 중복확인 메소드
 	private void checkProfileNickname(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json; charset=UTF-8");
 		MemberVO sessionMember = getSessionLoginMember(request);
@@ -185,15 +208,28 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 로그인 처리 메소드
 	private void loginPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
+		String recaptchaToken = request.getParameter("g-recaptcha-response");
+
+		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, request.getRemoteAddr());
+		if (!recaptchaResult.success) {
+			populateLoginViewAttributes(request);
+			request.setAttribute("loginError", recaptchaResult.message);
+			request.setAttribute("loginIdValue", id == null ? "" : id);
+			request.setAttribute("center", "members/login.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
 
 		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
 			populateLoginViewAttributes(request);
 			request.setAttribute("loginError", result.error != null ? result.error : "아이디 또는 비밀번호가 올바르지 않습니다.");
+			request.setAttribute("loginIdValue", id == null ? "" : id);
 			request.setAttribute("center", "members/login.jsp");
 			forward(request, response, "/main.jsp");
 			return;
@@ -210,6 +246,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 로그아웃 처리 메소드
 	private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
@@ -218,12 +255,14 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 공통 포워드 메소드
 	private void forward(HttpServletRequest request, HttpServletResponse response, String path)
 			throws ServletException, IOException {
 		RequestDispatcher dispatcher = request.getRequestDispatcher(path);
 		dispatcher.forward(request, response);
 	}
 
+	// 회원가입 처리 메소드
 	private void joinPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		request.setCharacterEncoding("UTF-8");
 
@@ -278,6 +317,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/member/login.me");
 	}
 
+	// 회원가입 이메일 인증번호 발송 메소드
 	private void sendJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json; charset=UTF-8");
 		String email = emptyToNull(request.getParameter("email"));
@@ -297,6 +337,7 @@ public class MemberController extends HttpServlet {
 		}
 	}
 
+	// 회원가입 이메일 인증번호 확인 메소드
 	private void verifyJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		response.setContentType("application/json; charset=UTF-8");
 		HttpSession session = request.getSession(false);
@@ -342,6 +383,90 @@ public class MemberController extends HttpServlet {
 		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
 	}
 
+	// 회원정보 수정 이메일 인증번호 발송 메소드
+	private void sendProfileEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.getWriter().write(toJsonError("로그인 후 이용해 주세요."));
+			return;
+		}
+		String email = emptyToNull(request.getParameter("email"));
+		try {
+			String currentEmail = emptyToNull(sessionMember.getEmail());
+			if (email == null) {
+				throw new IllegalArgumentException("이메일을 입력해 주세요.");
+			}
+			if (currentEmail != null && currentEmail.equalsIgnoreCase(email)) {
+				throw new IllegalArgumentException("현재 사용 중인 이메일과 동일합니다. 다른 이메일을 입력해 주세요.");
+			}
+			String code = memberService.sendJoinEmailVerificationCode(email);
+			HttpSession session = request.getSession(true);
+			session.setAttribute(PROFILE_EMAIL_SESSION_KEY, email);
+			session.setAttribute(PROFILE_EMAIL_CODE_SESSION_KEY, code);
+			session.setAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY, System.currentTimeMillis() + PROFILE_EMAIL_CODE_EXPIRE_MILLIS);
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write("{\"ok\":true,\"message\":\"인증번호를 메일로 발송했습니다.\"}");
+		} catch (IllegalArgumentException e) {
+			response.getWriter().write(toJsonError(e.getMessage()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().write(toJsonError(e.getMessage() != null ? e.getMessage() : "인증번호 발송에 실패했습니다."));
+		}
+	}
+
+	// 회원정보 수정 이메일 인증번호 확인 메소드
+	private void verifyProfileEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		HttpSession session = request.getSession(false);
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.getWriter().write(toJsonError("로그인 후 이용해 주세요."));
+			return;
+		}
+		String email = emptyToNull(request.getParameter("email"));
+		String code = emptyToNull(request.getParameter("verificationCode"));
+		if (email == null) {
+			response.getWriter().write(toJsonError("이메일을 입력해 주세요."));
+			return;
+		}
+		if (code == null) {
+			response.getWriter().write(toJsonError("인증번호를 입력해 주세요."));
+			return;
+		}
+		if (session == null) {
+			response.getWriter().write(toJsonError("인증 세션이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+
+		String sessionEmail = (String) session.getAttribute(PROFILE_EMAIL_SESSION_KEY);
+		String sessionCode = (String) session.getAttribute(PROFILE_EMAIL_CODE_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (sessionEmail == null || sessionCode == null || expireAt == null) {
+			response.getWriter().write(toJsonError("인증번호를 먼저 요청해 주세요."));
+			return;
+		}
+		if (!sessionEmail.equals(email)) {
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증 요청한 이메일과 현재 이메일이 다릅니다."));
+			return;
+		}
+		if (System.currentTimeMillis() > expireAt.longValue()) {
+			clearProfileEmailVerificationSession(session);
+			response.getWriter().write(toJsonError("인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+		if (!sessionCode.equals(code)) {
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증번호가 올바르지 않습니다."));
+			return;
+		}
+
+		session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.TRUE);
+		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
+	}
+
+	// 회원가입 이메일 인증 여부 확인 메소드
 	private boolean isJoinEmailVerified(HttpSession session, String email) {
 		String mail = emptyToNull(email);
 		if (session == null || mail == null) {
@@ -363,6 +488,29 @@ public class MemberController extends HttpServlet {
 		return true;
 	}
 
+	// 회원정보 수정 이메일 인증 여부 확인 메소드
+	private boolean isProfileEmailVerified(HttpSession session, String email) {
+		String mail = emptyToNull(email);
+		if (session == null || mail == null) {
+			return false;
+		}
+		String verifiedEmail = (String) session.getAttribute(PROFILE_EMAIL_SESSION_KEY);
+		Object verifiedObj = session.getAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (!(verifiedObj instanceof Boolean) || !((Boolean) verifiedObj).booleanValue()) {
+			return false;
+		}
+		if (verifiedEmail == null || !mail.equals(verifiedEmail)) {
+			return false;
+		}
+		if (expireAt == null || System.currentTimeMillis() > expireAt.longValue()) {
+			clearProfileEmailVerificationSession(session);
+			return false;
+		}
+		return true;
+	}
+
+	// 회원가입 이메일 인증 세션 초기화 메소드
 	private void clearJoinEmailVerificationSession(HttpSession session) {
 		if (session == null) {
 			return;
@@ -373,11 +521,24 @@ public class MemberController extends HttpServlet {
 		session.removeAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY);
 	}
 
+	// 회원정보 수정 이메일 인증 세션 초기화 메소드
+	private void clearProfileEmailVerificationSession(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(PROFILE_EMAIL_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_CODE_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
+	}
+
+	// 공통 JSON 에러 응답 메소드
 	private String toJsonError(String message) {
 		String safe = message == null ? "요청 처리에 실패했습니다." : message.replace("\\", "\\\\").replace("\"", "\\\"");
 		return "{\"ok\":false,\"message\":\"" + safe + "\"}";
 	}
 
+	// 비밀번호 찾기 인증번호 발송 메소드
 	private void sendPasswordRecoveryCode(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String memberId = emptyToNull(request.getParameter("findId"));
 		String email = emptyToNull(request.getParameter("findEmail"));
@@ -416,6 +577,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 비밀번호 찾기 인증번호 확인 메소드
 	private void verifyPasswordRecoveryCode(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String memberId = emptyToNull(request.getParameter("findId"));
 		String email = emptyToNull(request.getParameter("findEmail"));
@@ -488,6 +650,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 비밀번호 찾기 인증 세션 초기화 메소드
 	private void clearPasswordRecoverySession(HttpSession session) {
 		if (session == null) {
 			return;
@@ -498,6 +661,7 @@ public class MemberController extends HttpServlet {
 		session.removeAttribute(RECOVERY_EXPIRE_AT_SESSION_KEY);
 	}
 
+	// 마이페이지 조회 메소드
 	private void showMyPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -508,6 +672,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원정보 수정 페이지 조회 메소드
 	private void showEditProfile(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -518,6 +683,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원정보 수정 처리 메소드
 	private void updateProfile(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
@@ -537,6 +703,17 @@ public class MemberController extends HttpServlet {
 		vo.setEmail(request.getParameter("email"));
 		vo.setPhone(request.getParameter("phone"));
 
+		String newEmail = emptyToNull(vo.getEmail());
+		String currentEmail = emptyToNull(sessionMember.getEmail());
+		boolean emailChanged = (currentEmail == null && newEmail != null) || (currentEmail != null && !currentEmail.equals(newEmail));
+		if (emailChanged && !isProfileEmailVerified(request.getSession(false), newEmail)) {
+			request.setAttribute("profileError", "이메일을 변경한 경우 이메일 인증을 완료해 주세요.");
+			request.setAttribute("memberDetail", mergeProfileForView(sessionMember, vo));
+			request.setAttribute("center", "members/editProfile.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
 		String error = memberService.updateProfile(vo, request.getParameter("newPassword"));
 		if (error != null) {
 			request.setAttribute("profileError", error);
@@ -544,6 +721,10 @@ public class MemberController extends HttpServlet {
 			request.setAttribute("center", "members/editProfile.jsp");
 			forward(request, response, "/main.jsp");
 			return;
+		}
+
+		if (emailChanged) {
+			clearProfileEmailVerificationSession(request.getSession(false));
 		}
 
 		MemberVO refreshed = memberService.getMemberDetail(sessionMember.getMemberId());
@@ -554,6 +735,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/member/mypage.me");
 	}
 
+	// 회원탈퇴 페이지 조회 메소드
 	private void showWithdrawPage(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -564,6 +746,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 회원탈퇴 처리 메소드
 	private void withdrawPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
@@ -596,6 +779,7 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
 	}
 
+	// 관리자 회원 목록 조회 메소드
 	private void showAdminMemberList(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
@@ -617,6 +801,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 관리자 회원 상세 조회 메소드
 	private void showAdminMemberDetail(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
@@ -640,6 +825,7 @@ public class MemberController extends HttpServlet {
 		forward(request, response, "/main.jsp");
 	}
 
+	// 관리자 회원 상태 변경 메소드
 	private void updateAdminMemberStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
@@ -659,15 +845,18 @@ public class MemberController extends HttpServlet {
 		response.sendRedirect(request.getContextPath() + "/member/admin/detail.me?memberId=" + java.net.URLEncoder.encode(memberId == null ? "" : memberId, "UTF-8"));
 	}
 
+	// 관리자 신고 게시판 조회 메소드
 	private void showAdminReportBoard(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
 			return;
 		}
-		List<CommentReportVO> reports = reportService.getCommentReports();
+		String filter = reportService.normalizeFilter(request.getParameter("filter"));
+		List<CommentReportVO> reports = reportService.getCommentReports(filter);
+		List<CommentReportVO> allReports = reportService.getCommentReports();
 		int pendingCount = 0;
 		int completedCount = 0;
-		for (CommentReportVO report : reports) {
+		for (CommentReportVO report : allReports) {
 			if (report.isProcessed()) {
 				completedCount++;
 			} else {
@@ -676,13 +865,16 @@ public class MemberController extends HttpServlet {
 		}
 		request.setAttribute("adminMember", admin);
 		request.setAttribute("commentReportList", reports);
-		request.setAttribute("reportCount", reports.size());
+		request.setAttribute("reportCount", allReports.size());
 		request.setAttribute("pendingReportCount", pendingCount);
 		request.setAttribute("completedReportCount", completedCount);
+		request.setAttribute("filteredReportCount", reports.size());
+		request.setAttribute("selectedReportFilter", filter);
 		request.setAttribute("center", "admin/reportBoard.jsp");
 		forward(request, response, "/main.jsp");
 	}
 
+	// 관리자 신고 처리 메소드
 	private void processAdminReport(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		MemberVO admin = requireAdminMember(request, response);
 		if (admin == null) {
@@ -694,9 +886,11 @@ public class MemberController extends HttpServlet {
 		} catch (Exception ignore) {
 		}
 		reportService.processCommentReport(reportId);
-		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me");
+		String filter = reportService.normalizeFilter(request.getParameter("filter"));
+		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me?filter=" + java.net.URLEncoder.encode(filter, "UTF-8"));
 	}
 
+	// 권한 라벨 맵 생성 메소드
 	private Map<String, String> buildRoleLabelMap() {
 		Map<String, String> roleLabelMap = new LinkedHashMap<>();
 		roleLabelMap.put("USER", "유저");
@@ -704,6 +898,7 @@ public class MemberController extends HttpServlet {
 		return roleLabelMap;
 	}
 
+	// 상태 라벨 맵 생성 메소드
 	private Map<String, String> buildStatusLabelMap() {
 		Map<String, String> statusLabelMap = new LinkedHashMap<>();
 		statusLabelMap.put("ALL", "전체");
@@ -714,6 +909,7 @@ public class MemberController extends HttpServlet {
 		return statusLabelMap;
 	}
 
+	// 날짜 포맷 변환 메소드
 	private String formatDateTime(java.time.LocalDateTime value) {
 		if (value == null) {
 			return "-";
@@ -721,6 +917,7 @@ public class MemberController extends HttpServlet {
 		return value.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 	}
 
+	// 관리자 권한 확인 메소드
 	private MemberVO requireAdminMember(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		MemberVO member = requireLoginMember(request, response);
 		if (member == null) {
@@ -733,13 +930,17 @@ public class MemberController extends HttpServlet {
 		return member;
 	}
 
+	// 공백 문자열 null 변환 메소드
 	private static String emptyToNull(String s) {
 		if (s == null) return null;
 		String v = s.trim();
 		return v.isEmpty() ? null : v;
 	}
 
+	// 로그인 뷰 공통 속성 세팅 메소드
 	private void populateLoginViewAttributes(HttpServletRequest request) {
+		request.setAttribute("recaptchaSiteKey", recaptchaUtil.getSiteKey());
+		request.setAttribute("recaptchaEnabled", Boolean.valueOf(recaptchaUtil.isConfigured()));
 		HttpSession session = request.getSession(false);
 		if (session == null) {
 			request.setAttribute("isAdmin", false);
@@ -762,10 +963,12 @@ public class MemberController extends HttpServlet {
 		request.setAttribute("isAdmin", isAdminRole(loginRole));
 	}
 
+	// 관리자 권한 여부 확인 메소드
 	private boolean isAdminRole(String role) {
 		return role != null && "ADMIN".equalsIgnoreCase(role.trim());
 	}
 
+	// 로그인 사용자 확인 메소드
 	private MemberVO requireLoginMember(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		MemberVO member = getSessionLoginMember(request);
 		if (member == null) {
@@ -782,6 +985,7 @@ public class MemberController extends HttpServlet {
 		return detail;
 	}
 
+	// 세션 로그인 회원 조회 메소드
 	private MemberVO getSessionLoginMember(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session == null) {
@@ -791,6 +995,7 @@ public class MemberController extends HttpServlet {
 		return (loginMemberObj instanceof MemberVO) ? (MemberVO) loginMemberObj : null;
 	}
 
+	// 로그인 세션 정보 갱신 메소드
 	private void refreshLoginSession(HttpSession session, MemberVO member) {
 		session.setAttribute("loginMember", member);
 		session.setAttribute("loginId", member.getId());
@@ -799,6 +1004,7 @@ public class MemberController extends HttpServlet {
 		session.setAttribute("isAdmin", isAdminRole(member.getRole()));
 	}
 
+	// 회원정보 수정 화면용 데이터 병합 메소드
 	private MemberVO mergeProfileForView(MemberVO base, MemberVO input) {
 		MemberVO merged = new MemberVO();
 		if (base != null) {

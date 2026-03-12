@@ -4,6 +4,8 @@
 <c:set var="reportCount" value="${empty requestScope.reportCount ? 0 : requestScope.reportCount}" />
 <c:set var="pendingReportCount" value="${empty requestScope.pendingReportCount ? 0 : requestScope.pendingReportCount}" />
 <c:set var="completedReportCount" value="${empty requestScope.completedReportCount ? 0 : requestScope.completedReportCount}" />
+<c:set var="filteredReportCount" value="${empty requestScope.filteredReportCount ? 0 : requestScope.filteredReportCount}" />
+<c:set var="selectedReportFilter" value="${empty requestScope.selectedReportFilter ? 'ALL' : requestScope.selectedReportFilter}" />
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -125,6 +127,40 @@
 		line-height: 1 !important;
 		white-space: nowrap !important;
 	}
+	.report-board .report-filter{
+		display: flex;
+		gap: 10px;
+		flex-wrap: wrap;
+		align-items: center;
+	}
+	.report-board .report-filter__label{
+		font-size: 13px;
+		color: #64748b;
+		font-weight: 700;
+	}
+	.report-board .report-filter__link{
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 36px;
+		padding: 0 14px;
+		border-radius: 999px;
+		border: 1px solid #dbe3ef;
+		background: #fff;
+		color: #334155;
+		text-decoration: none;
+		font-size: 13px;
+		font-weight: 700;
+	}
+	.report-board .report-filter__link.is-active{
+		background: #2563eb;
+		border-color: #2563eb;
+		color: #fff;
+	}
+	.report-board .report-filter__summary{
+		font-size: 13px;
+		color: #475569;
+	}
 	@media (max-width: 900px){
 		.report-board .report-table{
 			table-layout: auto;
@@ -161,12 +197,20 @@
 
 	<div class="table-card">
 		<div class="table-head">
-			<h2>신고 목록</h2>
-			<div>총 <strong>${reportCount}</strong>건</div>
+			<div>
+				<h2>신고 목록</h2>
+				<div class="report-filter__summary">현재 <strong>${filteredReportCount}</strong>건 표시 중</div>
+			</div>
+			<div class="report-filter">
+				<span class="report-filter__label">상태 필터</span>
+				<a class="report-filter__link ${selectedReportFilter eq 'ALL' ? 'is-active' : ''}" href="${contextPath}/member/admin/reportList.me?filter=ALL">전체</a>
+				<a class="report-filter__link ${selectedReportFilter eq 'PENDING' ? 'is-active' : ''}" href="${contextPath}/member/admin/reportList.me?filter=PENDING">처리대기만</a>
+				<a class="report-filter__link ${selectedReportFilter eq 'COMPLETED' ? 'is-active' : ''}" href="${contextPath}/member/admin/reportList.me?filter=COMPLETED">처리완료만</a>
+			</div>
 		</div>
 		<c:choose>
 			<c:when test="${empty commentReportList}">
-				<div class="empty-box">접수된 댓글 신고가 없습니다.</div>
+				<div class="empty-box">선택한 조건의 댓글 신고가 없습니다.</div>
 			</c:when>
 			<c:otherwise>
 				<table class="member-table report-table">
@@ -215,6 +259,7 @@
 									<c:if test="${not report.processed}">
 										<form method="post" action="${contextPath}/member/admin/report/process.me" class="report-table__action-form">
 											<input type="hidden" name="reportId" value="${report.reportId}">
+											<input type="hidden" name="filter" value="${selectedReportFilter}">
 											<button class="btn report-table__action-btn" type="submit">처리완료</button>
 										</form>
 									</c:if>
