@@ -17,6 +17,7 @@ import Service.MemberService;
 import Service.ReportService;
 import Vo.MemberVO;
 import Vo.CommentReportVO;
+import util.RecaptchaUtil;
 
 @WebServlet("/member/*")
 public class MemberController extends HttpServlet {
@@ -31,8 +32,14 @@ public class MemberController extends HttpServlet {
 	private static final String JOIN_EMAIL_EXPIRE_AT_SESSION_KEY = "joinEmailVerificationExpireAt";
 	private static final String JOIN_EMAIL_VERIFIED_SESSION_KEY = "joinEmailVerificationVerified";
 	private static final long JOIN_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	private static final String PROFILE_EMAIL_SESSION_KEY = "profileEmailVerificationEmail";
+	private static final String PROFILE_EMAIL_CODE_SESSION_KEY = "profileEmailVerificationCode";
+	private static final String PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY = "profileEmailVerificationExpireAt";
+	private static final String PROFILE_EMAIL_VERIFIED_SESSION_KEY = "profileEmailVerificationVerified";
+	private static final long PROFILE_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
+	private final RecaptchaUtil recaptchaUtil = new RecaptchaUtil();
 
 	@Override
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -124,6 +131,12 @@ public class MemberController extends HttpServlet {
 		case "/verifyJoinEmailCode.me":
 			verifyJoinEmailCode(request, response);
 			return;
+		case "/sendProfileEmailCode.me":
+			sendProfileEmailCode(request, response);
+			return;
+		case "/verifyProfileEmailCode.me":
+			verifyProfileEmailCode(request, response);
+			return;
 		default:
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
@@ -188,12 +201,24 @@ public class MemberController extends HttpServlet {
 	private void loginPro(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
+		String recaptchaToken = request.getParameter("g-recaptcha-response");
+
+		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, request.getRemoteAddr());
+		if (!recaptchaResult.success) {
+			populateLoginViewAttributes(request);
+			request.setAttribute("loginError", recaptchaResult.message);
+			request.setAttribute("loginIdValue", id == null ? "" : id);
+			request.setAttribute("center", "members/login.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
 
 		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
 			populateLoginViewAttributes(request);
 			request.setAttribute("loginError", result.error != null ? result.error : "아이디 또는 비밀번호가 올바르지 않습니다.");
+			request.setAttribute("loginIdValue", id == null ? "" : id);
 			request.setAttribute("center", "members/login.jsp");
 			forward(request, response, "/main.jsp");
 			return;
@@ -342,6 +367,87 @@ public class MemberController extends HttpServlet {
 		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
 	}
 
+	private void sendProfileEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.getWriter().write(toJsonError("로그인 후 이용해 주세요."));
+			return;
+		}
+		String email = emptyToNull(request.getParameter("email"));
+		try {
+			String currentEmail = emptyToNull(sessionMember.getEmail());
+			if (email == null) {
+				throw new IllegalArgumentException("이메일을 입력해 주세요.");
+			}
+			if (currentEmail != null && currentEmail.equalsIgnoreCase(email)) {
+				throw new IllegalArgumentException("현재 사용 중인 이메일과 동일합니다. 다른 이메일을 입력해 주세요.");
+			}
+			String code = memberService.sendJoinEmailVerificationCode(email);
+			HttpSession session = request.getSession(true);
+			session.setAttribute(PROFILE_EMAIL_SESSION_KEY, email);
+			session.setAttribute(PROFILE_EMAIL_CODE_SESSION_KEY, code);
+			session.setAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY, System.currentTimeMillis() + PROFILE_EMAIL_CODE_EXPIRE_MILLIS);
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write("{\"ok\":true,\"message\":\"인증번호를 메일로 발송했습니다.\"}");
+		} catch (IllegalArgumentException e) {
+			response.getWriter().write(toJsonError(e.getMessage()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().write(toJsonError(e.getMessage() != null ? e.getMessage() : "인증번호 발송에 실패했습니다."));
+		}
+	}
+
+	private void verifyProfileEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		response.setContentType("application/json; charset=UTF-8");
+		HttpSession session = request.getSession(false);
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.getWriter().write(toJsonError("로그인 후 이용해 주세요."));
+			return;
+		}
+		String email = emptyToNull(request.getParameter("email"));
+		String code = emptyToNull(request.getParameter("verificationCode"));
+		if (email == null) {
+			response.getWriter().write(toJsonError("이메일을 입력해 주세요."));
+			return;
+		}
+		if (code == null) {
+			response.getWriter().write(toJsonError("인증번호를 입력해 주세요."));
+			return;
+		}
+		if (session == null) {
+			response.getWriter().write(toJsonError("인증 세션이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+
+		String sessionEmail = (String) session.getAttribute(PROFILE_EMAIL_SESSION_KEY);
+		String sessionCode = (String) session.getAttribute(PROFILE_EMAIL_CODE_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (sessionEmail == null || sessionCode == null || expireAt == null) {
+			response.getWriter().write(toJsonError("인증번호를 먼저 요청해 주세요."));
+			return;
+		}
+		if (!sessionEmail.equals(email)) {
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증 요청한 이메일과 현재 이메일이 다릅니다."));
+			return;
+		}
+		if (System.currentTimeMillis() > expireAt.longValue()) {
+			clearProfileEmailVerificationSession(session);
+			response.getWriter().write(toJsonError("인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요."));
+			return;
+		}
+		if (!sessionCode.equals(code)) {
+			session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
+			response.getWriter().write(toJsonError("인증번호가 올바르지 않습니다."));
+			return;
+		}
+
+		session.setAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY, Boolean.TRUE);
+		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
+	}
+
 	private boolean isJoinEmailVerified(HttpSession session, String email) {
 		String mail = emptyToNull(email);
 		if (session == null || mail == null) {
@@ -363,6 +469,27 @@ public class MemberController extends HttpServlet {
 		return true;
 	}
 
+	private boolean isProfileEmailVerified(HttpSession session, String email) {
+		String mail = emptyToNull(email);
+		if (session == null || mail == null) {
+			return false;
+		}
+		String verifiedEmail = (String) session.getAttribute(PROFILE_EMAIL_SESSION_KEY);
+		Object verifiedObj = session.getAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
+		Long expireAt = (Long) session.getAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		if (!(verifiedObj instanceof Boolean) || !((Boolean) verifiedObj).booleanValue()) {
+			return false;
+		}
+		if (verifiedEmail == null || !mail.equals(verifiedEmail)) {
+			return false;
+		}
+		if (expireAt == null || System.currentTimeMillis() > expireAt.longValue()) {
+			clearProfileEmailVerificationSession(session);
+			return false;
+		}
+		return true;
+	}
+
 	private void clearJoinEmailVerificationSession(HttpSession session) {
 		if (session == null) {
 			return;
@@ -371,6 +498,16 @@ public class MemberController extends HttpServlet {
 		session.removeAttribute(JOIN_EMAIL_CODE_SESSION_KEY);
 		session.removeAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY);
 		session.removeAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY);
+	}
+
+	private void clearProfileEmailVerificationSession(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(PROFILE_EMAIL_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_CODE_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY);
+		session.removeAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
 	}
 
 	private String toJsonError(String message) {
@@ -537,6 +674,17 @@ public class MemberController extends HttpServlet {
 		vo.setEmail(request.getParameter("email"));
 		vo.setPhone(request.getParameter("phone"));
 
+		String newEmail = emptyToNull(vo.getEmail());
+		String currentEmail = emptyToNull(sessionMember.getEmail());
+		boolean emailChanged = (currentEmail == null && newEmail != null) || (currentEmail != null && !currentEmail.equals(newEmail));
+		if (emailChanged && !isProfileEmailVerified(request.getSession(false), newEmail)) {
+			request.setAttribute("profileError", "이메일을 변경한 경우 이메일 인증을 완료해 주세요.");
+			request.setAttribute("memberDetail", mergeProfileForView(sessionMember, vo));
+			request.setAttribute("center", "members/editProfile.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
 		String error = memberService.updateProfile(vo, request.getParameter("newPassword"));
 		if (error != null) {
 			request.setAttribute("profileError", error);
@@ -544,6 +692,10 @@ public class MemberController extends HttpServlet {
 			request.setAttribute("center", "members/editProfile.jsp");
 			forward(request, response, "/main.jsp");
 			return;
+		}
+
+		if (emailChanged) {
+			clearProfileEmailVerificationSession(request.getSession(false));
 		}
 
 		MemberVO refreshed = memberService.getMemberDetail(sessionMember.getMemberId());
@@ -740,6 +892,8 @@ public class MemberController extends HttpServlet {
 	}
 
 	private void populateLoginViewAttributes(HttpServletRequest request) {
+		request.setAttribute("recaptchaSiteKey", recaptchaUtil.getSiteKey());
+		request.setAttribute("recaptchaEnabled", Boolean.valueOf(recaptchaUtil.isConfigured()));
 		HttpSession session = request.getSession(false);
 		if (session == null) {
 			request.setAttribute("isAdmin", false);

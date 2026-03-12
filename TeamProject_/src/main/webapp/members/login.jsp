@@ -24,13 +24,35 @@
 	font-size: 13px;
 	text-decoration: underline;
 }
+.recaptcha-wrap{
+	margin-top: 18px;
+	display:flex;
+	justify-content:center;
+}
+.recaptcha-help{
+	margin-top:10px;
+	font-size:12px;
+	color:#b91c1c;
+	text-align:center;
+	line-height:1.5;
+}
 </style>
+
+<%
+	String recaptchaSiteKey = (String) request.getAttribute("recaptchaSiteKey");
+	Boolean recaptchaEnabled = (Boolean) request.getAttribute("recaptchaEnabled");
+	boolean captchaReady = recaptchaEnabled != null && recaptchaEnabled.booleanValue() && recaptchaSiteKey != null && !recaptchaSiteKey.trim().isEmpty();
+%>
+<% if (captchaReady) { %>
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<% } %>
 
 </head>
 <body>
 
 <%
 	String contextPath = request.getContextPath();
+	String loginIdValue = (String) request.getAttribute("loginIdValue");
 
 	String joinFlash = null;
 	javax.servlet.http.HttpSession flashSession = request.getSession(false);
@@ -64,11 +86,11 @@
 			<% } %>
 
 			<form class="form-signin" method="post"
-				action="<%=contextPath%>/member/loginPro.me" id="join">
+				action="<%=contextPath%>/member/loginPro.me" id="loginForm">
 
 				<div class="login-form-row">
 					<label class="label" for="id">아이디</label>
-					<input type="text" id="id" name="id" placeholder="아이디" required autofocus>
+					<input type="text" id="id" name="id" placeholder="아이디" value="<%= loginIdValue == null ? "" : loginIdValue %>" required autofocus>
 				</div>
 
 				<div class="login-form-row">
@@ -78,6 +100,14 @@
 						<button class="pw-toggle" type="button" id="pwToggle" aria-label="비밀번호 보기/숨기기" title="비밀번호 보기/숨기기">👁</button>
 					</div>
 					<div class="notice" id="capsNotice" role="status">CapsLock이 켜져 있어요</div>
+				</div>
+
+				<div class="recaptcha-wrap">
+					<% if (captchaReady) { %>
+						<div class="g-recaptcha" data-sitekey="<%= recaptchaSiteKey %>"></div>
+					<% } else { %>
+						<div class="recaptcha-help">reCAPTCHA가 아직 설정되지 않았습니다.<br>application.properties의 <strong>recaptcha.site.key</strong>, <strong>recaptcha.secret.key</strong> 값을 입력해 주세요.</div>
+					<% } %>
 				</div>
 
 				<div class="login-links">
