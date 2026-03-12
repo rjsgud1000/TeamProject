@@ -31,11 +31,12 @@
       </nav>
     </div>
 
+<!-- 인기게시글 contextPath-> pageContext로변경 -->
 <div class="subnav">
   <div class="container subnav__inner" aria-label="보조 메뉴">
     <a href="${contextPath}/board/list?category=all">전체보기</a>
 	<a href="${contextPath}/board/list?category=0">공지사항</a>
-	<a href="${contextPath}/board/list?sort=popular">인기 게시글</a>
+	<a href="${pageContext.request.contextPath}/board/popular">인기 게시글</a>
 	<a href="${contextPath}/board/list?category=1">자유 게시판</a>
 	<a href="${contextPath}/board/list?category=2">질문과 답변</a>
 	<a href="${contextPath}/board/list?category=3">파티원 모집</a>

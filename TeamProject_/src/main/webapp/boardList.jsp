@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<jsp:useBean id="now" class="java.util.Date" />
 
 <div style="max-width:1000px; margin:0 auto; padding:20px;">
 
@@ -88,8 +89,24 @@
 						</c:choose></td>
 
 					<td style="padding: 10px; text-align: left;">
-					<a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}">
-    				${post.title}</a>
+						<c:set var="isHot" value="${post.likeCount >= 50 || post.viewcount >= 100}" /> 
+						<c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
+
+						<a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}"
+						   style="text-decoration: none; color: inherit;"> ${post.title}
+							<c:if test="${post.category != 0 && post.commentCount > 0}">
+								<span style="color: #2563eb; font-weight: bold; margin-left: 4px;">[${post.commentCount}] </span>
+							</c:if> 
+							<c:if test="${isHot}">
+								<span style="display: inline-block; margin-left: 6px; padding: 2px 6px; font-size: 11px; font-weight: bold; color: white; background: #ef4444; border-radius: 10px;">
+									  HOT </span>
+							</c:if> 
+							<c:if test="${isNew}">
+								<span style="display: inline-block; margin-left: 4px; padding: 2px 6px; font-size: 11px; font-weight: bold; color: white; background: #22c55e; border-radius: 10px;">
+									  NEW </span>
+							</c:if>
+						  </a>
+					 </td>
 
 					<td style="padding: 10px; text-align: center;">${post.nickname}</td>
 					<td style="padding: 10px; text-align: center;">${post.viewcount}</td>
