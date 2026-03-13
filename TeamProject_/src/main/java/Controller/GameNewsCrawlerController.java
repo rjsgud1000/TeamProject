@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.HashSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -160,7 +161,9 @@ public class GameNewsCrawlerController extends HttpServlet {
         }
         if ("lostark".equals(game)) {
             if ("notice".equals(type)) return "https://lostark.game.onstove.com/News/Notice/List";
-            if ("patch".equals(type)) return "https://lostark.game.onstove.com/News/Update/List";
+            if ("patch".equals(type)) {
+                return "https://lostark.game.onstove.com/News/Notice/List?page=1&searchtype=2&searchtext=%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8&noticetype=all";
+            }
         }
         return "";
     }
@@ -207,9 +210,12 @@ public class GameNewsCrawlerController extends HttpServlet {
             return crawlAion2(sourceUrl);
         }
         if ("dnf".equals(game)) {
-            return crawlDnf(sourceUrl);
+            return crawlDnf(sourceUrl, type);
         }
         if ("lostark".equals(game)) {
+            if ("patch".equals(type)) {
+                return crawlLostArkPatch(sourceUrl);
+            }
             return crawlLostArk(sourceUrl, type);
         }
         return new ArrayList<NewsItem>();
@@ -773,29 +779,161 @@ public class GameNewsCrawlerController extends HttpServlet {
         List<NewsItem> items = new ArrayList<NewsItem>();
         Document doc = connect(url);
 
-        Elements links = doc.select("a[href]");
+        java.util.LinkedHashMap<String, NewsItem> merged = new java.util.LinkedHashMap<String, NewsItem>();
+
+        Elements links = doc.select(
+                "a[href*='/News/Notice/'], " +
+                "a[href*='/News/Update/']"
+        );
+
         for (Element a : links) {
             String href = a.absUrl("href");
-            if (!href.contains("/News/") || href.equals(url)) continue;
-            String title = cleanText(a.text());
-            if (isBlank(title) || title.length() < 4) continue;
-            if (title.equals("공지사항") || title.equals("업데이트") || title.equals("이벤트")) continue;
-            String date = extractDateAround(a);
-            if (isBlank(date)) continue;
-            addItem(items, title, date, "", href, 10);
+            if (isBlank(href) || href.equals(url)) continue;
+
+            String text = cleanText(a.text());
+            if (isBlank(text)) continue;
+            if (isMapleIgnoreText(text)) continue;
+
+            NewsItem current = merged.get(href);
+            if (current == null) {
+                current = new NewsItem("", "", "", href);
+            }
+
+            if (isMapleDateOnlyText(text)) {
+                if (isBlank(current.date)) {
+                    current.date = normalizeMapleDateText(text);
+                }
+            } else {
+                String title = removeMapleDateText(text);
+                String date = extractMapleDateText(text);
+
+                title = cleanTitleNoise(title);
+
+                if (!isBlank(title)) {
+                    if (isBlank(current.title) || current.title.length() < title.length()) {
+                        current.title = title;
+                    }
+                }
+
+                if (isBlank(current.date) && !isBlank(date)) {
+                    current.date = date;
+                }
+            }
+
+            if (isBlank(current.date)) {
+                String nearDate = extractMapleDateAround(a);
+                if (!isBlank(nearDate)) {
+                    current.date = nearDate;
+                }
+            }
+
+            merged.put(href, current);
         }
 
-        if (!items.isEmpty()) return items;
+        for (NewsItem item : merged.values()) {
+            if (isBlank(item.title)) continue;
+            addItem(items, item.title, item.date, "", item.url, 10);
+            if (items.size() >= 10) break;
+        }
+
+        if (!items.isEmpty()) {
+            return items;
+        }
 
         String text = cleanText(doc.text());
         Matcher m = Pattern.compile("(.+?)\\s+(20\\d{2}\\.\\d{2}\\.\\d{2})").matcher(text);
         while (m.find() && items.size() < 10) {
-            String title = m.group(1);
-            if (title.contains("공지사항") || title.contains("업데이트") || title.contains("이벤트")) continue;
-            if (title.length() > 120) title = title.substring(Math.max(0, title.length() - 120)).trim();
-            addItem(items, cleanTitleNoise(title), m.group(2), "", url, 10);
+            String title = cleanTitleNoise(removeMapleDateText(m.group(1)));
+            String date = m.group(2);
+
+            if (isBlank(title) || isMapleIgnoreText(title)) continue;
+            addItem(items, title, date, "", url, 10);
         }
+
         return items;
+    }
+
+    private boolean isMapleIgnoreText(String text) {
+        String t = cleanText(text);
+        if (isBlank(t)) return true;
+
+        return t.equals("공지사항")
+                || t.equals("업데이트")
+                || t.equals("이벤트")
+                || t.equals("캐시샵 공지")
+                || t.equals("메이플 알림판")
+                || t.equals("with maple")
+                || t.equals("제목")
+                || t.equals("전체")
+                || t.equals("공지")
+                || t.equals("점검")
+                || t.equals("GM소식");
+    }
+
+    private boolean isMapleDateOnlyText(String text) {
+        String t = cleanText(text);
+
+        return t.matches("^20\\d{2}\\.\\d{2}\\.\\d{2}.*$")
+                || t.matches("^AM\\s*\\d{1,2}:\\d{2}$")
+                || t.matches("^PM\\s*\\d{1,2}:\\d{2}$")
+                || t.matches("^20\\d{2}\\.\\d{2}\\.\\d{2}\\s*\\(.+?\\)\\s*~.*$");
+    }
+
+    private String extractMapleDateText(String text) {
+        String t = cleanText(text);
+
+        Matcher range = Pattern.compile("(20\\d{2}\\.\\d{2}\\.\\d{2}\\s*\\(.+?\\)\\s*~\\s*20\\d{2}\\.\\d{2}\\.\\d{2}.*)$")
+                .matcher(t);
+        if (range.find()) return cleanText(range.group(1));
+
+        Matcher date = Pattern.compile("(20\\d{2}\\.\\d{2}\\.\\d{2})").matcher(t);
+        if (date.find()) return cleanText(date.group(1));
+
+        Matcher ampm = Pattern.compile("\\b(AM|PM)\\s*\\d{1,2}:\\d{2}\\b").matcher(t);
+        if (ampm.find()) return cleanText(ampm.group());
+
+        return "";
+    }
+
+    private String removeMapleDateText(String text) {
+        String t = cleanText(text);
+
+        t = t.replaceAll("20\\d{2}\\.\\d{2}\\.\\d{2}\\s*\\(.+?\\)\\s*~\\s*20\\d{2}\\.\\d{2}\\.\\d{2}.*$", "");
+        t = t.replaceAll("20\\d{2}\\.\\d{2}\\.\\d{2}$", "");
+        t = t.replaceAll("\\b(AM|PM)\\s*\\d{1,2}:\\d{2}\\b$", "");
+        t = t.replaceAll("\\s+", " ").trim();
+
+        return t;
+    }
+
+    private String normalizeMapleDateText(String text) {
+        return cleanText(extractMapleDateText(text));
+    }
+
+    private String extractMapleDateAround(Element element) {
+        if (element == null) return "";
+
+        String own = extractMapleDateText(element.text());
+        if (!isBlank(own)) return own;
+
+        Element cur = element;
+        for (int i = 0; i < 4 && cur != null; i++) {
+            Element next = cur.nextElementSibling();
+            if (next != null) {
+                String nextDate = extractMapleDateText(next.text());
+                if (!isBlank(nextDate)) return nextDate;
+            }
+
+            Element parent = cur.parent();
+            if (parent != null) {
+                String parentDate = extractMapleDateText(parent.text());
+                if (!isBlank(parentDate)) return parentDate;
+            }
+
+            cur = parent;
+        }
+
+        return "";
     }
 
     private List<NewsItem> crawlAion2(String url) throws IOException {
@@ -826,29 +964,235 @@ public class GameNewsCrawlerController extends HttpServlet {
         return items;
     }
 
-    private List<NewsItem> crawlDnf(String url) throws IOException {
+    private List<NewsItem> crawlDnf(String url, String type) throws IOException {
         List<NewsItem> items = new ArrayList<NewsItem>();
         Document doc = connect(url);
-        for (Element a : doc.select("a[href]")) {
-            String href = a.absUrl("href");
-            String title = cleanText(a.text());
-            if (isBlank(title) || title.length() < 4) continue;
-            if (!(href.contains("/community/news/") || href.contains("/df/news/") || href.contains("/news/") || href.contains("mode=view"))) continue;
-            if (title.equals("공지사항") || title.equals("업데이트")) continue;
-            String date = extractDateAround(a);
-            if (isBlank(date)) continue;
-            addItem(items, title, date, "", href, 10);
+
+        boolean noticePage = "notice".equals(type) || url.contains("/community/news/notice/list");
+        boolean updatePage = "patch".equals(type) || url.contains("/community/news/update/list");
+
+        String pageText = cleanText(doc.text());
+        List<NewsItem> parsed = parseDnfListText(pageText, url, noticePage, updatePage);
+
+        for (NewsItem item : parsed) {
+            addItem(items, item.title, item.date, "", item.url, 10);
+            if (items.size() >= 10) {
+                return items;
+            }
         }
 
-        if (!items.isEmpty()) return items;
+        String scopedText = extractDnfNewsSection(pageText, noticePage, updatePage);
+        parsed = parseDnfListText(scopedText, url, noticePage, updatePage);
 
-        String text = cleanText(doc.text());
-        Matcher m = Pattern.compile("(?:일반|점검|주요|퍼스트서버|던파ON|대규모)\\s+(.+?)\\s+(20\\d{2}\\.\\d{2}\\.\\d{2})\\s+[0-9,]+")
-                .matcher(text);
-        while (m.find() && items.size() < 10) {
-            addItem(items, cleanTitleNoise(m.group(1)), m.group(2), "", url, 10);
+        for (NewsItem item : parsed) {
+            addItem(items, item.title, item.date, "", item.url, 10);
+            if (items.size() >= 10) {
+                return items;
+            }
         }
+
         return items;
+    }
+
+    private List<NewsItem> parseDnfListText(String text, String fallbackUrl, boolean noticePage, boolean updatePage) {
+        List<NewsItem> items = new ArrayList<NewsItem>();
+        if (isBlank(text)) return items;
+
+        String scoped = extractDnfNewsSection(text, noticePage, updatePage);
+        if (isBlank(scoped)) scoped = text;
+
+        scoped = trimDnfListStart(scoped, noticePage, updatePage);
+        if (isBlank(scoped)) return items;
+
+        Pattern p = Pattern.compile(
+                "(일반|점검|퍼스트서버|당첨자발표|주요|대규모|던파ON)\\s+(.+?)\\s+(20\\d{2}\\.\\d{2}\\.\\d{2})\\s+[0-9,]+"
+        );
+        Matcher m = p.matcher(scoped);
+
+        Set<String> seen = new LinkedHashSet<String>();
+
+        while (m.find() && items.size() < 10) {
+            String category = cleanText(m.group(1));
+            String title = cleanTitleNoise(cleanText(m.group(2)));
+            String date = cleanText(m.group(3));
+
+            if (isBlank(title)) continue;
+            if (isDnfIgnoreTitle(title)) continue;
+            if (containsEmail(title)) continue;
+            if (title.length() < 4) continue;
+
+            String dedupKey = title + "|" + date;
+            if (!seen.add(dedupKey)) continue;
+
+            items.add(new NewsItem(title, date, "", fallbackUrl));
+        }
+
+        return items;
+    }
+
+    private String trimDnfListStart(String text, boolean noticePage, boolean updatePage) {
+        if (isBlank(text)) return "";
+
+        String scoped = cleanText(text);
+
+        String[] startMarkers = {
+                "제목+본문 제목 삭제",
+                "제목 삭제",
+                "삭제"
+        };
+
+        for (String marker : startMarkers) {
+            int idx = scoped.indexOf(marker);
+            if (idx >= 0) {
+                scoped = scoped.substring(idx + marker.length()).trim();
+                break;
+            }
+        }
+
+        Pattern firstRow = Pattern.compile(
+                "(일반|점검|퍼스트서버|당첨자발표|주요|대규모|던파ON)\\s+.+?\\s+20\\d{2}\\.\\d{2}\\.\\d{2}\\s+[0-9,]+"
+        );
+        Matcher m = firstRow.matcher(scoped);
+        if (m.find()) {
+            scoped = scoped.substring(m.start()).trim();
+        }
+
+        return scoped;
+    }
+
+    private String extractDnfNewsSection(String text, boolean noticePage, boolean updatePage) {
+        if (isBlank(text)) return "";
+
+        String startToken = noticePage ? "공지사항" : "업데이트";
+        int start = text.indexOf(startToken);
+        if (start < 0) {
+            start = text.indexOf("새소식");
+        }
+        if (start < 0) {
+            start = 0;
+        }
+
+        int end = text.length();
+
+        String[] endTokens = {
+                "업데이트 안정화 제보",
+                "제보하기 TOP",
+                "회사소개",
+                "E-mail :",
+                "© 2005 NEOPLE",
+                "보안 경고 알림"
+        };
+
+        for (String token : endTokens) {
+            int idx = text.indexOf(token, start);
+            if (idx >= 0 && idx < end) {
+                end = idx;
+            }
+        }
+
+        return cleanText(text.substring(start, end));
+    }
+
+    private boolean containsEmail(String text) {
+        if (isBlank(text)) return false;
+        return text.matches(".*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}.*");
+    }
+
+    private boolean isDnfUpdateOnlyCategory(String category) {
+        if (isBlank(category)) return false;
+        return "퍼스트서버".equals(category)
+                || "주요".equals(category)
+                || "대규모".equals(category)
+                || "던파ON".equals(category);
+    }
+
+    private boolean isDnfIgnoreTitle(String title) {
+        if (isBlank(title)) return true;
+
+        String raw = cleanText(title);
+        if (containsEmail(raw)) return true;
+
+        String t = raw.replaceAll("\\s+", "").toUpperCase();
+
+        return t.equals("공지사항")
+                || t.equals("업데이트")
+                || t.equals("이벤트")
+                || t.equals("이달의아이템")
+                || t.equals("세리아의상점")
+                || t.equals("오늘의던파")
+                || t.equals("던파매거진")
+                || t.equals("개발자노트")
+                || t.equals("게임시작")
+                || t.equals("로그인")
+                || t.equals("넥슨ID회원가입")
+                || t.equals("던파ID회원가입")
+                || t.equals("제목")
+                || t.equals("제목+본문")
+                || t.equals("삭제")
+                || t.equals("TOP")
+                || t.equals("NEXT")
+                || t.equals("END")
+                || t.equals("PREV")
+                || t.equals("EMAIL")
+                || t.equals("E-MAIL")
+                || t.contains("NEXON")
+                || t.contains("NEOPLE")
+                || t.matches("^\\d+$");
+    }
+
+    private String extractDnfDateFromParent(Element element) {
+        if (element == null) return "";
+
+        Element parent = element.parent();
+        int guard = 0;
+
+        while (parent != null && guard < 4) {
+            String date = extractDateAround(parent);
+            if (!isBlank(date)) {
+                return date;
+            }
+
+            String ownText = cleanText(parent.ownText());
+            Matcher m = DATE_DOT_PATTERN.matcher(ownText);
+            if (m.find()) {
+                return m.group(1);
+            }
+
+            parent = parent.parent();
+            guard++;
+        }
+
+        return "";
+    }
+
+    private String extractDnfDateFromSibling(Element element) {
+        if (element == null) return "";
+
+        Element cur = element;
+
+        for (int i = 0; i < 4 && cur != null; i++) {
+            Element next = cur.nextElementSibling();
+            if (next != null) {
+                String text = cleanText(next.text());
+                Matcher m = DATE_DOT_PATTERN.matcher(text);
+                if (m.find()) {
+                    return m.group(1);
+                }
+            }
+
+            Element prev = cur.previousElementSibling();
+            if (prev != null) {
+                String text = cleanText(prev.text());
+                Matcher m = DATE_DOT_PATTERN.matcher(text);
+                if (m.find()) {
+                    return m.group(1);
+                }
+            }
+
+            cur = cur.parent();
+        }
+
+        return "";
     }
 
     private List<NewsItem> crawlLostArk(String url, String type) throws IOException {
@@ -865,12 +1209,16 @@ public class GameNewsCrawlerController extends HttpServlet {
         Elements scopedLinks = doc.select(
                 "section a[href*=/News/Update/View], " +
                 "section a[href*=/News/Notice/View], " +
+                "section a[href*=/News/Notice/Views/], " +
                 "article a[href*=/News/Update/View], " +
                 "article a[href*=/News/Notice/View], " +
+                "article a[href*=/News/Notice/Views/], " +
                 "main a[href*=/News/Update/View], " +
                 "main a[href*=/News/Notice/View], " +
+                "main a[href*=/News/Notice/Views/], " +
                 "div a[href*=/News/Update/View], " +
-                "div a[href*=/News/Notice/View]"
+                "div a[href*=/News/Notice/View], " +
+                "div a[href*=/News/Notice/Views/]"
         );
 
         for (Element a : scopedLinks) {
@@ -879,9 +1227,11 @@ public class GameNewsCrawlerController extends HttpServlet {
             if (!seen.add(href)) continue;
 
             if ("patch".equals(type) && !href.contains("/News/Update/View")) continue;
-            if ("notice".equals(type) && !href.contains("/News/Notice/View")) continue;
+            if ("notice".equals(type)
+                    && !(href.contains("/News/Notice/View") || href.contains("/News/Notice/Views/"))) continue;
 
-            String title = cleanTitleNoise(cleanText(a.text()));
+            String rawTitle = cleanText(a.text());
+            String title = cleanLostArkTitle(rawTitle);
             if (isBlank(title) || title.length() < 4) continue;
 
             if (title.contains("이벤트 모아보기")
@@ -890,7 +1240,10 @@ public class GameNewsCrawlerController extends HttpServlet {
                 continue;
             }
 
-            String date = extractDateAround(a);
+            String date = extractLostArkDate(rawTitle);
+            if (isBlank(date)) {
+                date = extractDateAround(a);
+            }
 
             if (isBlank(date)) {
                 Element parent = a.parent();
@@ -902,12 +1255,7 @@ public class GameNewsCrawlerController extends HttpServlet {
                 }
             }
 
-            addItem(items,
-                    title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", ""),
-                    date,
-                    "",
-                    href,
-                    10);
+            addItem(items, title, date, "", href, 10);
 
             if (items.size() >= 10) {
                 break;
@@ -918,26 +1266,26 @@ public class GameNewsCrawlerController extends HttpServlet {
             return items;
         }
 
-        Elements fallbackLinks = doc.select("a[href*=/News/Update/View], a[href*=/News/Notice/View]");
+        Elements fallbackLinks = doc.select("a[href*=/News/Update/View], a[href*=/News/Notice/View], a[href*=/News/Notice/Views/]");
         for (Element a : fallbackLinks) {
             String href = a.absUrl("href");
             if (isBlank(href)) continue;
             if (!seen.add(href)) continue;
 
             if ("patch".equals(type) && !href.contains("/News/Update/View")) continue;
-            if ("notice".equals(type) && !href.contains("/News/Notice/View")) continue;
+            if ("notice".equals(type)
+                    && !(href.contains("/News/Notice/View") || href.contains("/News/Notice/Views/"))) continue;
 
-            String title = cleanTitleNoise(cleanText(a.text()));
+            String rawTitle = cleanText(a.text());
+            String title = cleanLostArkTitle(rawTitle);
             if (isBlank(title) || title.length() < 4) continue;
 
-            String date = extractDateAround(a);
+            String date = extractLostArkDate(rawTitle);
+            if (isBlank(date)) {
+                date = extractDateAround(a);
+            }
 
-            addItem(items,
-                    title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", ""),
-                    date,
-                    "",
-                    href,
-                    10);
+            addItem(items, title, date, "", href, 10);
 
             if (items.size() >= 10) {
                 break;
@@ -947,9 +1295,282 @@ public class GameNewsCrawlerController extends HttpServlet {
         return items;
     }
 
+    private String cleanLostArkTitle(String text) {
+        String title = cleanTitleNoise(cleanText(text));
+        if (isBlank(title)) return "";
+
+        title = title.replaceFirst("^(공지|점검|상점|이벤트)\\s+", "");
+        title = title.replaceAll("\\s*새\\s*글\\s*", " ");
+        title = title.replaceAll("\\s+\\d{1,3}(?:,\\d{3})*(?:\\+)?\\s+(?:(?:20\\d{2}\\.\\d{2}\\.\\d{2})|(?:\\d+\\s*(?:분|시간|일)\\s*전))$", "");
+        title = title.replaceAll("\\s+(?:20\\d{2}\\.\\d{2}\\.\\d{2}|\\d+\\s*(?:분|시간|일)\\s*전)$", "");
+        title = title.replaceAll("\\s+", " ").trim();
+
+        return title;
+    }
+
+    private String extractLostArkDate(String text) {
+        String value = cleanText(text);
+        if (isBlank(value)) return "";
+
+        Matcher dotMatcher = DATE_DOT_PATTERN.matcher(value);
+        String lastDate = "";
+        while (dotMatcher.find()) {
+            lastDate = dotMatcher.group(1);
+        }
+        if (!isBlank(lastDate)) {
+            return lastDate;
+        }
+
+        Matcher relativeMatcher = RELATIVE_DATE_PATTERN.matcher(value);
+        String lastRelative = "";
+        while (relativeMatcher.find()) {
+            lastRelative = cleanText(relativeMatcher.group(1));
+        }
+        return lastRelative;
+    }
+
+    private List<NewsItem> crawlLostArkPatch(String url) throws IOException {
+        List<NewsItem> items = new ArrayList<NewsItem>();
+        Document doc = connect(url);
+
+        Set<String> seen = new LinkedHashSet<String>();
+
+        Elements rows = doc.select("ul.list li, ul.news_list li, div.list li, tbody tr");
+
+        for (Element row : rows) {
+            Element linkEl = row.selectFirst("a[href]");
+            if (linkEl == null) continue;
+
+            String href = cleanText(linkEl.absUrl("href"));
+            if (isBlank(href)) continue;
+            if (!(href.contains("/News/Notice/View") || href.contains("/News/Notice/Views/"))) continue;
+            if (!seen.add(href)) continue;
+
+            String rawTitle = firstNonBlank(
+                    firstText(row, ".tit"),
+                    firstText(row, ".title"),
+                    firstText(row, ".subject"),
+                    cleanText(linkEl.text()),
+                    cleanText(row.text())
+            );
+
+            String title = cleanLostArkPatchSearchTitle(rawTitle);
+            if (isBlank(title) || title.length() < 4) continue;
+            if (!looksLikeLostArkPatchTitle(title)) continue;
+
+            String date = firstNonBlank(
+                    firstText(row, ".date"),
+                    firstText(row, "time"),
+                    extractDateAround(row),
+                    extractLostArkDate(rawTitle)
+            );
+
+            addItem(items, title, date, "", href, 10);
+
+            if (items.size() >= 10) {
+                break;
+            }
+        }
+
+        if (!items.isEmpty()) {
+            return items;
+        }
+
+        Elements links = doc.select("a[href*='/News/Notice/View'], a[href*='/News/Notice/Views/']");
+        for (Element a : links) {
+            String href = cleanText(a.absUrl("href"));
+            if (isBlank(href)) continue;
+            if (!seen.add(href)) continue;
+
+            String rawTitle = cleanText(firstNonBlank(a.text(), a.attr("title"), a.attr("aria-label")));
+            String title = cleanLostArkPatchSearchTitle(rawTitle);
+
+            if (isBlank(title) || title.length() < 4) continue;
+            if (!looksLikeLostArkPatchTitle(title)) continue;
+
+            String date = firstNonBlank(
+                    extractDateAround(a),
+                    extractLostArkDate(rawTitle)
+            );
+
+            addItem(items, title, date, "", href, 10);
+
+            if (items.size() >= 10) {
+                break;
+            }
+        }
+
+        return items;
+    }
+
+    private String cleanLostArkPatchSearchTitle(String text) {
+        String title = cleanText(text);
+        if (isBlank(title)) return "";
+
+        title = title.replaceFirst("^공지\\s+", "");
+        title = title.replaceAll("\\s*새\\s*글\\s*", " ");
+        title = title.replaceAll("\\s+(9999\\+|[0-9,]+)$", "");
+        title = title.replaceAll("\\s+(20\\d{2}\\.\\d{2}\\.\\d{2}|\\d+\\s*(?:분|시간|일)\\s*전)$", "");
+        title = title.replaceAll("\\s+", " ").trim();
+
+        return cleanTitleNoise(title);
+    }
+
+    private boolean looksLikeLostArkPatchTitle(String title) {
+        String t = cleanText(title);
+        if (isBlank(t)) return false;
+
+        return t.contains("업데이트")
+                || t.contains("패치")
+                || t.contains("밸런스")
+                || t.contains("콘텐츠")
+                || t.contains("개선")
+                || t.contains("전투")
+                || t.contains("시스템");
+    }
+
+    private void collectLostArkPatchListItems(Document doc, List<NewsItem> items, Set<String> seenUrls, int limit) {
+        if (doc == null || items.size() >= limit) {
+            return;
+        }
+
+        Elements links = doc.select(
+                "a[href*='/Event/Update/'], " +
+                "a[href*='/News/Update/View'], " +
+                "a[href*='/News/Notice/Views/']"
+        );
+
+        for (Element a : links) {
+            if (items.size() >= limit) {
+                break;
+            }
+
+            String href = cleanText(a.absUrl("href"));
+            if (isBlank(href)) continue;
+            if (!(href.contains("/Event/Update/") || href.contains("/News/Update/View") || href.contains("/News/Notice/Views/"))) continue;
+            if (!seenUrls.add(href)) continue;
+
+            String rawText = cleanText(firstNonBlank(a.text(), a.attr("title"), a.attr("aria-label")));
+            if (isBlank(rawText)) continue;
+            if (rawText.contains("이벤트 모아보기") || rawText.contains("자동재생") || rawText.contains("정지")) continue;
+
+            String title = normalizeLostArkPatchListTitle(rawText);
+            if (isBlank(title) || title.length() < 4) continue;
+
+            String date = extractLostArkPatchListDate(rawText);
+            if (isBlank(date)) {
+                date = extractDateAround(a);
+            }
+
+            addItem(items, title, date, "", href, limit);
+        }
+    }
+
+    private void collectLostArkPatchNoticeItems(List<NewsItem> items, Set<String> seenUrls, int limit) throws IOException {
+        for (int page = 1; page <= 8 && items.size() < limit; page++) {
+            String url = "https://lostark.game.onstove.com/News/Notice/List?noticetype=all&page="
+                    + page + "&searchtext=" + encodeUtf8("업데이트") + "&searchtype=2";
+
+            Document doc = connect(url);
+            Elements links = doc.select("a[href*='/News/Notice/Views/']");
+            if (links.isEmpty()) {
+                continue;
+            }
+
+            for (Element a : links) {
+                if (items.size() >= limit) {
+                    break;
+                }
+
+                String href = cleanText(a.absUrl("href"));
+                if (isBlank(href) || !href.contains("/News/Notice/Views/")) continue;
+                if (!seenUrls.add(href)) continue;
+
+                String rawText = cleanText(firstNonBlank(a.text(), a.attr("title"), a.attr("aria-label")));
+                if (isBlank(rawText)) continue;
+
+                String title = cleanLostArkNoticePatchTitle(rawText);
+                if (isBlank(title) || title.length() < 4) continue;
+                if (!looksLikeLostArkPatchNotice(title, rawText)) continue;
+
+                String date = firstNonBlank(extractLostArkDate(rawText), extractDateAround(a));
+                addItem(items, title, date, "", href, limit);
+            }
+        }
+    }
+
+    private String normalizeLostArkPatchListTitle(String text) {
+        String value = cleanText(text);
+        if (isBlank(value)) {
+            return "";
+        }
+
+        value = value.replaceFirst("^날짜\\s*", "");
+        value = value.replaceAll("\\b새\\s*글\\b", " ");
+        value = value.replaceAll("\\b20\\d{2}\\s*\\.\\s*\\d{1,2}\\s*\\.\\s*\\d{1,2}\\b", " ");
+        value = value.replaceAll("\\b\\d{1,2}\\s*\\.\\s*\\d{1,2}\\s*20\\d{2}\\b", " ");
+        value = value.replaceAll("\\b\\d{1,2}\\s*\\.\\s*\\d{1,2}\\b", " ");
+        value = value.replaceAll("\\s+", " ").trim();
+
+        value = cleanTitleNoise(value);
+        if (value.length() > 120) {
+            value = value.substring(0, 120).trim();
+        }
+        return value;
+    }
+
+    private String extractLostArkPatchListDate(String text) {
+        String value = cleanText(text);
+        if (isBlank(value)) {
+            return "";
+        }
+
+        Matcher m1 = Pattern.compile("(20\\d{2})\\s*\\.\\s*(\\d{1,2})\\s*\\.\\s*(\\d{1,2})").matcher(value);
+        if (m1.find()) {
+            return String.format(Locale.KOREA, "%s.%02d.%02d", m1.group(1), Integer.parseInt(m1.group(2)), Integer.parseInt(m1.group(3)));
+        }
+
+        Matcher m2 = Pattern.compile("(\\d{1,2})\\s*\\.\\s*(\\d{1,2})\\s*(20\\d{2})").matcher(value);
+        if (m2.find()) {
+            return String.format(Locale.KOREA, "%s.%02d.%02d", m2.group(3), Integer.parseInt(m2.group(1)), Integer.parseInt(m2.group(2)));
+        }
+
+        return extractLostArkDate(value);
+    }
+
+    private String cleanLostArkNoticePatchTitle(String text) {
+        String title = cleanText(text);
+        if (isBlank(title)) {
+            return "";
+        }
+
+        title = title.replaceFirst("^공지\\s+", "");
+        title = title.replaceAll("\\s*새\\s*글\\s*", " ");
+        title = title.replaceAll("\\s+(9999\\+|[0-9,]+)$", "");
+        title = title.replaceAll("\\s+(20\\d{2}\\.\\d{2}\\.\\d{2}|\\d+\\s*(?:분|시간|일)\\s*전)$", "");
+        title = title.replaceAll("\\s+", " ").trim();
+
+        return title;
+    }
+
+    private boolean looksLikeLostArkPatchNotice(String title, String rawText) {
+        String t = cleanText(title + " " + rawText);
+        return t.contains("업데이트") || t.contains("패치") || t.contains("밸런스") || t.contains("콘텐츠");
+    }
+
+    private String encodeUtf8(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (Exception e) {
+            return value;
+        }
+    }
+
     private Document connect(String url) throws IOException {
         return Jsoup.connect(url)
                 .userAgent(USER_AGENT)
+                .header("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7")
+                .referrer("https://www.google.com/")
                 .timeout(20000)
                 .followRedirects(true)
                 .get();
