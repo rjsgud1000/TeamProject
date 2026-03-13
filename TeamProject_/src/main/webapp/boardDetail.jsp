@@ -4,8 +4,21 @@
 
 <div style="width: 80%; margin: 30px auto;">
     <h2>게시글 상세보기</h2>
+	
+	<!-- 게시글 신고 접수판 -->
+	<c:if test="${param.reportSuccess == '1'}">
+		<script>
+        alert('게시글 신고가 접수되었습니다.');
+    </script>
+	</c:if>
 
-    <table border="1" width="100%" cellspacing="0" cellpadding="10">
+	<c:if test="${param.reportDuplicate == '1'}">
+		<script>
+        alert('이미 신고한 게시글입니다.');
+    </script>
+	</c:if>
+
+	<table border="1" width="100%" cellspacing="0" cellpadding="10">
         <tr>
             <th width="15%">번호</th>
             <td width="35%">${post.postId}</td>
@@ -136,6 +149,39 @@
 					</form>
 				</c:otherwise>
 			</c:choose>
+
+		</div>
+	</c:if>
+
+	<!-- 게시글 신고버튼 -->
+	<c:if test="${post.category != '0' && post.category != 0}">
+		<div style="margin-top: 12px; text-align: center;">
+
+			<c:if test="${sessionScope.loginMember != null}">
+				<form action="${pageContext.request.contextPath}/board/report"
+					method="post" style="display: inline-block;">
+
+					<input type="hidden" name="postId" value="${post.postId}">
+					<input type="hidden" name="category" value="${category}"> <input
+						type="hidden" name="page" value="${page}"> <select
+						name="reason"
+						style="padding: 6px 10px; border-radius: 6px; margin-right: 8px;">
+						<option value="욕설/비방">욕설/비방</option>
+						<option value="도배/스팸">도배/스팸</option>
+						<option value="음란/부적절">음란/부적절</option>
+						<option value="기타">기타</option>
+					</select>
+
+					<button type="submit" onclick="return confirm('이 게시글을 신고하시겠습니까?');"
+						style="padding: 8px 14px; border: none; border-radius: 999px; background: #ef4444; color: white; font-weight: 700; cursor: pointer;">
+						🚨 신고하기</button>
+				</form>
+			</c:if>
+
+			<c:if test="${sessionScope.loginMember == null}">
+				<div style="margin-top: 8px; color: gray; font-size: 14px;">
+					신고는 로그인 후 가능합니다.</div>
+			</c:if>
 
 		</div>
 	</c:if>
