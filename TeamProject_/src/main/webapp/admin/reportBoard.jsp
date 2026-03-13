@@ -174,6 +174,107 @@
 			display: none !important;
 		}
 	}
+	@media (max-width: 760px){
+		.report-board.member-admin{
+			padding-left: 12px;
+			padding-right: 12px;
+		}
+		.report-board .member-admin__hero,
+		.report-board .table-head{
+			align-items: stretch;
+		}
+		.report-board .actions,
+		.report-board .report-filter{
+			width: 100%;
+		}
+		.report-board .actions .btn,
+		.report-board .report-filter__link{
+			flex: 1 1 calc(50% - 6px);
+			min-width: 0;
+		}
+		.report-board .table-card{
+			overflow: hidden;
+		}
+		.report-board .report-table,
+		.report-board .report-table thead,
+		.report-board .report-table tbody,
+		.report-board .report-table tr,
+		.report-board .report-table th,
+		.report-board .report-table td{
+			display: block;
+			width: 100%;
+		}
+		.report-board .report-table thead{
+			display: none;
+		}
+		.report-board .report-table tbody{
+			padding: 12px;
+		}
+		.report-board .report-table tr{
+			border: 1px solid #e2e8f0;
+			border-radius: 18px;
+			background: #fff;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+			overflow: hidden;
+		}
+		.report-board .report-table tr + tr{
+			margin-top: 12px;
+		}
+		.report-board .report-table td{
+			padding: 12px 14px;
+			border-bottom: 1px solid #eef2f7;
+		}
+		.report-board .report-table td:last-child{
+			border-bottom: 0;
+		}
+		.report-board .report-table td::before{
+			display: block;
+			margin-bottom: 6px;
+			font-size: 12px;
+			font-weight: 900;
+			color: #64748b;
+		}
+		.report-board .report-table td:nth-child(1)::before{ content:'번호'; }
+		.report-board .report-table td:nth-child(2)::before{ content:'분류'; }
+		.report-board .report-table td:nth-child(3)::before{ content:'신고자'; }
+		.report-board .report-table td:nth-child(4)::before{ content:'대상자'; }
+		.report-board .report-table td:nth-child(5)::before{ content:'게시글'; }
+		.report-board .report-table td:nth-child(6)::before{ content:'댓글 내용'; }
+		.report-board .report-table td:nth-child(7)::before{ content:'신고 사유'; }
+		.report-board .report-table td:nth-child(8)::before{ content:'접수일'; }
+		.report-board .report-table td:nth-child(9)::before{ content:'처리상태'; }
+		.report-board .report-table td:nth-child(10)::before{ content:'처리'; }
+		.report-board .report-table__status-cell,
+		.report-board .report-table__action-cell{
+			text-align: left !important;
+			white-space: normal !important;
+		}
+		.report-board .report-table__status-cell .badge,
+		.report-board .report-table__action-cell .btn,
+		.report-board .report-table__action-cell .report-table__dash,
+		.report-board .report-table__action-cell form{
+			margin: 0;
+		}
+		.report-board .report-table__action-form{
+			justify-content: flex-start;
+		}
+		.report-board .report-table__action-btn.btn{
+			width: 100% !important;
+			max-width: 220px;
+		}
+	}
+	@media (max-width: 480px){
+		.report-board .actions .btn,
+		.report-board .report-filter__link{
+			flex-basis: 100%;
+		}
+		.report-board .member-admin__hero h1{
+			font-size: 24px;
+		}
+		.report-board .table-head h2{
+			font-size: 18px;
+		}
+	}
 </style>
 </head>
 <body>
@@ -231,31 +332,31 @@
 					<tbody>
 						<c:forEach var="report" items="${commentReportList}">
 							<tr>
-								<td>${report.reportId}</td>
-								<td>댓글</td>
-								<td><c:out value="${report.reportMemberId}" /></td>
-								<td><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${report.targetMemberId}"><c:out value="${report.targetMemberId}" /></a></td>
-								<td><c:out value="${report.postTitle}" /></td>
-								<td class="report-table__content">
+								<td data-label="번호">${report.reportId}</td>
+								<td data-label="분류">댓글</td>
+								<td data-label="신고자"><c:out value="${report.reportMemberId}" /></td>
+								<td data-label="대상자"><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${report.targetMemberId}"><c:out value="${report.targetMemberId}" /></a></td>
+								<td data-label="게시글"><c:out value="${report.postTitle}" /></td>
+								<td class="report-table__content" data-label="댓글 내용">
 									<div class="report-table__preview" tabindex="0" title="${report.commentContent}">
 										<div class="report-table__preview-text"><c:out value="${report.commentContent}" /></div>
 										<div class="report-table__hover-card"><c:out value="${report.commentContent}" /></div>
 									</div>
 								</td>
-								<td class="report-table__content">
+								<td class="report-table__content" data-label="신고 사유">
 									<div class="report-table__preview" tabindex="0" title="${report.reason}">
 										<div class="report-table__preview-text"><c:out value="${report.reason}" /></div>
 										<div class="report-table__hover-card"><c:out value="${report.reason}" /></div>
 									</div>
 								</td>
-								<td><c:out value="${report.createdAt}" /></td>
-								<td class="report-table__status-cell">
+								<td data-label="접수일"><c:out value="${report.createdAt}" /></td>
+								<td class="report-table__status-cell" data-label="처리상태">
 									<c:choose>
 										<c:when test="${report.processed}"><span class="badge badge--done">처리됨</span></c:when>
 										<c:otherwise><span class="badge badge--pending">처리안됨</span></c:otherwise>
 									</c:choose>
 								</td>
-								<td class="report-table__action-cell">
+								<td class="report-table__action-cell" data-label="처리">
 									<c:if test="${not report.processed}">
 										<form method="post" action="${contextPath}/member/admin/report/process.me" class="report-table__action-form">
 											<input type="hidden" name="reportId" value="${report.reportId}">

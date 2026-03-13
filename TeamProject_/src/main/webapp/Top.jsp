@@ -3,6 +3,52 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="loginId" value="${sessionScope.loginId}" />
 <c:set var="loginName" value="${sessionScope.loginName}" />
+<style>
+  .topbar__inner{
+    flex-wrap:wrap;
+    height:auto;
+    min-height:76px;
+    padding:12px 0;
+  }
+
+  .nav{
+    margin-left:auto;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    row-gap:8px;
+  }
+
+  @media (max-width: 900px){
+    .topbar__inner{
+      gap:12px;
+    }
+
+    .nav{
+      width:100%;
+      margin-left:0;
+      justify-content:flex-start;
+    }
+  }
+
+  @media (max-width: 640px){
+    .brand{
+      width:100%;
+    }
+
+    .nav a{
+      padding:8px 8px;
+      font-size:13px;
+    }
+
+    .subnav__inner{
+      height:auto;
+      padding:8px 0;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+  }
+</style>
 <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="${contextPath}/main.jsp">

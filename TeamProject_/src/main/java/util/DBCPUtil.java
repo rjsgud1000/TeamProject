@@ -28,6 +28,7 @@ package util;
 // DB 연결 객체 (SQL 실행을 위해 필요)
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 // JNDI 관련 클래스 (서버 자원을 이름으로 찾기 위해 사용)
 import javax.naming.Context;
@@ -42,8 +43,7 @@ public class DBCPUtil {
 
     // 커넥션 풀 객체
     private static DataSource dataSource;
-
-
+    private static final String SESSION_TIME_ZONE_SQL = "SET time_zone = '+09:00'";
 
     /*
      =============================================================================
@@ -187,21 +187,20 @@ public class DBCPUtil {
     */
     public static Connection getConnection() throws SQLException {
 
-        /*
-		         내부 동작 흐름 :
-		
-		           - 커넥션 풀에 사용 가능한 연결이 있는지 확인
-		           - 있으면 즉시 반환
-		           - 없으면 대기
-		           - 대기 시간 초과 시 SQLException 발생
-		
-		         사용 후 반드시 close() 호출해야 한다.
-		
-		         단,
-		         close()는 실제 종료가 아니라
-		         "사용 완료" 표시 후 풀로 반환하는 동작이다.
-        */
-        return dataSource.getConnection();
+        Connection connection = dataSource.getConnection();
+
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(SESSION_TIME_ZONE_SQL);
+        } catch (SQLException e) {
+            try {
+                connection.close();
+            } catch (SQLException closeException) {
+                e.addSuppressed(closeException);
+            }
+            throw e;
+        }
+
+        return connection;
     }
 
 }

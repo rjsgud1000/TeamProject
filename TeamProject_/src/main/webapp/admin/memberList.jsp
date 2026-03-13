@@ -14,6 +14,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원관리</title>
 <link rel="stylesheet" href="${contextPath}/css/admin-member.css" />
+<style>
+	@media (max-width: 760px){
+		body .member-admin{
+			padding-left: 12px;
+			padding-right: 12px;
+		}
+
+		body .member-admin > .table-card{
+			overflow: hidden;
+		}
+
+		body .member-admin .table-head{
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		body .member-admin .member-table,
+		body .member-admin .member-table thead,
+		body .member-admin .member-table tbody,
+		body .member-admin .member-table tr,
+		body .member-admin .member-table th,
+		body .member-admin .member-table td{
+			display: block !important;
+			width: 100% !important;
+		}
+
+		body .member-admin .member-table thead{
+			display: none !important;
+		}
+
+		body .member-admin .member-table tbody{
+			padding: 12px;
+		}
+
+		body .member-admin .member-table tr{
+			margin: 0 0 12px;
+			border: 1px solid #e2e8f0;
+			border-radius: 18px;
+			background: #fff;
+			box-shadow: 0 10px 30px rgba(15, 23, 42, .06);
+			overflow: hidden;
+		}
+
+		body .member-admin .member-table tr:last-child{
+			margin-bottom: 0;
+		}
+
+		body .member-admin .member-table td{
+			padding: 12px 14px !important;
+			border-bottom: 1px solid #eef2f7;
+			text-align: left !important;
+			white-space: normal !important;
+			word-break: break-word;
+			overflow-wrap: anywhere;
+		}
+
+		body .member-admin .member-table td:last-child{
+			border-bottom: 0;
+		}
+
+		body .member-admin .member-table td::before{
+			content: attr(data-label);
+			display: block !important;
+			margin-bottom: 6px;
+			font-size: 12px;
+			font-weight: 900;
+			color: #64748b;
+		}
+	}
+
+	@media (max-width: 480px){
+		body .member-admin__chips{
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		body .member-admin .member-admin__hero h1{
+			font-size: 24px;
+		}
+	}
+</style>
 </head>
 <body>
 <div class="member-admin">
@@ -79,13 +159,13 @@
 					<tbody>
 						<c:forEach var="member" items="${memberList}">
 							<tr>
-								<td>${member.memberId}</td>
-								<td>${member.username}</td>
-								<td>${member.nickname}</td>
-								<td><span class="badge badge--${member.role}">${empty roleLabelMap[member.role] ? member.role : roleLabelMap[member.role]}</span></td>
-								<td><span class="badge badge--${member.status}">${empty statusLabelMap[member.status] ? member.status : statusLabelMap[member.status]}</span></td>
-								<td><c:out value="${empty member.email ? '-' : member.email}" /></td>
-								<td><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${member.memberId}">보기</a></td>
+								<td data-label="아이디">${member.memberId}</td>
+								<td data-label="이름">${member.username}</td>
+								<td data-label="닉네임">${member.nickname}</td>
+								<td data-label="권한"><span class="badge badge--${member.role}">${empty roleLabelMap[member.role] ? member.role : roleLabelMap[member.role]}</span></td>
+								<td data-label="상태"><span class="badge badge--${member.status}">${empty statusLabelMap[member.status] ? member.status : statusLabelMap[member.status]}</span></td>
+								<td data-label="이메일"><c:out value="${empty member.email ? '-' : member.email}" /></td>
+								<td data-label="상세"><a class="link" href="${contextPath}/member/admin/detail.me?memberId=${member.memberId}">보기</a></td>
 							</tr>
 						</c:forEach>
 					</tbody>

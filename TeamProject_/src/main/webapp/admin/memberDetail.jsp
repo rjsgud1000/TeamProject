@@ -14,9 +14,100 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원 상세관리</title>
 <link rel="stylesheet" href="${contextPath}/css/admin-member.css" />
+<style>
+	.detail-page{
+		padding-left: 12px;
+		padding-right: 12px;
+	}
+	.detail-page .detail-status-form select,
+	.detail-page .detail-status-form textarea,
+	.detail-page .detail-status-form input[type="datetime-local"]{
+		border: 1px solid #cbd5e1;
+		font-size: 14px;
+		background: #fff;
+	}
+	.detail-page .detail-status-form textarea{
+		min-height: 112px;
+	}
+	.detail-page .detail-status-form .btn{
+		min-width: 160px;
+	}
+	.detail-page .address-card{
+		overflow-wrap: anywhere;
+	}
+	@media (max-width: 860px){
+		.detail-page{
+			padding-left: 14px;
+			padding-right: 14px;
+		}
+		.detail-page .detail-head{
+			align-items: stretch;
+		}
+		.detail-page .actions{
+			width: 100%;
+		}
+		.detail-page .actions .btn{
+			flex: 1 1 calc(50% - 6px);
+			min-width: 0;
+		}
+		.detail-page .meta{
+			grid-template-columns: 120px 1fr;
+			gap: 10px 12px;
+		}
+	}
+	@media (max-width: 640px){
+		.detail-page{
+			padding-left: 12px;
+			padding-right: 12px;
+			padding-top: 14px;
+		}
+		.detail-page .detail-head h1{
+			font-size: 24px;
+		}
+		.detail-page .card{
+			padding: 18px 16px;
+			border-radius: 18px;
+		}
+		.detail-page .summary{
+			gap: 14px;
+		}
+		.detail-page .meta{
+			grid-template-columns: 1fr;
+			gap: 6px;
+		}
+		.detail-page .meta dt{
+			font-size: 12px;
+			color: #64748b;
+		}
+		.detail-page .meta dd{
+			padding-bottom: 10px;
+			border-bottom: 1px solid #eef2f7;
+		}
+		.detail-page .meta dd:last-child{
+			border-bottom: 0;
+			padding-bottom: 0;
+		}
+		.detail-page .actions .btn,
+		.detail-page .detail-status-form .btn{
+			width: 100%;
+		}
+		.detail-page .detail-status-form .btn{
+			min-width: 0;
+		}
+		.detail-page .notice{
+			padding: 12px 14px;
+			font-size: 14px;
+		}
+	}
+	@media (max-width: 420px){
+		.detail-page .actions .btn{
+			flex-basis: 100%;
+		}
+	}
+</style>
 </head>
 <body>
-<div class="detail-wrap">
+<div class="detail-wrap detail-page">
 	<div class="detail-head">
 		<div>
 			<h1>회원 상세관리</h1>
@@ -58,7 +149,7 @@
 						<p style="margin:0; color:#666;">관리자 계정은 상태를 변경할 수 없습니다.</p>
 					</c:when>
 					<c:otherwise>
-						<form method="post" action="${contextPath}/member/admin/updateStatus.me" onsubmit="return validateStatusForm();">
+						<form method="post" action="${contextPath}/member/admin/updateStatus.me" class="detail-status-form" onsubmit="return validateStatusForm();">
 							<input type="hidden" name="memberId" value="${member.memberId}">
 							<label for="status" style="display:block; margin-bottom:8px; font-weight:600;">변경 상태</label>
 							<select id="status" name="status" style="width:100%; padding:10px; border-radius:10px; margin-bottom:12px;" onchange="toggleSanctionFields();">
@@ -84,7 +175,7 @@
 		</div>
 	</div>
 
-	<div class="card">
+	<div class="card address-card">
 		<h2 style="margin-top:0;">주소 정보</h2>
 		<div class="address">우편번호: <c:out value="${empty member.zipcode ? '-' : member.zipcode}" />
 도로명주소: <c:out value="${empty member.addr1 ? '-' : member.addr1}" />
