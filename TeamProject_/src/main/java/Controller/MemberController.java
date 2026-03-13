@@ -1,6 +1,7 @@
 package Controller;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,10 +14,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import Comment.CommentDTO;
+import Dao.MemberDAO;
+import Dao.MyCommentsDAO;
+import Dao.MyPostsDAO;
 import Service.MemberService;
 import Service.ReportService;
 import Vo.MemberVO;
 import Vo.CommentReportVO;
+import Vo.BoardPostVO;
 import util.RecaptchaUtil;
 
 @WebServlet("/member/*")
@@ -44,6 +50,10 @@ public class MemberController extends HttpServlet {
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
 	private final RecaptchaUtil recaptchaUtil = new RecaptchaUtil();
+	private final MyPostsDAO myPostsDAO = new MyPostsDAO();
+	private final MyCommentsDAO myCommentsDAO = new MyCommentsDAO();
+	private final MemberDAO memberDAO = new MemberDAO();
+	private static final int MY_ACTIVITY_PREVIEW_LIMIT = 5;
 
 	// GET 요청 처리 메소드
 	@Override
@@ -667,7 +677,26 @@ public class MemberController extends HttpServlet {
 		if (member == null) {
 			return;
 		}
-		request.setAttribute("memberDetail", member);
+
+		MemberVO memberDetail = memberDAO.findByMemberId(member.getMemberId());
+		String memberId = member.getMemberId();
+		String nickname = memberDetail != null ? memberDetail.getNickname() : member.getNickname();
+
+		List<BoardPostVO> myPosts = myPostsDAO.findPostsByMember(memberId, nickname);
+		List<CommentDTO> myComments = myCommentsDAO.findCommentsByMember(memberId, nickname);
+		if (myPosts == null) {
+			myPosts = Collections.emptyList();
+		}
+		if (myComments == null) {
+			myComments = Collections.emptyList();
+		}
+
+		request.setAttribute("memberDetail", memberDetail != null ? memberDetail : member);
+		request.setAttribute("myPosts", myPosts.size() > MY_ACTIVITY_PREVIEW_LIMIT ? myPosts.subList(0, MY_ACTIVITY_PREVIEW_LIMIT) : myPosts);
+		request.setAttribute("myComments", myComments.size() > MY_ACTIVITY_PREVIEW_LIMIT ? myComments.subList(0, MY_ACTIVITY_PREVIEW_LIMIT) : myComments);
+		request.setAttribute("myPostCount", myPostsDAO.countPostsByMember(memberId, nickname));
+		request.setAttribute("myCommentCount", myCommentsDAO.countCommentsByMember(memberId, nickname));
+		request.setAttribute("activityPreviewLimit", MY_ACTIVITY_PREVIEW_LIMIT);
 		request.setAttribute("center", "members/mypage.jsp");
 		forward(request, response, "/main.jsp");
 	}
