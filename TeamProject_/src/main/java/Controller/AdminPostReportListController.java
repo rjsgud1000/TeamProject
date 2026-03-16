@@ -29,7 +29,7 @@ public class AdminPostReportListController extends HttpServlet {
 
         List<PostReportDTO> reportList = boardDAO.getPostReportList();
         request.setAttribute("reportList", reportList);
-        request.setAttribute("center", "adminPostReportList.jsp");
+        request.setAttribute("center", "admin/adminPostReportList.jsp");
 
         request.getRequestDispatcher("/main.jsp").forward(request, response);
     }

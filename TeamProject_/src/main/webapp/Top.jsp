@@ -19,6 +19,55 @@
     row-gap:8px;
   }
 
+  .nav-dropdown{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+  }
+
+  .nav-dropdown__toggle{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .nav-dropdown__toggle::after{
+    content:'▾';
+    font-size:12px;
+    line-height:1;
+  }
+
+  .nav-dropdown__menu{
+    position:absolute;
+    top:100%;
+    left:0;
+    min-width:170px;
+    display:none;
+    flex-direction:column;
+    padding:8px 0;
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.08);
+    border-radius:10px;
+    box-shadow:0 10px 24px rgba(0,0,0,0.12);
+    z-index:1000;
+  }
+
+  .nav-dropdown:hover .nav-dropdown__menu,
+  .nav-dropdown:focus-within .nav-dropdown__menu{
+    display:flex;
+  }
+
+  .nav-dropdown__menu a{
+    white-space:nowrap;
+    padding:10px 14px;
+    color:#222;
+  }
+
+  .nav-dropdown__menu a:hover{
+    background:#f5f7fb;
+    color:#111;
+  }
+
   @media (max-width: 900px){
     .topbar__inner{
       gap:12px;
@@ -47,6 +96,11 @@
       flex-wrap:wrap;
       gap:8px;
     }
+
+    .nav-dropdown__menu{
+      left:auto;
+      right:0;
+    }
   }
 </style>
 <header class="topbar">
@@ -66,12 +120,16 @@
 				<c:otherwise>
 					<c:if test="${requestScope.isAdmin}">
 						<a href="${contextPath}/member/admin/list.me">회원조회</a>
-						<a href="${contextPath}/member/admin/reportList.me">신고처리</a>
 					</c:if>
 					
-					<!-- 게시글 신고관리 -->
 					<c:if test="${sessionScope.loginMember != null && sessionScope.loginMember.role eq 'ADMIN'}">
-						<a href="${contextPath}/admin/postReportList">게시글 신고관리</a>
+						<div class="nav-dropdown">
+							<a href="#" class="nav-dropdown__toggle" onclick="return false;">신고처리</a>
+							<div class="nav-dropdown__menu">
+								<a href="${contextPath}/admin/postReportList">게시글 신고처리</a>
+								<a href="${contextPath}/member/admin/reportList.me">댓글 신고처리</a>
+							</div>
+						</div>
 					</c:if>
 
 					<a href="#"

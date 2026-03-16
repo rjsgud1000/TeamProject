@@ -1,0 +1,240 @@
+/* 게시글 신고 관리 - 관리자 공통 톤 보강 */
+.post-report-page{
+  max-width:1180px;
+}
+
+.post-report-page__header{
+  margin-bottom:20px;
+}
+
+.post-report-page__header h1,
+.post-report-page__header h2{
+  margin:0;
+  font-size:30px;
+  color:#0f172a;
+}
+
+.post-report-page__header p{
+  margin:8px 0 0;
+  color:#64748b;
+  font-size:14px;
+  font-weight:700;
+}
+
+.post-report-card{
+  overflow:hidden;
+}
+
+.post-report-table-head__count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  padding:0 14px;
+  border-radius:999px;
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  color:#1d4ed8;
+  font-size:13px;
+  font-weight:800;
+}
+
+.post-report-table-wrap{
+  overflow-x:auto;
+}
+
+.post-report-table{
+  width:100%;
+  min-width:980px;
+  table-layout:auto;
+}
+
+.post-report-table th,
+.post-report-table td{
+  vertical-align:top;
+  color:#1e293b;
+}
+
+.post-report-table thead th{
+  background:#f8fafc;
+  color:#475569;
+  font-size:13px;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.post-report-table tbody tr:hover{
+  background:#f8fbff;
+}
+
+.post-report-table__empty{
+  text-align:center !important;
+  padding:48px 20px !important;
+  color:#64748b !important;
+  font-weight:700;
+}
+
+.post-report-link{
+  display:inline-block;
+  max-width:240px;
+  white-space:normal;
+  word-break:break-word;
+}
+
+.report-badge{
+  min-width:84px;
+  font-weight:900;
+}
+
+.report-badge--pending{background:#fef3c7;color:#92400e;}
+.report-badge--resolved{background:#dcfce7;color:#166534;}
+.report-badge--rejected{background:#fee2e2;color:#b91c1c;}
+
+.post-report-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.post-report-actions--stack{
+  flex-direction:column;
+  align-items:flex-start;
+}
+
+.post-report-actions form{
+  margin:0;
+}
+
+.report-btn.btn{
+  height:38px;
+  padding:0 14px;
+  border:0;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:800;
+  transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+
+.report-btn.btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(15, 23, 42, .14);
+}
+
+.report-btn--success.btn{
+  background:linear-gradient(180deg, #22c55e, #16a34a);
+}
+
+.report-btn--danger.btn{
+  background:linear-gradient(180deg, #ef4444, #dc2626);
+}
+
+.report-btn--warning.btn{
+  background:linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.post-report-done{
+  color:#475569;
+  font-weight:700;
+}
+
+.post-report-reason{
+  max-width:280px;
+  line-height:1.6;
+  word-break:break-word;
+}
+
+@media (max-width: 900px){
+  .post-report-table{
+    min-width:860px;
+  }
+}
+
+@media (max-width: 760px){
+  .post-report-page{
+    padding-left:12px;
+    padding-right:12px;
+  }
+
+  .post-report-page__header h1,
+  .post-report-page__header h2{
+    font-size:24px;
+  }
+
+  .post-report-card{
+    border-radius:18px;
+  }
+
+  .post-report-table,
+  .post-report-table thead,
+  .post-report-table tbody,
+  .post-report-table tr,
+  .post-report-table th,
+  .post-report-table td{
+    display:block;
+    width:100%;
+  }
+
+  .post-report-table{
+    min-width:0;
+  }
+
+  .post-report-table thead{
+    display:none;
+  }
+
+  .post-report-table tbody{
+    padding:12px;
+  }
+
+  .post-report-table tr{
+    border:1px solid #e2e8f0;
+    border-radius:18px;
+    background:#fff;
+    box-shadow:0 10px 30px rgba(15, 23, 42, .06);
+    overflow:hidden;
+  }
+
+  .post-report-table tr + tr{
+    margin-top:12px;
+  }
+
+  .post-report-table td{
+    padding:12px 14px;
+    border-bottom:1px solid #eef2f7;
+  }
+
+  .post-report-table td:last-child{
+    border-bottom:0;
+  }
+
+  .post-report-table td::before{
+    content:attr(data-label);
+    display:block;
+    margin-bottom:6px;
+    color:#64748b;
+    font-size:12px;
+    font-weight:800;
+  }
+
+  .post-report-table__empty::before{
+    display:none;
+  }
+
+  .post-report-link,
+  .post-report-reason{
+    max-width:none;
+  }
+
+  .post-report-actions,
+  .post-report-actions--stack{
+    width:100%;
+  }
+
+  .post-report-actions form{
+    width:100%;
+  }
+
+  .report-btn.btn{
+    width:100%;
+  }
+}
