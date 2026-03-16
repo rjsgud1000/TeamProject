@@ -7,13 +7,28 @@
 <%@ page import="Service.NaverTrendCacheService" %>
 <%@ page import="Vo.TrendGameVO" %>
 
-
 <main>
     <div class="container">
 <%
     NaverTrendCacheService trendCacheService = NaverTrendCacheService.getInstance();
-    List<TrendGameVO> trendGames = trendCacheService.getCachedList();
-    int featuredCount = trendGames.size() >= 10 ? 10 : trendGames.size();
+
+    List<TrendGameVO> trendGamesAll = trendCacheService.getCachedList();
+    List<TrendGameVO> trendGamesTop10 = new ArrayList<TrendGameVO>();
+    List<TrendGameVO> trendGames11To20 = new ArrayList<TrendGameVO>();
+
+    if (trendGamesAll != null && !trendGamesAll.isEmpty()) {
+        for (int i = 0; i < trendGamesAll.size(); i++) {
+            if (i < 10) {
+                trendGamesTop10.add(trendGamesAll.get(i));
+            } else if (i < 20) {
+                trendGames11To20.add(trendGamesAll.get(i));
+            } else {
+                break;
+            }
+        }
+    }
+
+    int featuredCount = trendGamesTop10.size();
 %>
 
 <div class="section-title">
@@ -27,37 +42,33 @@
 
     <div class="featured-slider__viewport">
       <div class="featured-slider__track" data-total-slides="<%= featuredCount %>">
-			<% for (int i = 0; i < featuredCount; i++) {
-			     TrendGameVO item = trendGames.get(i);
-			
-			     String displayTitle = item.getTitle();
-			     if ("오버워치 2".equals(displayTitle) || "오버워치2".equals(displayTitle)) {
-			         displayTitle = "오버워치";
-			     }
-			%>
-			    <div class="featured-slide">
-			      <a class="game-card trend-card"
-			         href="#top10ChartPopup"
-			         style="background-image:url('<%= request.getContextPath() + "/img/rank_slide/" + java.net.URLEncoder.encode(displayTitle, "UTF-8").replace("+", "%20") + ".png" %>');">
-			        <div class="rank-badge">
-			          <span class="rank-circle"><%= item.getRank() %></span>
-			          <%= item.getRank() %>위
-			        </div>
-			
-			        <div class="game-card__content">
-			          <div>
-			            <div class="game-name"><%= displayTitle %></div>
-			            <div class="game-submeta">평균 점수 <%= String.format("%.1f", item.getScore()) %></div>
-			          </div>
-			
-			          <div class="game-meta">
-			            <span class="meta-dot"></span>
-			            <%= item.getSource() %>
-			          </div>
-			        </div>
-			      </a>
-			    </div>
-			<% } %>
+<% for (int i = 0; i < featuredCount; i++) {
+     TrendGameVO item = trendGamesTop10.get(i);
+     String displayTitle = item.getTitle();
+%>
+            <div class="featured-slide">
+              <a class="game-card trend-card"
+                 href="#rank11to20ChartPopup"
+                 style="background-image:url('<%= request.getContextPath() + "/img/rank_slide/" + java.net.URLEncoder.encode(displayTitle, "UTF-8").replace("+", "%20") + ".png" %>');">
+                <div class="rank-badge">
+                  <span class="rank-circle"><%= item.getRank() %></span>
+                  <%= item.getRank() %>위
+                </div>
+
+                <div class="game-card__content">
+                  <div>
+                    <div class="game-name"><%= displayTitle %></div>
+                    <div class="game-submeta">평균 점수 <%= String.format("%.1f", item.getScore()) %></div>
+                  </div>
+
+                  <div class="game-meta">
+                    <span class="meta-dot"></span>
+                    <%= item.getSource() %>
+                  </div>
+                </div>
+              </a>
+            </div>
+        <% } %>
       </div>
     </div>
 
@@ -124,13 +135,13 @@
   })();
 </script>
 
-<div id="top10ChartPopup" class="chart-popup">
+<div id="rank11to20ChartPopup" class="chart-popup">
   <a href="#" class="chart-popup__dim"></a>
 
   <div class="chart-popup__panel">
     <div class="chart-popup__head">
       <div>
-        <h3>인기 게임 TOP 10</h3>
+        <h3>인기 게임 11~20위</h3>
         <p>Naver DataLab · 최근 7일 평균 · PC 기준</p>
       </div>
       <a href="#" class="chart-popup__close">✕</a>
@@ -148,8 +159,8 @@
         </thead>
         <tbody>
           <%
-            if (trendGames != null && !trendGames.isEmpty()) {
-                for (TrendGameVO item : trendGames) {
+            if (trendGames11To20 != null && !trendGames11To20.isEmpty()) {
+                for (TrendGameVO item : trendGames11To20) {
           %>
             <tr>
               <td class="rank-col"><%= item.getRank() %></td>
@@ -162,7 +173,7 @@
             } else {
           %>
             <tr>
-              <td colspan="4">차트 데이터를 불러오지 못했습니다.</td>
+              <td colspan="4">11~20위 차트 데이터를 불러오지 못했습니다.</td>
             </tr>
           <% } %>
         </tbody>
@@ -368,7 +379,6 @@
 %>
                 <li class="item">
                   <div class="item__text">
-                    <!-- 인기글 제목 클릭 시 상세페이지 이동 -->
                     <div class="title">
                       🔥
                       <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
@@ -422,7 +432,6 @@
 %>
                 <li class="item">
                   <div class="item__text">
-                    <!-- 최신 게시글 제목 클릭 시 상세페이지 이동 -->
                     <div class="title">
                       <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
                          style="text-decoration: none; color: inherit;">
@@ -471,7 +480,6 @@
 %>
                 <li class="item">
                   <div class="item__text">
-                    <!-- 공지사항 제목 클릭 시 상세페이지 이동 -->
                     <div class="title">
                       <a href="<%=request.getContextPath()%>/board/detail?postId=<%=vo.getMa_post_id()%>&category=<%=vo.getMa_category()%>&page=1"
                          style="text-decoration: none; color: inherit;">
