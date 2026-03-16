@@ -28,10 +28,13 @@ public class mainDAO {
         try {
             con = DBCPUtil.getConnection();
 
-            String sql = "select post_id, nickname, category, title, viewcount, create_at, is_deleted "
-                       + "from BOARD_POST "
-                       + "where category > 0 "
-                       + "order by post_id desc limit 5";
+            String sql =
+            	    "SELECT post_id, nickname, category, title, viewcount, create_at, is_deleted " +
+            	    "FROM BOARD_POST " +
+            	    "WHERE is_deleted = 0 " +
+            	    "AND is_blinded = 0 " +
+            	    "ORDER BY create_at DESC " +
+            	    "LIMIT 5";
 
             pstmt = con.prepareStatement(sql);
             rs = pstmt.executeQuery();
@@ -109,17 +112,18 @@ public ArrayList<mainVO> popularList() {
         con = DBCPUtil.getConnection();
 
         String sql =
-            "SELECT bp.post_id, bp.nickname, bp.category, bp.title, bp.viewcount, bp.create_at, bp.is_deleted, pl.like_count " +
-            "FROM BOARD_POST bp " +
-            "JOIN ( " +
-            "    SELECT post_id, COUNT(*) AS like_count " +
-            "    FROM POST_LIKE " +
-            "    GROUP BY post_id " +
-            "    HAVING COUNT(*) >= 5 " +
-            ") pl ON bp.post_id = pl.post_id " +
-            "WHERE bp.is_deleted = 0 " +
-            "ORDER BY bp.create_at DESC " +
-            "LIMIT 5";
+        	    "SELECT bp.post_id, bp.nickname, bp.category, bp.title, bp.viewcount, bp.create_at, bp.is_deleted, pl.like_count " +
+        	    "FROM BOARD_POST bp " +
+        	    "JOIN ( " +
+        	    "    SELECT post_id, COUNT(*) AS like_count " +
+        	    "    FROM POST_LIKE " +
+        	    "    GROUP BY post_id " +
+        	    "    HAVING COUNT(*) >= 5 " +
+        	    ") pl ON bp.post_id = pl.post_id " +
+        	    "WHERE bp.is_deleted = 0 " +
+        	    "AND bp.is_blinded = 0 " +
+        	    "ORDER BY bp.create_at DESC " +
+        	    "LIMIT 5";
 
         pstmt = con.prepareStatement(sql);
         rs = pstmt.executeQuery();
