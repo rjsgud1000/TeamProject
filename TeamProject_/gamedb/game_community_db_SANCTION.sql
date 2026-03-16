@@ -45,7 +45,7 @@ CREATE TABLE `SANCTION` (
   KEY `admin_member_id` (`admin_member_id`),
   CONSTRAINT `SANCTION_ibfk_1` FOREIGN KEY (`target_member_id`) REFERENCES `MEMBER` (`member_id`),
   CONSTRAINT `SANCTION_ibfk_2` FOREIGN KEY (`admin_member_id`) REFERENCES `MEMBER` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -68,4 +68,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-16 15:19:14
+-- Dump completed on 2026-03-16 17:38:23

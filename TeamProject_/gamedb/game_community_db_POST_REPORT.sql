@@ -42,7 +42,7 @@ CREATE TABLE `POST_REPORT` (
   KEY `fk_post_report_member` (`member_id`),
   CONSTRAINT `fk_post_report_member` FOREIGN KEY (`member_id`) REFERENCES `MEMBER` (`member_id`),
   CONSTRAINT `fk_post_report_post` FOREIGN KEY (`post_id`) REFERENCES `BOARD_POST` (`post_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -51,7 +51,7 @@ CREATE TABLE `POST_REPORT` (
 
 LOCK TABLES `POST_REPORT` WRITE;
 /*!40000 ALTER TABLE `POST_REPORT` DISABLE KEYS */;
-INSERT INTO `POST_REPORT` VALUES (1,56,'aa','욕설/비방','2026-03-13 05:16:52','REJECTED'),(2,46,'aa','도배/스팸','2026-03-13 05:21:59','RESOLVED'),(3,60,'admin','욕설/비방','2026-03-13 05:50:29','RESOLVED'),(4,46,'admin','욕설/비방','2026-03-13 05:50:56','RESOLVED'),(5,43,'aa','욕설/비방','2026-03-13 06:08:46','REJECTED'),(6,25,'admin','도배/스팸','2026-03-13 06:09:43','REJECTED'),(7,56,'admin','도배/스팸','2026-03-13 06:17:52','REJECTED'),(8,61,'admin','욕설/비방','2026-03-13 06:18:10','RESOLVED'),(9,58,'aa','욕설/비방','2026-03-13 06:18:38','RESOLVED'),(10,47,'aa','도배/스팸','2026-03-13 06:19:03','REJECTED'),(11,62,'admin','기타','2026-03-13 08:34:03','RESOLVED'),(12,59,'admin','음란/부적절','2026-03-13 08:36:20','PENDING'),(13,54,'admin','욕설/비방','2026-03-13 08:36:28','PENDING'),(14,61,'aa','도배/스팸','2026-03-13 08:46:53','RESOLVED');
+INSERT INTO `POST_REPORT` VALUES (1,56,'aa','욕설/비방','2026-03-13 05:16:52','REJECTED'),(2,46,'aa','도배/스팸','2026-03-13 05:21:59','RESOLVED'),(3,60,'admin','욕설/비방','2026-03-13 05:50:29','RESOLVED'),(4,46,'admin','욕설/비방','2026-03-13 05:50:56','RESOLVED'),(5,43,'aa','욕설/비방','2026-03-13 06:08:46','REJECTED'),(6,25,'admin','도배/스팸','2026-03-13 06:09:43','REJECTED'),(7,56,'admin','도배/스팸','2026-03-13 06:17:52','REJECTED'),(8,61,'admin','욕설/비방','2026-03-13 06:18:10','RESOLVED'),(9,58,'aa','욕설/비방','2026-03-13 06:18:38','RESOLVED'),(10,47,'aa','도배/스팸','2026-03-13 06:19:03','REJECTED'),(11,62,'admin','기타','2026-03-13 08:34:03','RESOLVED'),(12,59,'admin','음란/부적절','2026-03-13 08:36:20','PENDING'),(13,54,'admin','욕설/비방','2026-03-13 08:36:28','PENDING'),(14,61,'aa','도배/스팸','2026-03-13 08:46:53','RESOLVED'),(15,26,'admin','욕설/비방','2026-03-16 06:21:15','PENDING'),(16,63,'devv','욕설/비방','2026-03-16 06:35:33','RESOLVED');
 /*!40000 ALTER TABLE `POST_REPORT` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -65,4 +65,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-16 15:19:15
+-- Dump completed on 2026-03-16 17:38:24

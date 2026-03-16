@@ -39,80 +39,126 @@ public class MemberService {
 		}
 	}
 
-	// 로그인 처리 메소드
-	public LoginResult loginWithReason(String memberId, String password) {
+	// 로그인 처리 메소드 (기존 loginWithReason 보강)
+	public LoginResult loginWithReason(String memberId, String password, String ip, String agent) {
 		if (memberId == null || memberId.isBlank() || password == null || password.isBlank()) {
 			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
 		}
 		String id = memberId.trim();
 
 		MemberVO member = memberDAO.findByMemberId(id);
-		if (member == null) {
-			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
-		}
-
-		String flash = null;
-		String status = member.getStatus();
-		if (status != null) {
-			String s = status.trim().toUpperCase();
-			if ("BANNED".equals(s)) {
-				if (memberDAO.isLatestBannedSanctionExpired(id)) {
-					memberDAO.endActiveSanctions(id);
-					memberDAO.activateMember(id);
-					member.setStatus("ACTIVE");
-				} else {
-					Dao.MemberDAO.SanctionInfo info = memberDAO.findLatestBannedSanction(id);
-					String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
-					String until = "";
-					if (info != null && info.endAt != null) {
-						DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-						until = info.endAt.format(fmt);
+		
+		// 1. 이미 차단된 계정인지 먼저 확인 (기존 로직 포함)
+		if (member != null) {
+			String status = member.getStatus();
+			if (status != null) {
+				String s = status.trim().toUpperCase();
+				if ("BANNED".equals(s)) {
+					if (memberDAO.isLatestBannedSanctionExpired(id)) {
+						memberDAO.endActiveSanctions(id);
+						memberDAO.activateMember(id);
+						member.setStatus("ACTIVE");
+					} else {
+						MemberDAO.SanctionInfo info = memberDAO.findLatestBannedSanction(id);
+						String reason = (info != null && info.reason != null && !info.reason.isBlank()) ? info.reason : "(사유 없음)";
+						String until = "";
+						if (info != null && info.endAt != null) {
+							DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+							until = info.endAt.format(fmt);
+						}
+						
+						String msg = "차단된 계정입니다.";
+						msg += "\n사유: " + reason;
+						if (!until.isEmpty()) {
+							msg += "\n기간: ~ " + until;
+						}
+						
+						// 차단된 상태에서 시도 로그 (BLOCKED)
+						memberDAO.insertLoginHistory(id, member.getMemberId(), ip, agent, "BLOCKED", "ACCOUNT_BANNED");
+						return new LoginResult(null, msg, null);
 					}
-					String msg = "제재계정입니다.";
-					msg += "\n제재사유: " + reason;
-					if (!until.isEmpty()) {
-						msg += "\n제재기간: ~ " + until;
-					}
-					return new LoginResult(null, msg, null);
+				}
+				if ("WITHDRAWN".equals(s)) {
+					memberDAO.insertLoginHistory(id, member.getMemberId(), ip, agent, "FAIL", "WITHDRAWN");
+					return new LoginResult(null, "탈퇴한 계정입니다.", null);
 				}
 			}
-			if ("WITHDRAWN".equals(s)) {
-				return new LoginResult(null, "탈퇴한 계정입니다.", null);
+		}
+
+		// 2. 비밀번호 검증
+		boolean ok = false;
+		if (member != null) {
+			String stored = member.getPasswordHash();
+			if (PasswordUtil.isHashed(stored)) {
+				ok = PasswordUtil.matches(password, stored);
+			} else {
+				ok = password.equals(stored);
+				if (ok) {
+					String newHash = PasswordUtil.hash(password);
+					memberDAO.updatePasswordHash(id, newHash);
+					member.setPasswordHash(newHash);
+				}
 			}
-			if ("WARNING".equals(s)) {
+		}
+
+		if (ok) {
+			// 로그인 성공
+			memberDAO.insertLoginHistory(id, member.getMemberId(), ip, agent, "SUCCESS", null);
+			
+			// 성공 시 flash 메시지 (기존 경고 로직 유지)
+			String flash = null;
+			if ("WARNING".equals(member.getStatus())) {
 				int warningCount = memberDAO.countSanctions(id)[0];
 				memberDAO.endWarningSanctions(id);
 				memberDAO.activateMember(id);
 				member.setStatus("ACTIVE");
 				flash = "관리자로 부터 경고를 받았습니다. 경고 누적시 제재당할수도 있으니 주의하십시오. 경고누적: " + warningCount + "회";
 			}
-			if (!"ACTIVE".equals(member.getStatus()) && !"INACTIVE".equals(member.getStatus()) && !"WARNING".equals(member.getStatus())) {
-				return new LoginResult(null, "현재 계정 상태로는 로그인할 수 없습니다. (상태: " + member.getStatus() + ")", null);
-			}
-		}
-
-		// 비밀번호 검증(기존 로직 유지)
-		String stored = member.getPasswordHash();
-		boolean ok;
-		if (PasswordUtil.isHashed(stored)) {
-			ok = PasswordUtil.matches(password, stored);
+			
+			return new LoginResult(memberDAO.findByMemberId(id), null, flash);
 		} else {
-			ok = password.equals(stored);
-			if (ok) {
-				String newHash = PasswordUtil.hash(password);
-				memberDAO.updatePasswordHash(id, newHash);
-				member.setPasswordHash(newHash);
-			}
-		}
+			// 로그인 실패
+			String memberIdForLog = (member != null) ? member.getMemberId() : null;
+			String failReason = (member != null) ? "BAD_PASSWORD" : "NO_SUCH_MEMBER";
+			
+			memberDAO.insertLoginHistory(id, memberIdForLog, ip, agent, "FAIL", failReason);
+			
+			// 실패 횟수 누적 확인 및 자동 차단 로직 (회원이 존재하는 경우에만)
+			if (member != null) {
+				int failCount = memberDAO.countRecentLoginFailures(id);
+				if (failCount >= 5) {
+					// 5회 실패 시 10분 차단 (SANCTION 연계)
+					final int lockMinutes = 10;
+					final String sanctionReason = "비밀번호 5번 연속 틀림";
 
-		return ok ? new LoginResult(memberDAO.findByMemberId(id), null, flash) : new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
+					memberDAO.insertSanction(member.getMemberId(), "SYSTEM", "BAN", sanctionReason, lockMinutes);
+					memberDAO.updateMemberStatus(member.getMemberId(), "BANNED");
+
+					// 제재 종료 시각을 함께 안내
+					MemberDAO.SanctionInfo info = memberDAO.findLatestBannedSanction(id);
+					String until = "";
+					if (info != null && info.endAt != null) {
+						DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+						until = info.endAt.format(fmt);
+					}
+
+					String msg = "비밀번호를 5회 연속 잘못 입력하여 계정이 10분간 잠금되었습니다.";
+					msg += "\n제재사유: " + sanctionReason;
+					if (!until.isEmpty()) {
+						msg += "\n제재기간: ~ " + until;
+					}
+					return new LoginResult(null, msg, null);
+				}
+				return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다. (연속 실패: " + failCount + "회)", null);
+			}
+			
+			return new LoginResult(null, "아이디 또는 비밀번호가 올바르지 않습니다.", null);
+		}
 	}
 
-	// 로그인 호환 메소드
-	public MemberVO login(String memberId, String password) {
-		// 기존 호출부 호환: 이유 없이 member만 반환
-		LoginResult r = loginWithReason(memberId, password);
-		return r.member;
+	// 기존 loginWithReason (오버로딩으로 호환성 유지)
+	public LoginResult loginWithReason(String memberId, String password) {
+		return loginWithReason(memberId, password, null, null);
 	}
 
 	// 회원가입 처리 메소드

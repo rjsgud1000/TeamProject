@@ -631,6 +631,65 @@ public class MemberDAO {
 		return null;
 	}
 
+	// 로그인 이력 기록 메소드
+	public int insertLoginHistory(String inputId, String memberId, String ip, String agent, String result, String reason) {
+		String sql = "INSERT INTO LOGIN_HISTORY (input_member_id, member_id, login_ip, user_agent, login_result, fail_reason) VALUES (?, ?, ?, ?, ?, ?)";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, inputId);
+			pstmt.setString(2, memberId);
+			pstmt.setString(3, ip);
+			pstmt.setString(4, agent);
+			pstmt.setString(5, result);
+			pstmt.setString(6, reason);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// 최근 로그인 실패 횟수 조회 (최근 성공 이후 또는 특정 기간 내)
+	public int countRecentLoginFailures(String inputId) {
+		// 마지막 성공 로그인 이후의 실패 횟수를 카운트
+		String sql = "SELECT COUNT(*) FROM LOGIN_HISTORY " +
+					 "WHERE input_member_id = ? AND login_result = 'FAIL' " +
+					 "AND login_history_id > IFNULL((SELECT MAX(login_history_id) FROM LOGIN_HISTORY WHERE input_member_id = ? AND login_result = 'SUCCESS'), 0)";
+		
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, inputId);
+			pstmt.setString(2, inputId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// 회원 제재 추가 (SANCTION 테이블 연계)
+	public int insertSanction(String targetId, String adminId, String type, String reason, int durationMinutes) {
+		// 프로젝트 내 다른 제재 INSERT와 컬럼명을 통일(admin_member_id)
+		String sql = "INSERT INTO SANCTION (target_member_id, admin_member_id, TYPE, REASON, start_at, end_at, member_status) " +
+					 "VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MINUTE), 'BANNED')";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, targetId);
+			pstmt.setString(2, adminId);
+			pstmt.setString(3, type);
+			pstmt.setString(4, reason);
+			pstmt.setInt(5, durationMinutes);
+			return pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
 	// ResultSet -> MemberVO 매핑 메소드
 	private MemberVO mapMember(ResultSet rs) throws Exception {
 		MemberVO vo = new MemberVO();

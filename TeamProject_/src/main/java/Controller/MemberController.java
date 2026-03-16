@@ -231,8 +231,12 @@ public class MemberController extends HttpServlet {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
 		String recaptchaToken = request.getParameter("g-recaptcha-response");
+		
+		// 클라이언트 정보 추출 (프록시 헤더 우선 + IPv6 루프백 정규화)
+		String ip = resolveClientIp(request);
+		String agent = request.getHeader("User-Agent");
 
-		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, request.getRemoteAddr());
+		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, ip);
 		if (!recaptchaResult.success) {
 			populateLoginViewAttributes(request);
 			request.setAttribute("loginError", recaptchaResult.message);
@@ -242,7 +246,7 @@ public class MemberController extends HttpServlet {
 			return;
 		}
 
-		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
+		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass, ip, agent);
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
 			populateLoginViewAttributes(request);
@@ -759,9 +763,13 @@ public class MemberController extends HttpServlet {
 			return;
 		}
 
-		MemberService.LoginResult loginResult = memberService.loginWithReason(sessionMember.getMemberId(), password);
+		// 프로필 수정 전 인증에서도 로그인 이력을 남기려면 ip, agent 전달
+		String ip = resolveClientIp(request);
+		String agent = request.getHeader("User-Agent");
+
+		MemberService.LoginResult loginResult = memberService.loginWithReason(sessionMember.getMemberId(), password, ip, agent);
 		if (loginResult.member == null) {
-			request.setAttribute("verifyError", "현재 비밀번호가 일치하지 않습니다.");
+			request.setAttribute("verifyError", loginResult.error != null ? loginResult.error : "현재 비밀번호가 일치하지 않습니다.");
 			request.setAttribute("center", "members/editProfileVerify.jsp");
 			forward(request, response, "/main.jsp");
 			return;
@@ -1124,4 +1132,47 @@ public class MemberController extends HttpServlet {
 		return merged;
 	}
 
+	/**
+	 * 클라이언트 IP 추출: 프록시를 타는 환경을 고려해 X-Forwarded-For 등을 우선 사용하고,
+	 * 로컬 개발 환경에서 흔히 들어오는 IPv6 loopback(0:0:0:0:0:0:0:1, ::1)은 127.0.0.1로 정규화합니다.
+	 */
+	private String resolveClientIp(HttpServletRequest request) {
+		if (request == null) {
+			return null;
+		}
+
+		String ip = firstIpFromHeader(request.getHeader("X-Forwarded-For"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("X-Real-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("X-Client-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("Proxy-Client-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("WL-Proxy-Client-IP"));
+		if (ip == null) ip = request.getRemoteAddr();
+
+		if (ip != null) {
+			ip = ip.trim();
+			// IPv6 loopback normalize
+			if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+				return "127.0.0.1";
+			}
+			// Forwarded-for에 IPv4가 '::ffff:127.0.0.1' 형태로 올 수 있어 정리
+			if (ip.startsWith("::ffff:")) {
+				return ip.substring("::ffff:".length());
+			}
+		}
+		return ip;
+	}
+
+	private String firstIpFromHeader(String headerValue) {
+		if (headerValue == null) {
+			return null;
+		}
+		String v = headerValue.trim();
+		if (v.isEmpty() || "unknown".equalsIgnoreCase(v)) {
+			return null;
+		}
+		// X-Forwarded-For: client, proxy1, proxy2 ...
+		int comma = v.indexOf(',');
+		String ip = (comma >= 0) ? v.substring(0, comma).trim() : v;
+		return (ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) ? null : ip;
+	}
 }
