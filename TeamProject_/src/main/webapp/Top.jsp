@@ -3,6 +3,7 @@
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 <c:set var="loginId" value="${sessionScope.loginId}" />
 <c:set var="loginName" value="${sessionScope.loginName}" />
+
 <style>
   .topbar__inner{
     flex-wrap:wrap;
@@ -104,6 +105,7 @@
   }
 </style>
 <header class="topbar">
+    
 	<div class="container topbar__inner">
 		<a class="brand" href="${contextPath}/main.jsp"> <img
 			src="${contextPath}/img/logo.png" alt="G-UNIVERSE 로고"
@@ -145,12 +147,12 @@
 	<!-- 인기게시글 contextPath-> pageContext로변경 -->
 	<div class="subnav">
 		<div class="container subnav__inner" aria-label="보조 메뉴">
-			<a href="${contextPath}/board/list?category=all">전체보기</a> <a
-				href="${contextPath}/board/list?category=0">공지사항</a> <a
-				href="${pageContext.request.contextPath}/board/popular">인기 게시글</a> <a
-				href="${contextPath}/board/list?category=1">자유 게시판</a> <a
-				href="${contextPath}/board/list?category=2">질문과 답변</a> <a
-				href="${contextPath}/board/list?category=3">파티원 모집</a>
+			<a href="${contextPath}/board/list?category=all">전체보기</a> 
+			<a href="${contextPath}/board/list?category=0">공지사항</a> 
+			<a href="${pageContext.request.contextPath}/board/popular">인기 게시글</a> 
+			<a href="${contextPath}/board/list?category=1">자유 게시판</a> 
+			<a href="${contextPath}/board/list?category=2">질문과 답변</a> 
+			<a href="${contextPath}/board/list?category=3">파티원 모집</a>
 		</div>
 	</div>
 </header>
