@@ -87,7 +87,7 @@
 
 								<div class="actions">
 									<a class="btn" href="${contextPath}/member/logout.me">로그아웃</a>
-									<a class="btn primary" href="${contextPath}/member/editProfile.me">회원정보 수정</a>
+									<a class="btn primary" href="${contextPath}/member/editProfileVerify.me">회원정보 수정</a>
 									<a class="btn" href="${contextPath}/member/withdraw.me" style="background:#fff5f5; color:#b91c1c; border:1px solid #fecaca;">회원탈퇴</a>
 								</div>
 

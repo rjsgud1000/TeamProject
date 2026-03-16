@@ -46,6 +46,8 @@ public class MemberController extends HttpServlet {
 	private static final String PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY = "profileEmailVerificationExpireAt";
 	private static final String PROFILE_EMAIL_VERIFIED_SESSION_KEY = "profileEmailVerificationVerified";
 	private static final long PROFILE_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	// 회원정보 수정 인증 세션 키
+	private static final String PROFILE_EDIT_VERIFIED_SESSION_KEY = "profileEditVerified";
 	// 회원/신고/리캡차 서비스 객체
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
@@ -120,6 +122,12 @@ public class MemberController extends HttpServlet {
 			return;
 		case "/mypage.me":
 			showMyPage(request, response);
+			return;
+		case "/editProfileVerify.me":
+			showEditProfileVerify(request, response);
+			return;
+		case "/verifyEditProfilePassword.me":
+			verifyEditProfilePassword(request, response);
 			return;
 		case "/editProfile.me":
 			showEditProfile(request, response);
@@ -260,6 +268,7 @@ public class MemberController extends HttpServlet {
 	private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
+			clearProfileEditVerification(session);
 			session.invalidate();
 		}
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
@@ -542,6 +551,14 @@ public class MemberController extends HttpServlet {
 		session.removeAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
 	}
 
+	// 회원정보 수정 인증 세션 초기화 메소드
+	private void clearProfileEditVerification(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY);
+	}
+
 	// 공통 JSON 에러 응답 메소드
 	private String toJsonError(String message) {
 		String safe = message == null ? "요청 처리에 실패했습니다." : message.replace("\\", "\\\\").replace("\"", "\\\"");
@@ -707,9 +724,51 @@ public class MemberController extends HttpServlet {
 		if (member == null) {
 			return;
 		}
+
+		HttpSession session = request.getSession(false);
+		if (session == null || !Boolean.TRUE.equals(session.getAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY))) {
+			response.sendRedirect(request.getContextPath() + "/member/editProfileVerify.me");
+			return;
+		}
 		request.setAttribute("memberDetail", member);
 		request.setAttribute("center", "members/editProfile.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private void showEditProfileVerify(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		MemberVO member = requireLoginMember(request, response);
+		if (member == null) {
+			return;
+		}
+		request.setAttribute("center", "members/editProfileVerify.jsp");
+		forward(request, response, "/main.jsp");
+	}
+
+	private void verifyEditProfilePassword(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.sendRedirect(request.getContextPath() + "/member/login.me");
+			return;
+		}
+
+		String password = emptyToNull(request.getParameter("password"));
+		if (password == null) {
+			request.setAttribute("verifyError", "현재 비밀번호를 입력해 주세요.");
+			request.setAttribute("center", "members/editProfileVerify.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		MemberService.LoginResult loginResult = memberService.loginWithReason(sessionMember.getMemberId(), password);
+		if (loginResult.member == null) {
+			request.setAttribute("verifyError", "현재 비밀번호가 일치하지 않습니다.");
+			request.setAttribute("center", "members/editProfileVerify.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		request.getSession().setAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY, Boolean.TRUE);
+		response.sendRedirect(request.getContextPath() + "/member/editProfile.me");
 	}
 
 	// 회원정보 수정 처리 메소드
@@ -717,6 +776,12 @@ public class MemberController extends HttpServlet {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
 			response.sendRedirect(request.getContextPath() + "/member/login.me");
+			return;
+		}
+
+		HttpSession session = request.getSession(false);
+		if (session == null || !Boolean.TRUE.equals(session.getAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY))) {
+			response.sendRedirect(request.getContextPath() + "/member/editProfileVerify.me");
 			return;
 		}
 
@@ -755,6 +820,7 @@ public class MemberController extends HttpServlet {
 		if (emailChanged) {
 			clearProfileEmailVerificationSession(request.getSession(false));
 		}
+		clearProfileEditVerification(request.getSession(false));
 
 		MemberVO refreshed = memberService.getMemberDetail(sessionMember.getMemberId());
 		if (refreshed != null) {
@@ -803,6 +869,7 @@ public class MemberController extends HttpServlet {
 
 		HttpSession session = request.getSession(false);
 		if (session != null) {
+			clearProfileEditVerification(session);
 			session.invalidate();
 		}
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
