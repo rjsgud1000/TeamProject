@@ -19,7 +19,7 @@ public class MyPostsDAO {
                 "       (SELECT COUNT(*) FROM COMMENT c WHERE c.post_id = bp.post_id AND c.is_deleted = 0 AND c.parent_comment_id IS NULL) AS comment_count " +
                 "FROM BOARD_POST bp " +
                 "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
-                "WHERE bp.is_deleted = 0 AND (bp.member_id = ? OR (? IS NOT NULL AND bp.nickname = ?)) " +
+                "WHERE bp.is_deleted = 0 AND bp.is_blinded = 0 AND (bp.member_id = ? OR (? IS NOT NULL AND bp.nickname = ?)) " +
                 "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
                 "ORDER BY bp.post_id DESC";
 
@@ -54,7 +54,7 @@ public class MyPostsDAO {
     }
 
     public int countPostsByMember(String memberId, String nickname) {
-        String sql = "SELECT COUNT(*) FROM BOARD_POST bp WHERE bp.is_deleted = 0 AND (bp.member_id = ? OR (? IS NOT NULL AND bp.nickname = ?))";
+        String sql = "SELECT COUNT(*) FROM BOARD_POST bp WHERE bp.is_deleted = 0 AND bp.is_blinded = 0 AND (bp.member_id = ? OR (? IS NOT NULL AND bp.nickname = ?))";
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, memberId);
