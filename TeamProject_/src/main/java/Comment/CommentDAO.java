@@ -316,4 +316,30 @@ public class CommentDAO {
         } catch(Exception e){ e.printStackTrace(); }
         return 0;
     }
+
+    // ============================
+    // [추가] 게시글별 댓글 수 조회
+    // - 일반 댓글 + 답글 포함
+    // - 삭제되지 않은 댓글만 카운트
+    // ============================
+    public int getCommentCountByPostId(int postId) {
+        String sql = "SELECT COUNT(*) FROM COMMENT WHERE post_id = ? AND is_deleted = 0";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, postId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
 }

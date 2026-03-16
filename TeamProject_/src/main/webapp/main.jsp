@@ -6,6 +6,7 @@
 	if (loginFlash != null) {
 		session.removeAttribute("loginFlash");
 %>
+
 <script type="text/javascript">
 	alert("<%= loginFlash.replace("\\", "\\\\").replace("\"", "\\\"") %>");
 </script>
@@ -15,6 +16,10 @@
 <!doctype html>
 <html lang="ko">
 <head>
+  <!-- 인기글 이모티콘 사이즈 -->
+  <link rel="stylesheet" href="/css/main.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>G-UNIVERSE - 홈</title>
@@ -24,6 +29,14 @@
   display:flex;
   justify-content:center;
   margin-top:18px;
+}
+
+<!-- 인기글 이모티콘 사이즈 -->
+.material-icons{
+    font-size:20px;
+    vertical-align:middle;
+    margin-right:6px;
+    color:#1f4fa3;
 }
 
 .chart-popup__more-btn{

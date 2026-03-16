@@ -15,7 +15,7 @@ public class BoardPopularController extends HttpServlet {
     private BoardDAO boardDAO;
 
     @Override
-    public void init() throws ServletException {
+    public void init() {
         boardDAO = new BoardDAO();
     }
 
