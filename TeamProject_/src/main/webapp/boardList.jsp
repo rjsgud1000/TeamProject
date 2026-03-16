@@ -88,8 +88,9 @@
 							<c:otherwise>기타</c:otherwise>
 						</c:choose></td>
 
+					<!-- 새게시글 NEW 추천5이상 이거나 조회수100이상일 경우 HOT -->
 					<td style="padding: 10px; text-align: left;">
-						<c:set var="isHot" value="${post.likeCount >= 50 || post.viewcount >= 100}" /> 
+						<c:set var="isHot" value="${post.likeCount >= 5 || post.viewcount >= 100}" />
 						<c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
 
 						<a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}"

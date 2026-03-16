@@ -186,43 +186,63 @@
 		</div>
 	</c:if>
 
+
 	<!-- 댓글 영역 : 공지사항(category=0)에서는 숨김 -->
 	<c:if test="${post.category != '0' && post.category != 0}">
 		<div style="margin-top: 50px;">
 			<h3>댓글</h3>
 
+			<c:if test="${param.commentLimit == '1'}">
+				<script>
+					alert('이 게시글은 댓글 작성이 마감되었습니다. (최대 50개)');
+				</script>
+			</c:if>
+
+			<c:if test="${commentCount >= maxCommentCount}">
+				<div style="margin: 10px 0; color: red; font-weight: bold;">
+					댓글 작성이 마감되었습니다. (최대 ${maxCommentCount}개)</div>
+			</c:if>
+
 			<c:forEach var="c" items="${comments}">
 				<div
-					style="border-bottom:1px solid #ccc; padding:8px;
-                <c:if test='${c.parentCommentId != null}'>margin-left:40px; background:#f9f9f9;</c:if>">
-
+					style="border-bottom:1px solid #ccc; padding:8px; ${c.parentCommentId != null ? 'margin-left:40px; background:#f9f9f9;' : ''}">
 					<b>${c.memberNickname}</b>
 					<fmt:formatDate value="${c.createdAt}" pattern="yyyy-MM-dd HH:mm" />
 					<p>${c.content}</p>
 
+					<c:choose>
+						<c:when test="${sessionScope.loginMember != null}">
+							<form action="${pageContext.request.contextPath}/board/detail"
+								method="post" style="display: inline;">
+								<input type="hidden" name="action" value="like" /> <input
+									type="hidden" name="commentId" value="${c.commentId}" /> <input
+									type="hidden" name="postId" value="${post.postId}" /> <input
+									type="hidden" name="category" value="${category}" /> <input
+									type="hidden" name="page" value="${page}" />
+								<button type="submit">👍 ${c.likeCount}</button>
+							</form>
+
+							<form action="${pageContext.request.contextPath}/board/detail"
+								method="post" style="display: inline;">
+								<input type="hidden" name="action" value="dislike" /> <input
+									type="hidden" name="commentId" value="${c.commentId}" /> <input
+									type="hidden" name="postId" value="${post.postId}" /> <input
+									type="hidden" name="category" value="${category}" /> <input
+									type="hidden" name="page" value="${page}" />
+								<button type="submit">👎 ${c.dislikeCount}</button>
+							</form>
+						</c:when>
+						<c:otherwise>
+							<button type="button" onclick="alert('로그인 후 이용 가능합니다.');">👍
+								${c.likeCount}</button>
+							<button type="button" onclick="alert('로그인 후 이용 가능합니다.');">👎
+								${c.dislikeCount}</button>
+						</c:otherwise>
+					</c:choose>
+
 					<c:if test="${sessionScope.loginMember != null}">
-						<!-- 좋아요 -->
-						<form action="${pageContext.request.contextPath}/board/detail"
-							method="post" style="display: inline;">
-							<input type="hidden" name="action" value="like" /> <input
-								type="hidden" name="commentId" value="${c.commentId}" /> <input
-								type="hidden" name="postId" value="${post.postId}" />
-							<button type="submit">👍 ${c.likeCount}</button>
-						</form>
-
-						<!-- 싫어요 -->
-						<form action="${pageContext.request.contextPath}/board/detail"
-							method="post" style="display: inline;">
-							<input type="hidden" name="action" value="dislike" /> <input
-								type="hidden" name="commentId" value="${c.commentId}" /> <input
-								type="hidden" name="postId" value="${post.postId}" />
-							<button type="submit">👎 ${c.dislikeCount}</button>
-						</form>
-
-						<!-- 수정 버튼 (작성자 또는 ADMIN) -->
 						<c:if
-							test="${sessionScope.loginMember.role eq 'ADMIN' 
-           							 || sessionScope.loginMember.memberId eq c.memberId}">
+							test="${sessionScope.loginMember.role eq 'ADMIN' || sessionScope.loginMember.memberId eq c.memberId}">
 							<button type="button" onclick="toggleEdit(${c.commentId})">수정</button>
 							<div id="editForm-${c.commentId}"
 								style="display: none; margin-top: 5px;">
@@ -230,7 +250,9 @@
 									method="post">
 									<input type="hidden" name="action" value="update" /> <input
 										type="hidden" name="commentId" value="${c.commentId}" /> <input
-										type="hidden" name="postId" value="${post.postId}" />
+										type="hidden" name="postId" value="${post.postId}" /> <input
+										type="hidden" name="category" value="${category}" /> <input
+										type="hidden" name="page" value="${page}" />
 									<textarea name="content" rows="2" cols="40"><c:out
 											value="${c.content}" /></textarea>
 									<br>
@@ -239,36 +261,38 @@
 							</div>
 						</c:if>
 
-						<!-- 삭제 버튼 (작성자 또는 ADMIN) -->
 						<c:if
-							test="${sessionScope.loginMember.role eq 'ADMIN' 
-           						 || sessionScope.loginMember.memberId eq c.memberId}">
+							test="${sessionScope.loginMember.role eq 'ADMIN' || sessionScope.loginMember.memberId eq c.memberId}">
 							<form action="${pageContext.request.contextPath}/board/detail"
 								method="post" style="display: inline;">
 								<input type="hidden" name="action" value="delete" /> <input
 									type="hidden" name="commentId" value="${c.commentId}" /> <input
-									type="hidden" name="postId" value="${post.postId}" />
+									type="hidden" name="postId" value="${post.postId}" /> <input
+									type="hidden" name="category" value="${category}" /> <input
+									type="hidden" name="page" value="${page}" />
 								<button type="submit">삭제</button>
 							</form>
 						</c:if>
 
-						<!-- 답글 버튼 -->
-						<button type="button" onclick="toggleReply(${c.commentId})">답글</button>
-						<div id="replyForm-${c.commentId}"
-							style="display: none; margin-top: 5px;">
-							<form action="${pageContext.request.contextPath}/board/detail"
-								method="post">
-								<input type="hidden" name="action" value="insert" /> <input
-									type="hidden" name="postId" value="${post.postId}" /> <input
-									type="hidden" name="parentCommentId" value="${c.commentId}" />
-								<textarea name="content" rows="2" cols="40"
-									placeholder="답글을 입력하세요"></textarea>
-								<br>
-								<button type="submit">답글 작성</button>
-							</form>
-						</div>
+						<c:if test="${commentCount < maxCommentCount}">
+							<button type="button" onclick="toggleReply(${c.commentId})">답글</button>
+							<div id="replyForm-${c.commentId}"
+								style="display: none; margin-top: 5px;">
+								<form action="${pageContext.request.contextPath}/board/detail"
+									method="post">
+									<input type="hidden" name="action" value="insert" /> <input
+										type="hidden" name="postId" value="${post.postId}" /> <input
+										type="hidden" name="category" value="${category}" /> <input
+										type="hidden" name="page" value="${page}" /> <input
+										type="hidden" name="parentCommentId" value="${c.commentId}" />
+									<textarea name="content" rows="2" cols="40"
+										placeholder="답글을 입력하세요"></textarea>
+									<br>
+									<button type="submit">답글 작성</button>
+								</form>
+							</div>
+						</c:if>
 
-						<!-- 신고 버튼 -->
 						<button type="button" onclick="toggleReport(${c.commentId})">신고</button>
 						<div id="reportForm-${c.commentId}"
 							style="display: none; margin-top: 5px;">
@@ -276,7 +300,9 @@
 								method="post">
 								<input type="hidden" name="action" value="report" /> <input
 									type="hidden" name="commentId" value="${c.commentId}" /> <input
-									type="hidden" name="postId" value="${post.postId}" />
+									type="hidden" name="postId" value="${post.postId}" /> <input
+									type="hidden" name="category" value="${category}" /> <input
+									type="hidden" name="page" value="${page}" />
 								<textarea name="reason" rows="2" cols="30" placeholder="신고 사유"></textarea>
 								<br>
 								<button type="submit">신고하기</button>
@@ -286,18 +312,27 @@
 				</div>
 			</c:forEach>
 
-			<!-- 일반 댓글 작성 폼 (반복문 밖) -->
 			<c:if test="${sessionScope.loginMember != null}">
 				<div style="margin-top: 20px;">
-					<form action="${pageContext.request.contextPath}/board/detail"
-						method="post">
-						<input type="hidden" name="action" value="insert" /> <input
-							type="hidden" name="postId" value="${post.postId}" />
-						<textarea name="content" rows="3" cols="50"
-							placeholder="댓글을 입력하세요"></textarea>
-						<br>
-						<button type="submit">댓글 달기</button>
-					</form>
+					<c:choose>
+						<c:when test="${commentCount >= maxCommentCount}">
+							<div style="color: red; font-weight: bold;">댓글 작성이 마감되었습니다.
+								(최대 ${maxCommentCount}개)</div>
+						</c:when>
+						<c:otherwise>
+							<form action="${pageContext.request.contextPath}/board/detail"
+								method="post">
+								<input type="hidden" name="action" value="insert" /> <input
+									type="hidden" name="postId" value="${post.postId}" /> <input
+									type="hidden" name="category" value="${category}" /> <input
+									type="hidden" name="page" value="${page}" />
+								<textarea name="content" rows="3" cols="50"
+									placeholder="댓글을 입력하세요"></textarea>
+								<br>
+								<button type="submit">댓글 달기</button>
+							</form>
+						</c:otherwise>
+					</c:choose>
 				</div>
 			</c:if>
 		</div>

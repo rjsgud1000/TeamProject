@@ -21,6 +21,11 @@ public class BoardDetailController extends HttpServlet {
     private CommentDAO commentDAO;
     private final BoardDAO boardDAO = new BoardDAO();
 
+    // ============================
+    // [추가] 댓글 최대 개수 상수
+    // ============================
+    private static final int MAX_COMMENT_COUNT = 50;
+
     @Override
     public void init() throws ServletException {
         boardService = new BoardService(new BoardDAO());
@@ -32,8 +37,8 @@ public class BoardDetailController extends HttpServlet {
             throws ServletException, IOException {
 
         String postIdStr = request.getParameter("postId");
-        String category = request.getParameter("category");   
-        String page = request.getParameter("page");           
+        String category = request.getParameter("category");
+        String page = request.getParameter("page");
         int postId;
 
         try {
@@ -64,7 +69,7 @@ public class BoardDetailController extends HttpServlet {
             e.printStackTrace();
             comments = Collections.emptyList();
         }
-        
+
         HttpSession session = request.getSession(false);
         MemberVO loginMember = (session != null) ? (MemberVO) session.getAttribute("loginMember") : null;
 
@@ -75,13 +80,25 @@ public class BoardDetailController extends HttpServlet {
             liked = boardDAO.isLikedByMember(postId, loginMember.getMemberId());
         }
 
+        // ============================
+        // [추가] 현재 댓글 수 조회
+        // - JSP에서 입력창 숨김/안내문 출력용
+        // ============================
+        int commentCount = commentDAO.getCommentCountByPostId(postId);
+
         request.setAttribute("likeCount", likeCount);
         request.setAttribute("liked", liked);
 
+        // ============================
+        // [추가] 댓글 수 / 최대 댓글 수 전달
+        // ============================
+        request.setAttribute("commentCount", commentCount);
+        request.setAttribute("maxCommentCount", MAX_COMMENT_COUNT);
+
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
-        request.setAttribute("category", category);   
-        request.setAttribute("page", page);          
+        request.setAttribute("category", category);
+        request.setAttribute("page", page);
         request.setAttribute("loginMember", loginMember);
         request.setAttribute("center", "boardDetail.jsp");
 
@@ -107,8 +124,8 @@ public class BoardDetailController extends HttpServlet {
         MemberVO loginMember = (MemberVO) obj;
 
         String action = request.getParameter("action");
-        String category = request.getParameter("category"); 
-        String page = request.getParameter("page");          
+        String category = request.getParameter("category");
+        String page = request.getParameter("page");
         String postIdStr = request.getParameter("postId");
         String commentIdStr = request.getParameter("commentId");
         int postId = 0;
@@ -128,6 +145,26 @@ public class BoardDetailController extends HttpServlet {
             case "insert": // 댓글/대댓글 작성
                 String content = request.getParameter("content");
                 if (content != null && !content.isBlank()) {
+
+                    // ============================
+                    // [추가] 댓글 50개 제한 체크
+                    // - 일반 댓글 + 답글 포함
+                    // - 50개 이상이면 작성 차단
+                    // ============================
+                    int commentCount = commentDAO.getCommentCountByPostId(postId);
+                    if (commentCount >= MAX_COMMENT_COUNT) {
+                        String category1 = (category != null) ? category : "0";
+                        String page1 = (page != null) ? page : "1";
+
+                        String limitRedirectUrl = String.format(
+                                "%s/board/detail?postId=%d&category=%s&page=%s&commentLimit=1",
+                                request.getContextPath(), postId, category1, page1
+                        );
+
+                        response.sendRedirect(limitRedirectUrl);
+                        return;
+                    }
+
                     CommentDTO comment = new CommentDTO();
                     comment.setPostId(postId);
                     comment.setMemberId(loginMember.getMemberId());
