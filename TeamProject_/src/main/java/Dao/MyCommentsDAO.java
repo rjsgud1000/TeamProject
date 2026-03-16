@@ -17,7 +17,8 @@ public class MyCommentsDAO {
                      "       m.nickname AS memberNickname " +
                      "FROM COMMENT c " +
                      "LEFT JOIN MEMBER m ON c.member_id = m.member_id " +
-                     "WHERE c.is_deleted = 0 AND (c.member_id = ? OR (? IS NOT NULL AND m.nickname = ?)) " +
+                     "INNER JOIN BOARD_POST bp ON c.post_id = bp.post_id " +
+                     "WHERE c.is_deleted = 0 AND bp.is_deleted = 0 AND bp.is_blinded = 0 AND (c.member_id = ? OR (? IS NOT NULL AND m.nickname = ?)) " +
                      "ORDER BY c.comment_id DESC";
 
         try (Connection conn = DBCPUtil.getConnection();
@@ -50,7 +51,7 @@ public class MyCommentsDAO {
     }
 
     public int countCommentsByMember(String memberId, String nickname) {
-        String sql = "SELECT COUNT(*) FROM COMMENT c LEFT JOIN MEMBER m ON c.member_id = m.member_id WHERE c.is_deleted = 0 AND (c.member_id = ? OR (? IS NOT NULL AND m.nickname = ?))";
+        String sql = "SELECT COUNT(*) FROM COMMENT c LEFT JOIN MEMBER m ON c.member_id = m.member_id INNER JOIN BOARD_POST bp ON c.post_id = bp.post_id WHERE c.is_deleted = 0 AND bp.is_deleted = 0 AND bp.is_blinded = 0 AND (c.member_id = ? OR (? IS NOT NULL AND m.nickname = ?))";
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, memberId);

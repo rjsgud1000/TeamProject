@@ -46,6 +46,8 @@ public class MemberController extends HttpServlet {
 	private static final String PROFILE_EMAIL_EXPIRE_AT_SESSION_KEY = "profileEmailVerificationExpireAt";
 	private static final String PROFILE_EMAIL_VERIFIED_SESSION_KEY = "profileEmailVerificationVerified";
 	private static final long PROFILE_EMAIL_CODE_EXPIRE_MILLIS = 5L * 60L * 1000L;
+	// 회원정보 수정 인증 세션 키
+	private static final String PROFILE_EDIT_VERIFIED_SESSION_KEY = "profileEditVerified";
 	// 회원/신고/리캡차 서비스 객체
 	private final MemberService memberService = new MemberService();
 	private final ReportService reportService = new ReportService();
@@ -120,6 +122,12 @@ public class MemberController extends HttpServlet {
 			return;
 		case "/mypage.me":
 			showMyPage(request, response);
+			return;
+		case "/editProfileVerify.me":
+			showEditProfileVerify(request, response);
+			return;
+		case "/verifyEditProfilePassword.me":
+			verifyEditProfilePassword(request, response);
 			return;
 		case "/editProfile.me":
 			showEditProfile(request, response);
@@ -223,8 +231,12 @@ public class MemberController extends HttpServlet {
 		String id = request.getParameter("id");
 		String pass = request.getParameter("pass");
 		String recaptchaToken = request.getParameter("g-recaptcha-response");
+		
+		// 클라이언트 정보 추출 (프록시 헤더 우선 + IPv6 루프백 정규화)
+		String ip = resolveClientIp(request);
+		String agent = request.getHeader("User-Agent");
 
-		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, request.getRemoteAddr());
+		RecaptchaUtil.VerificationResult recaptchaResult = recaptchaUtil.verify(recaptchaToken, ip);
 		if (!recaptchaResult.success) {
 			populateLoginViewAttributes(request);
 			request.setAttribute("loginError", recaptchaResult.message);
@@ -234,7 +246,7 @@ public class MemberController extends HttpServlet {
 			return;
 		}
 
-		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass);
+		Service.MemberService.LoginResult result = memberService.loginWithReason(id, pass, ip, agent);
 		MemberVO loginMember = result.member;
 		if (loginMember == null) {
 			populateLoginViewAttributes(request);
@@ -260,6 +272,7 @@ public class MemberController extends HttpServlet {
 	private void logout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		HttpSession session = request.getSession(false);
 		if (session != null) {
+			clearProfileEditVerification(session);
 			session.invalidate();
 		}
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
@@ -542,6 +555,14 @@ public class MemberController extends HttpServlet {
 		session.removeAttribute(PROFILE_EMAIL_VERIFIED_SESSION_KEY);
 	}
 
+	// 회원정보 수정 인증 세션 초기화 메소드
+	private void clearProfileEditVerification(HttpSession session) {
+		if (session == null) {
+			return;
+		}
+		session.removeAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY);
+	}
+
 	// 공통 JSON 에러 응답 메소드
 	private String toJsonError(String message) {
 		String safe = message == null ? "요청 처리에 실패했습니다." : message.replace("\\", "\\\\").replace("\"", "\\\"");
@@ -707,9 +728,55 @@ public class MemberController extends HttpServlet {
 		if (member == null) {
 			return;
 		}
+
+		HttpSession session = request.getSession(false);
+		if (session == null || !Boolean.TRUE.equals(session.getAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY))) {
+			response.sendRedirect(request.getContextPath() + "/member/editProfileVerify.me");
+			return;
+		}
 		request.setAttribute("memberDetail", member);
 		request.setAttribute("center", "members/editProfile.jsp");
 		forward(request, response, "/main.jsp");
+	}
+
+	private void showEditProfileVerify(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		MemberVO member = requireLoginMember(request, response);
+		if (member == null) {
+			return;
+		}
+		request.setAttribute("center", "members/editProfileVerify.jsp");
+		forward(request, response, "/main.jsp");
+	}
+
+	private void verifyEditProfilePassword(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		MemberVO sessionMember = getSessionLoginMember(request);
+		if (sessionMember == null) {
+			response.sendRedirect(request.getContextPath() + "/member/login.me");
+			return;
+		}
+
+		String password = emptyToNull(request.getParameter("password"));
+		if (password == null) {
+			request.setAttribute("verifyError", "현재 비밀번호를 입력해 주세요.");
+			request.setAttribute("center", "members/editProfileVerify.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		// 프로필 수정 전 인증에서도 로그인 이력을 남기려면 ip, agent 전달
+		String ip = resolveClientIp(request);
+		String agent = request.getHeader("User-Agent");
+
+		MemberService.LoginResult loginResult = memberService.loginWithReason(sessionMember.getMemberId(), password, ip, agent);
+		if (loginResult.member == null) {
+			request.setAttribute("verifyError", loginResult.error != null ? loginResult.error : "현재 비밀번호가 일치하지 않습니다.");
+			request.setAttribute("center", "members/editProfileVerify.jsp");
+			forward(request, response, "/main.jsp");
+			return;
+		}
+
+		request.getSession().setAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY, Boolean.TRUE);
+		response.sendRedirect(request.getContextPath() + "/member/editProfile.me");
 	}
 
 	// 회원정보 수정 처리 메소드
@@ -717,6 +784,12 @@ public class MemberController extends HttpServlet {
 		MemberVO sessionMember = getSessionLoginMember(request);
 		if (sessionMember == null) {
 			response.sendRedirect(request.getContextPath() + "/member/login.me");
+			return;
+		}
+
+		HttpSession session = request.getSession(false);
+		if (session == null || !Boolean.TRUE.equals(session.getAttribute(PROFILE_EDIT_VERIFIED_SESSION_KEY))) {
+			response.sendRedirect(request.getContextPath() + "/member/editProfileVerify.me");
 			return;
 		}
 
@@ -755,6 +828,7 @@ public class MemberController extends HttpServlet {
 		if (emailChanged) {
 			clearProfileEmailVerificationSession(request.getSession(false));
 		}
+		clearProfileEditVerification(request.getSession(false));
 
 		MemberVO refreshed = memberService.getMemberDetail(sessionMember.getMemberId());
 		if (refreshed != null) {
@@ -803,6 +877,7 @@ public class MemberController extends HttpServlet {
 
 		HttpSession session = request.getSession(false);
 		if (session != null) {
+			clearProfileEditVerification(session);
 			session.invalidate();
 		}
 		response.sendRedirect(request.getContextPath() + "/main.jsp");
@@ -1057,4 +1132,47 @@ public class MemberController extends HttpServlet {
 		return merged;
 	}
 
+	/**
+	 * 클라이언트 IP 추출: 프록시를 타는 환경을 고려해 X-Forwarded-For 등을 우선 사용하고,
+	 * 로컬 개발 환경에서 흔히 들어오는 IPv6 loopback(0:0:0:0:0:0:0:1, ::1)은 127.0.0.1로 정규화합니다.
+	 */
+	private String resolveClientIp(HttpServletRequest request) {
+		if (request == null) {
+			return null;
+		}
+
+		String ip = firstIpFromHeader(request.getHeader("X-Forwarded-For"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("X-Real-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("X-Client-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("Proxy-Client-IP"));
+		if (ip == null) ip = firstIpFromHeader(request.getHeader("WL-Proxy-Client-IP"));
+		if (ip == null) ip = request.getRemoteAddr();
+
+		if (ip != null) {
+			ip = ip.trim();
+			// IPv6 loopback normalize
+			if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+				return "127.0.0.1";
+			}
+			// Forwarded-for에 IPv4가 '::ffff:127.0.0.1' 형태로 올 수 있어 정리
+			if (ip.startsWith("::ffff:")) {
+				return ip.substring("::ffff:".length());
+			}
+		}
+		return ip;
+	}
+
+	private String firstIpFromHeader(String headerValue) {
+		if (headerValue == null) {
+			return null;
+		}
+		String v = headerValue.trim();
+		if (v.isEmpty() || "unknown".equalsIgnoreCase(v)) {
+			return null;
+		}
+		// X-Forwarded-For: client, proxy1, proxy2 ...
+		int comma = v.indexOf(',');
+		String ip = (comma >= 0) ? v.substring(0, comma).trim() : v;
+		return (ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) ? null : ip;
+	}
 }
