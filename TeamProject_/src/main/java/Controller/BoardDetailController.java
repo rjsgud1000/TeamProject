@@ -24,7 +24,6 @@ public class BoardDetailController extends HttpServlet {
     // ============================
     // [추가] 댓글 최대 개수 상수
     // ============================
-    private static final int MAX_COMMENT_COUNT = 50;
 
     @Override
     public void init() throws ServletException {
@@ -56,9 +55,29 @@ public class BoardDetailController extends HttpServlet {
 
         boardService.increaseViewCount(postId);
 
+     // [추가] 댓글 페이지 번호 처리
+        int commentPage = 1;
+        String commentPageStr = request.getParameter("commentPage");
+        try {
+            if (commentPageStr != null && !commentPageStr.isBlank()) {
+                commentPage = Integer.parseInt(commentPageStr);
+            }
+        } catch (NumberFormatException e) {
+            commentPage = 1;
+        }
+
+        // [추가] 댓글 페이지당 부모댓글 5개
+        int commentPageSize = 5;
+        int commentStart = (commentPage - 1) * commentPageSize;
+
+        // [추가] 부모댓글 총 개수 / 총 페이지 수 계산
+        int parentCommentCount = commentDAO.getParentCommentCountByPostId(postId);
+        int commentTotalPages = (int) Math.ceil((double) parentCommentCount / commentPageSize);
+
         List<CommentDTO> comments;
         try {
-            comments = commentDAO.getCommentsByPostId(postId);
+            // [수정] 전체 조회 -> 페이징 조회로 변경
+            comments = commentDAO.getPagedCommentsWithReplies(postId, commentStart, commentPageSize);
             if (comments == null) comments = Collections.emptyList();
 
             for (CommentDTO c : comments) {
@@ -80,20 +99,16 @@ public class BoardDetailController extends HttpServlet {
             liked = boardDAO.isLikedByMember(postId, loginMember.getMemberId());
         }
 
-        // ============================
-        // [추가] 현재 댓글 수 조회
-        // - JSP에서 입력창 숨김/안내문 출력용
-        // ============================
-        int commentCount = commentDAO.getCommentCountByPostId(postId);
+       
 
         request.setAttribute("likeCount", likeCount);
         request.setAttribute("liked", liked);
-
-        // ============================
-        // [추가] 댓글 수 / 최대 댓글 수 전달
-        // ============================
-        request.setAttribute("commentCount", commentCount);
-        request.setAttribute("maxCommentCount", MAX_COMMENT_COUNT);
+        
+        // [추가] 댓글 페이징 정보 전달
+        request.setAttribute("commentPage", commentPage);
+        request.setAttribute("commentTotalPages", commentTotalPages);
+        request.setAttribute("commentPageSize", commentPageSize);
+        request.setAttribute("parentCommentCount", parentCommentCount);
 
         request.setAttribute("post", post);
         request.setAttribute("comments", comments);
@@ -108,7 +123,8 @@ public class BoardDetailController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+    	
+  
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession(false);
         if (session == null) {
@@ -128,6 +144,9 @@ public class BoardDetailController extends HttpServlet {
         String page = request.getParameter("page");
         String postIdStr = request.getParameter("postId");
         String commentIdStr = request.getParameter("commentId");
+        String commentPageParam = request.getParameter("commentPage");
+    	String commentPageValue = (commentPageParam != null && !commentPageParam.isBlank()) ? commentPageParam : "1";
+    	
         int postId = 0;
         int commentId = 0;
 
@@ -142,58 +161,78 @@ public class BoardDetailController extends HttpServlet {
         }
 
         switch (action) {
-            case "insert": // 댓글/대댓글 작성
-                String content = request.getParameter("content");
-                if (content != null && !content.isBlank()) {
+	        case "insert": // 댓글/대댓글 작성
+	            String content = request.getParameter("content");
+	
+	            if (content != null) {
+	                content = content.trim(); // [추가] 앞뒤 공백 제거
+	            }
+	
+	            if (content != null && !content.isBlank()) {
+	
+	                // [추가] 댓글 50자 제한
+	                if (content.length() > 50) {
+	                    String category1 = (category != null) ? category : "0";
+	                    String page1 = (page != null) ? page : "1";
+	
+	                    String redirectUrl = String.format(
+	                        "%s/board/detail?postId=%d&category=%s&page=%s&commentPage=%s&error=commentLength",
+	                        request.getContextPath(), postId, category1, page1, commentPageValue
+	                    );
+	
+	                    response.sendRedirect(redirectUrl);
+	                    return;
+	                }
+	
+	                CommentDTO comment = new CommentDTO();
+	                comment.setPostId(postId);
+	                comment.setMemberId(loginMember.getMemberId());
+	                comment.setContent(content);
+	
+	                String parentIdStr = request.getParameter("parentCommentId");
+	                if (parentIdStr != null && !parentIdStr.isEmpty()) {
+	                    comment.setParentCommentId(Integer.parseInt(parentIdStr));
+	                }
+	
+	                commentDAO.insertComment(comment);
+	            }
+	            break;
 
-                    // ============================
-                    // [추가] 댓글 50개 제한 체크
-                    // - 일반 댓글 + 답글 포함
-                    // - 50개 이상이면 작성 차단
-                    // ============================
-                    int commentCount = commentDAO.getCommentCountByPostId(postId);
-                    if (commentCount >= MAX_COMMENT_COUNT) {
-                        String category1 = (category != null) ? category : "0";
-                        String page1 = (page != null) ? page : "1";
+	        case "update": // 댓글 수정
+	            if(commentId > 0){
+	                CommentDTO target = commentDAO.getCommentById(commentId);
+	                if(target != null){
+	                    boolean isAuthor = target.getMemberId().equals(loginMember.getMemberId());
+	                    boolean isAdmin = "ADMIN".equalsIgnoreCase(loginMember.getRole());
+	                    if(isAuthor || isAdmin){
+	                        String newContent = request.getParameter("content");
 
-                        String limitRedirectUrl = String.format(
-                                "%s/board/detail?postId=%d&category=%s&page=%s&commentLimit=1",
-                                request.getContextPath(), postId, category1, page1
-                        );
+	                        if (newContent != null) {
+	                            newContent = newContent.trim(); // [추가]
+	                        }
 
-                        response.sendRedirect(limitRedirectUrl);
-                        return;
-                    }
+	                        if(newContent != null && !newContent.isBlank()){
 
-                    CommentDTO comment = new CommentDTO();
-                    comment.setPostId(postId);
-                    comment.setMemberId(loginMember.getMemberId());
-                    comment.setContent(content);
+	                            // [추가] 수정도 50자 제한
+	                            if (newContent.length() > 50) {
+	                                String category1 = (category != null) ? category : "0";
+	                                String page1 = (page != null) ? page : "1";
 
-                    String parentIdStr = request.getParameter("parentCommentId");
-                    if (parentIdStr != null && !parentIdStr.isEmpty()) {
-                        comment.setParentCommentId(Integer.parseInt(parentIdStr));
-                    }
+	                                String redirectUrl = String.format(
+	                                    "%s/board/detail?postId=%d&category=%s&page=%s&commentPage=%s&error=commentLength",
+	                                    request.getContextPath(), postId, category1, page1, commentPageValue
+	                                );
 
-                    commentDAO.insertComment(comment);
-                }
-                break;
+	                                response.sendRedirect(redirectUrl);
+	                                return;
+	                            }
 
-            case "update": // 댓글 수정
-                if(commentId > 0){
-                    CommentDTO target = commentDAO.getCommentById(commentId);
-                    if(target != null){
-                        boolean isAuthor = target.getMemberId().equals(loginMember.getMemberId());
-                        boolean isAdmin = "ADMIN".equalsIgnoreCase(loginMember.getRole()); // role 체크
-                        if(isAuthor || isAdmin){
-                            String newContent = request.getParameter("content");
-                            if(newContent != null && !newContent.isBlank()){
-                                commentDAO.updateComment(commentId, newContent);
-                            }
-                        }
-                    }
-                }
-                break;
+	                            commentDAO.updateComment(commentId, newContent);
+	                        }
+	                    }
+	                }
+	            }
+	            break;
 
             case "delete":
                 if(commentId > 0){
@@ -240,8 +279,8 @@ public class BoardDetailController extends HttpServlet {
         page1 = (page1 != null) ? page1 : "1";
 
         String redirectUrl = String.format(
-                "%s/board/detail?postId=%d&category=%s&page=%s",
-                request.getContextPath(), postId, category1, page1
+                "%s/board/detail?postId=%d&category=%s&page=%s&commentPage=%s",
+                request.getContextPath(), postId, category1, page1, commentPageValue
         );
 
         response.sendRedirect(redirectUrl);

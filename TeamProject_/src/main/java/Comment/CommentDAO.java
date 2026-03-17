@@ -342,4 +342,78 @@ public class CommentDAO {
 
         return 0;
     }
+    // [추가] 부모댓글 총 개수 조회
+    public int getParentCommentCountByPostId(int postId) {
+        String sql = "SELECT COUNT(*) FROM COMMENT " +
+                     "WHERE post_id = ? AND is_deleted = 0 AND parent_comment_id IS NULL";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, postId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    // [추가] 부모댓글 페이징 조회
+    public List<CommentDTO> getParentCommentsByPostId(int postId, int start, int size) {
+        List<CommentDTO> list = new ArrayList<>();
+
+        String sql = "SELECT c.*, m.nickname AS memberNickname " +
+                     "FROM COMMENT c " +
+                     "JOIN MEMBER m ON c.member_id = m.member_id " +
+                     "WHERE c.post_id = ? AND c.is_deleted = 0 AND c.parent_comment_id IS NULL " +
+                     "ORDER BY c.created_at ASC " +
+                     "LIMIT ?, ?";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, postId);
+            ps.setInt(2, start);
+            ps.setInt(3, size);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    CommentDTO dto = new CommentDTO();
+                    dto.setCommentId(rs.getInt("comment_id"));
+                    dto.setPostId(rs.getInt("post_id"));
+                    dto.setMemberId(rs.getString("member_id"));
+                    dto.setContent(rs.getString("content"));
+                    dto.setCreatedAt(rs.getTimestamp("created_at"));
+                    dto.setUpdatedAt(rs.getTimestamp("updated_at"));
+                    dto.setIsDeleted(rs.getBoolean("is_deleted"));
+                    dto.setParentCommentId(null);
+                    dto.setMemberNickname(rs.getString("memberNickname"));
+                    list.add(dto);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    // [추가] 부모댓글 5개와 그에 해당하는 답글들까지 포함한 리스트 반환
+    public List<CommentDTO> getPagedCommentsWithReplies(int postId, int start, int size) {
+        List<CommentDTO> result = new ArrayList<>();
+
+        List<CommentDTO> parents = getParentCommentsByPostId(postId, start, size);
+
+        for (CommentDTO parent : parents) {
+            result.add(parent);
+
+            List<CommentDTO> children = getCommentsByParentId(parent.getCommentId());
+            result.addAll(children);
+        }
+
+        return result;
+    }
 }
