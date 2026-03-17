@@ -34,19 +34,26 @@
 <div class="section-title section-title--games">
   <div>
     <h2>인기 게임</h2>
-    <p id="rankingSourceText">Naver DataLab · PC 검색 기준</p>
+    <p id="rankingSourceText">Naver DataLab · PC 검색량 기준</p>
   </div>
 
   <div class="chart-toggle" aria-label="차트 전환">
     <button type="button"
             class="chart-toggle__btn is-active"
             data-chart-source="naver">
-      네이버
+      온라인 게임
     </button>
+
     <button type="button"
             class="chart-toggle__btn"
             data-chart-source="steam">
-      스팀
+      스팀 게임
+    </button>
+
+    <button type="button"
+            class="chart-toggle__btn"
+            data-chart-source="playstore">
+      모바일 게임
     </button>
   </div>
 </div>
@@ -103,18 +110,30 @@
   </div>
 </div>
 
+<div class="game-chart-panel" data-chart-panel="playstore">
+  <div class="featured-slider featured-slider--playstore" id="playstoreFeaturedSlider">
+    <div class="featured-loading">플레이스토어 차트를 불러오는 중입니다...</div>
+  </div>
+</div>
+
 <script>
   (function () {
     var contextPath = '<%= request.getContextPath() %>';
     var sourceText = document.getElementById('rankingSourceText');
     var toggleButtons = document.querySelectorAll('.chart-toggle__btn');
     var panels = document.querySelectorAll('.game-chart-panel');
-    var steamPanel = document.querySelector('[data-chart-panel="steam"]');
+
     var steamSliderContainer = document.getElementById('steamFeaturedSlider');
     var steamPopupBody = document.getElementById('steamChartPopupBody');
 
+    var playstoreSliderContainer = document.getElementById('playstoreFeaturedSlider');
+    var playstorePopupBody = document.getElementById('playstoreChartPopupBody');
+
     var steamLoaded = false;
     var steamLoading = false;
+
+    var playstoreLoaded = false;
+    var playstoreLoading = false;
 
     function escapeHtml(value) {
       if (value == null) return '';
@@ -181,78 +200,154 @@
     }
 
     function renderSteamChart(items) {
-    	  var top10 = items.slice(0, 10);
-    	  var top11to20 = items.slice(10, 20);
+      var top10 = items.slice(0, 10);
+      var top11to20 = items.slice(10, 20);
 
-    	  if (!top10.length) {
-    	    steamSliderContainer.innerHTML =
-    	      '<div class="featured-empty">스팀 차트를 불러오지 못했습니다.</div>';
-    	    return;
-    	  }
+      if (!top10.length) {
+        steamSliderContainer.innerHTML =
+          '<div class="featured-empty">스팀 차트를 불러오지 못했습니다.</div>';
+        return;
+      }
 
-    	  var sliderHtml = '';
-    	  sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>';
-    	  sliderHtml += '<div class="featured-slider__viewport">';
-    	  sliderHtml += '  <div class="featured-slider__track" data-total-slides="' + top10.length + '">';
+      var sliderHtml = '';
+      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>';
+      sliderHtml += '<div class="featured-slider__viewport">';
+      sliderHtml += '  <div class="featured-slider__track" data-total-slides="' + top10.length + '">';
 
-    	  top10.forEach(function (item) {
-    	    var title = escapeHtml(item.title || ('Steam App #' + item.appId));
-    	    var storeUrl = escapeHtml(item.storeUrl || '#');
-    	    var bgStyle = item.headerImage
-    	      ? ' style="background-image:url(\'' + escapeHtml(item.headerImage) + '\');"'
-    	      : '';
+      top10.forEach(function (item) {
+        var title = escapeHtml(item.title || ('Steam App #' + item.appId));
+        var storeUrl = escapeHtml(item.storeUrl || '#');
+        var bgStyle = item.headerImage
+          ? ' style="background-image:url(\'' + escapeHtml(item.headerImage) + '\');"'
+          : '';
 
-    	    sliderHtml += ''
-    	      + '<div class="featured-slide">'
-    	      + '  <a class="game-card trend-card trend-card--steam" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer"' + bgStyle + '>'
-    	      + '    <div class="rank-badge">'
-    	      + '      <span class="rank-circle">' + item.rank + '</span>'
-    	      + '      ' + item.rank + '위'
-    	      + '    </div>'
-    	      + '    <div class="game-card__content game-card__content--steam">'
-    	      + '      <div class="game-card__left">'
-    	      + '        <div class="game-name">' + title + '</div>'
-    	      + '        <div class="game-submeta">Steam Top Sellers · KR</div>'
-    	      + '      </div>'
-    	      + '      <div class="game-meta">'
-    	      + '        <span class="meta-dot"></span>'
-    	      + '        실시간 매출 순위'
-    	      + '      </div>'
-    	      + '    </div>'
-    	      + '  </a>'
-    	      + '</div>';
-    	  });
+        sliderHtml += ''
+          + '<div class="featured-slide">'
+          + '  <a class="game-card trend-card trend-card--steam" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer"' + bgStyle + '>'
+          + '    <div class="rank-badge">'
+          + '      <span class="rank-circle">' + item.rank + '</span>'
+          + '      ' + item.rank + '위'
+          + '    </div>'
+          + '    <div class="game-card__content game-card__content--steam">'
+          + '      <div class="game-card__left">'
+          + '        <div class="game-name">' + title + '</div>'
+          + '        <div class="game-submeta">Steam Top Sellers · KR</div>'
+          + '      </div>'
+          + '      <div class="game-meta">'
+          + '        <span class="meta-dot"></span>'
+          + '        실시간 매출 순위'
+          + '      </div>'
+          + '    </div>'
+          + '  </a>'
+          + '</div>';
+      });
 
-    	  sliderHtml += '  </div>';
-    	  sliderHtml += '</div>';
-    	  sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>';
+      sliderHtml += '  </div>';
+      sliderHtml += '</div>';
+      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>';
 
-    	  steamSliderContainer.innerHTML = sliderHtml;
-    	  initFeaturedSlider(steamSliderContainer);
+      steamSliderContainer.innerHTML = sliderHtml;
+      initFeaturedSlider(steamSliderContainer);
 
-    	  if (steamPopupBody) {
-    	    var popupRows = '';
+      if (steamPopupBody) {
+        var popupRows = '';
 
-    	    if (top11to20.length) {
-    	      top11to20.forEach(function (item) {
-    	        var title = escapeHtml(item.title || ('Steam App #' + item.appId));
-    	        var storeUrl = escapeHtml(item.storeUrl || '#');
+        if (top11to20.length) {
+          top11to20.forEach(function (item) {
+            var title = escapeHtml(item.title || ('Steam App #' + item.appId));
+            var storeUrl = escapeHtml(item.storeUrl || '#');
 
-    	        popupRows += ''
-    	          + '<tr>'
-    	          + '  <td class="rank-col">' + item.rank + '</td>'
-    	          + '  <td class="name-col"><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">' + title + '</a></td>'
-    	          + '  <td>Steam KR</td>'
-    	          + '  <td><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">상점 바로가기</a></td>'
-    	          + '</tr>';
-    	      });
-    	    } else {
-    	      popupRows = '<tr><td colspan="4">11~20위 차트 데이터가 없습니다.</td></tr>';
-    	    }
+            popupRows += ''
+              + '<tr>'
+              + '  <td class="rank-col">' + item.rank + '</td>'
+              + '  <td class="name-col"><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">' + title + '</a></td>'
+              + '  <td>Steam KR</td>'
+              + '  <td><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">상점 바로가기</a></td>'
+              + '</tr>';
+          });
+        } else {
+          popupRows = '<tr><td colspan="4">11~20위 차트 데이터가 없습니다.</td></tr>';
+        }
 
-    	    steamPopupBody.innerHTML = popupRows;
-    	  }
-    	}
+        steamPopupBody.innerHTML = popupRows;
+      }
+    }
+
+    function renderPlayStoreChart(items) {
+      var top10 = items.slice(0, 10);
+      var top11to20 = items.slice(10, 20);
+
+      if (!top10.length) {
+        playstoreSliderContainer.innerHTML =
+          '<div class="featured-empty">플레이스토어 차트를 불러오지 못했습니다.</div>';
+        return;
+      }
+
+      var sliderHtml = '';
+      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>';
+      sliderHtml += '<div class="featured-slider__viewport">';
+      sliderHtml += '  <div class="featured-slider__track" data-total-slides="' + top10.length + '">';
+
+      top10.forEach(function (item) {
+        var title = escapeHtml(item.title || 'Google Play App');
+        var storeUrl = escapeHtml(item.storeUrl || item.appBrainUrl || '#');
+        var iconUrl = escapeHtml(item.iconUrl || '');
+        var iconHtml = iconUrl
+          ? '<div class="mobile-rank-card__icon"><img src="' + iconUrl + '" alt="' + title + ' 아이콘"></div>'
+          : '<div class="mobile-rank-card__icon mobile-rank-card__icon--empty">GP</div>';
+
+        sliderHtml += ''
+          + '<div class="featured-slide">'
+          + '  <a class="game-card trend-card trend-card--playstore" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">'
+          +       iconHtml
+          + '    <div class="rank-badge">'
+          + '      <span class="rank-circle">' + item.rank + '</span>'
+          + '      ' + item.rank + '위'
+          + '    </div>'
+          + '    <div class="game-card__content game-card__content--playstore">'
+          + '      <div class="game-card__left">'
+          + '        <div class="game-name">' + title + '</div>'
+          + '        <div class="game-submeta">Google Play · KR · 게임</div>'
+          + '      </div>'
+          + '      <div class="game-meta">'
+          + '        <span class="meta-dot"></span>'
+          + '        최고 매출'
+          + '      </div>'
+          + '    </div>'
+          + '  </a>'
+          + '</div>';
+      });
+
+      sliderHtml += '  </div>';
+      sliderHtml += '</div>';
+      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>';
+
+      playstoreSliderContainer.innerHTML = sliderHtml;
+      initFeaturedSlider(playstoreSliderContainer);
+
+      if (playstorePopupBody) {
+        var popupRows = '';
+
+        if (top11to20.length) {
+          top11to20.forEach(function (item) {
+            var title = escapeHtml(item.title || 'Google Play App');
+            var storeUrl = escapeHtml(item.storeUrl || item.appBrainUrl || '#');
+
+            popupRows += ''
+              + '<tr>'
+              + '  <td class="rank-col">' + item.rank + '</td>'
+              + '  <td class="name-col"><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">' + title + '</a></td>'
+              + '  <td>Google Play KR</td>'
+              + '  <td><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">스토어 바로가기</a></td>'
+              + '</tr>';
+          });
+        } else {
+          popupRows = '<tr><td colspan="4">11~20위 차트 데이터가 없습니다.</td></tr>';
+        }
+
+        playstorePopupBody.innerHTML = popupRows;
+      }
+    }
 
     function loadSteamChart() {
       if (steamLoaded || steamLoading) return;
@@ -263,14 +358,10 @@
 
       fetch(contextPath + '/api/steam/top-sellers?limit=20', {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
       })
       .then(function (response) {
-        if (!response.ok) {
-          throw new Error('HTTP ' + response.status);
-        }
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         return response.json();
       })
       .then(function (items) {
@@ -285,6 +376,39 @@
           '<div class="featured-empty">스팀 차트를 불러오지 못했습니다.</div>';
       });
     }
+
+    function loadPlayStoreChart() {
+    	  if (!playstoreSliderContainer) {
+    	    console.error('playstoreFeaturedSlider 요소를 찾을 수 없습니다.');
+    	    return;
+    	  }
+
+    	  if (playstoreLoaded || playstoreLoading) return;
+
+    	  playstoreLoading = true;
+    	  playstoreSliderContainer.innerHTML =
+    	    '<div class="featured-loading">플레이스토어 차트를 불러오는 중입니다...</div>';
+
+    	  fetch(contextPath + '/api/playstore/top-grossing?limit=20', {
+    	    method: 'GET',
+    	    headers: { 'Accept': 'application/json' }
+    	  })
+    	  .then(function (response) {
+    	    if (!response.ok) throw new Error('HTTP ' + response.status);
+    	    return response.json();
+    	  })
+    	  .then(function (items) {
+    	    playstoreLoaded = true;
+    	    playstoreLoading = false;
+    	    renderPlayStoreChart(Array.isArray(items) ? items : []);
+    	  })
+    	  .catch(function (error) {
+    	    playstoreLoading = false;
+    	    console.error(error);
+    	    playstoreSliderContainer.innerHTML =
+    	      '<div class="featured-empty">플레이스토어 차트를 불러오지 못했습니다.</div>';
+    	  });
+    	}
 
     toggleButtons.forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -304,6 +428,9 @@
         if (source === 'steam') {
           sourceText.textContent = 'Steam Top Sellers · KR 기준';
           loadSteamChart();
+        } else if (source === 'playstore') {
+          sourceText.textContent = 'Google Play 최고 매출 · KR 기준';
+          loadPlayStoreChart();
         } else {
           sourceText.textContent = 'Naver DataLab · PC 검색 기준';
         }
@@ -388,6 +515,38 @@
         <tbody id="steamChartPopupBody">
           <tr>
             <td colspan="4">스팀 차트를 불러오는 중입니다...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="playstoreRankChartPopup" class="chart-popup">
+  <a href="#" class="chart-popup__dim"></a>
+
+  <div class="chart-popup__panel">
+    <div class="chart-popup__head">
+      <div>
+        <h3>플레이스토어 인기 게임 11~20위</h3>
+        <p>Google Play 최고 매출 · KR 기준</p>
+      </div>
+      <a href="#" class="chart-popup__close">✕</a>
+    </div>
+
+    <div class="chart-popup__body">
+      <table class="chart-table">
+        <thead>
+          <tr>
+            <th>순위</th>
+            <th>게임명</th>
+            <th>기준</th>
+            <th>링크</th>
+          </tr>
+        </thead>
+        <tbody id="playstoreChartPopupBody">
+          <tr>
+            <td colspan="4">플레이스토어 차트를 불러오는 중입니다...</td>
           </tr>
         </tbody>
       </table>
