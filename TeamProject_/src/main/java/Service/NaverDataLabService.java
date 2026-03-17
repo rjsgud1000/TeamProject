@@ -371,6 +371,8 @@ public class NaverDataLabService {
                 "스타크래프트2", "starcraft 2"));
         list.add(new GameKeywordGroup("원신",
                 "원신", "genshin"));
+        list.add(new GameKeywordGroup("마인크래프트",
+                "마인크래프트", "minecraft"));
 
         return list;
     }
