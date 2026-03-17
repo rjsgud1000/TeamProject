@@ -38,6 +38,237 @@
     margin-right:6px;
     color:#1f4fa3;
 }
+.section-title--games{
+  align-items:center;
+}
+
+.chart-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.chart-toggle__btn{
+  min-width:84px;
+  height:38px;
+  padding:0 14px;
+  border:1px solid rgba(37, 99, 235, .18);
+  border-radius:999px;
+  background:#fff;
+  color:#475569;
+  font-size:13px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(15, 23, 42, .08);
+  transition:.18s ease;
+}
+
+.chart-toggle__btn:hover{
+  background:#eff6ff;
+  color:#1d4ed8;
+}
+
+.chart-toggle__btn.is-active{
+  background:#2563eb;
+  border-color:#2563eb;
+  color:#fff;
+  box-shadow:0 12px 24px rgba(37, 99, 235, .24);
+}
+
+.game-chart-panel{
+  display:none;
+}
+
+.game-chart-panel.is-active{
+  display:block;
+}
+
+.featured-loading{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:20px;
+  padding:40px 20px;
+  text-align:center;
+  font-weight:900;
+  color:#64748b;
+  box-shadow:0 10px 25px rgba(15, 23, 42, .06);
+}
+
+.featured-empty{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:20px;
+  padding:40px 20px;
+  text-align:center;
+  font-weight:900;
+  color:#64748b;
+  box-shadow:0 10px 25px rgba(15, 23, 42, .06);
+}
+
+.trend-card--steam{
+  position:relative;
+  overflow:hidden;
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  border-radius:20px;
+  min-height:210px;
+  display:block;
+  text-decoration:none;
+}
+
+.trend-card--steam::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg, rgba(15,23,42,.06) 0%, rgba(15,23,42,.18) 42%, rgba(15,23,42,.72) 100%);
+  pointer-events:none;
+}
+
+.trend-card--steam .rank-badge,
+.trend-card--steam .game-card__content{
+  position:relative;
+  z-index:2;
+}
+
+.trend-card--steam .rank-badge{
+  position:absolute;
+  top:14px;
+  left:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.18);
+  color:#fff;
+  font-weight:900;
+  font-size:13px;
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+
+.trend-card--steam .rank-circle{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:rgba(255,255,255,.26);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+}
+
+.trend-card--steam .game-card__content--steam{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  width:100%;
+  padding:18px 18px 16px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:14px;
+  box-sizing:border-box;
+}
+
+.trend-card--steam .game-card__left{
+  min-width:0;
+  flex:1 1 auto;
+}
+
+.trend-card--steam .game-name{
+  font-size:22px;
+  font-weight:900;
+  line-height:1.1;
+  letter-spacing:-0.02em;
+  color:#fff;
+  text-shadow:0 2px 12px rgba(0,0,0,.35);
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  word-break:keep-all;
+}
+
+.trend-card--steam .game-submeta{
+  margin-top:4px;
+  font-size:12px;
+  font-weight:700;
+  color:rgba(255,255,255,.82);
+  line-height:1.2;
+}
+
+.trend-card--steam .game-meta{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 12px;
+  border-radius:999px;
+  background:rgba(15,23,42,.58);
+  border:1px solid rgba(255,255,255,.16);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+  line-height:1;
+  white-space:nowrap;
+  backdrop-filter:blur(4px);
+}
+
+.trend-card--steam .meta-dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#22c55e;
+  flex:0 0 auto;
+}
+
+@media (max-width: 900px){
+  .trend-card--steam{
+    min-height:190px;
+  }
+
+  .trend-card--steam .game-card__content--steam{
+    padding:16px 16px 14px;
+  }
+
+  .trend-card--steam .game-name{
+    font-size:20px;
+  }
+
+  .trend-card--steam .game-meta{
+    font-size:11px;
+    padding:6px 10px;
+  }
+}
+
+@media (max-width: 640px){
+  .trend-card--steam{
+    min-height:180px;
+  }
+
+  .trend-card--steam .game-card__content--steam{
+    padding:14px 14px 13px;
+    gap:10px;
+  }
+
+  .trend-card--steam .game-name{
+    font-size:18px;
+  }
+
+  .trend-card--steam .game-submeta{
+    font-size:11px;
+  }
+
+  .trend-card--steam .game-meta{
+    font-size:10px;
+    padding:6px 9px;
+  }
+}
 
 .chart-popup__more-btn{
   min-width:160px;
