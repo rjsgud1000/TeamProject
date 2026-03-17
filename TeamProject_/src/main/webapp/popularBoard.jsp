@@ -4,9 +4,53 @@
 
 <style>
 
+.board-top-nav {
+    margin: 18px 0 24px;
+}
+
+.board-category-tabs,
+.board-sort-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.board-category-tabs .tab,
+.board-sort-tabs .sort-tab {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 999px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.board-category-tabs .tab {
+    background: #f3f4f6;
+    color: #333;
+}
+
+.board-category-tabs .tab:hover {
+    background: #e5e7eb;
+}
+
+.board-category-tabs .tab.active {
+    background: #1f4fa3;
+    color: #fff;
+}
+.section-icon {
+    font-size: 22px;
+    vertical-align: middle;
+    margin-right: 6px;
+    color: #1f4fa3;
+}
+
 .popular-page {
-    width: 1000px;
+    max-width: 1000px;
     margin: 40px auto;
+    padding: 0 20px;
     color: #222;
 }
 
@@ -20,7 +64,7 @@
 .popular-desc {
     font-size: 14px;
     color: #666;
-    margin-bottom: 30px;
+    margin-bottom: 18px;
 }
 
 .popular-section {
@@ -128,49 +172,79 @@
     <div class="popular-title">인기 게시글</div>
     <div class="popular-desc">추천수, 조회수, 댓글수를 기준으로 인기 게시글을 확인할 수 있습니다.</div>
 
-    <!-- 추천 TOP 5 -->
-    <div class="popular-section">
-        <span class="material-icons">thumb_up</span> 추천 TOP 5
+	<div class="board-top-nav">
+        <div class="board-category-tabs">
+            <a class="tab"
+               href="${pageContext.request.contextPath}/board/list?category=0&sort=latest">
+               공지사항
+            </a>
 
-        <c:choose>
-            <c:when test="${empty likeTopList}">
-                <div class="badge-empty">표시할 게시글이 없습니다.</div>
-            </c:when>
-            <c:otherwise>
-                <c:forEach var="post" items="${likeTopList}" varStatus="status">
-                    <div class="rank-item ${status.index == 0 ? 'top1' : status.index == 1 ? 'top2' : status.index == 2 ? 'top3' : ''}">
-                        <div class="rank-number">${status.index + 1}</div>
+            <a class="tab"
+               href="${pageContext.request.contextPath}/board/list?category=1&sort=latest">
+               자유게시판
+            </a>
 
-                        <div class="rank-content">
-                            <div class="rank-title-row">
-                                <a class="rank-title"
-                                   href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}">
-                                    ${post.title}
-                                </a>
+            <a class="tab"
+               href="${pageContext.request.contextPath}/board/list?category=2&sort=latest">
+               질문게시판
+            </a>
 
-                                <c:if test="${post.likeCount >= 3 || post.viewcount >= 50}">
-                                    <span class="material-icons" style="color:#ff4d4f;font-size:18px;">whatshot</span>
-                                </c:if>
-                            </div>
+            <a class="tab"
+               href="${pageContext.request.contextPath}/board/list?category=3&sort=latest">
+               파티게시판
+            </a>
 
-                            <div class="meta-row">
-                                작성자 ${post.nickname}
-                                &nbsp;|&nbsp; 조회수 ${post.viewcount}
-                                &nbsp;|&nbsp; 추천 ${post.likeCount}
-                                &nbsp;|&nbsp; 댓글 ${post.commentCount}
-                                &nbsp;|&nbsp;
-                                <fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" />
-                            </div>
-                        </div>
-                    </div>
-                </c:forEach>
-            </c:otherwise>
-        </c:choose>
+            <a class="tab active"
+               href="${pageContext.request.contextPath}/popularBoard">
+               인기글
+            </a>
+        </div>
     </div>
+    <!-- 추천 TOP 5 -->
+	<div class="popular-section">
+		<div class="popular-section-title">
+			<span class="material-icons section-icon">thumb_up</span>추천 TOP 5
+		</div>
 
-    <!-- 조회수 TOP 5 -->
+		<c:choose>
+			<c:when test="${empty likeTopList}">
+				<div class="badge-empty">표시할 게시글이 없습니다.</div>
+			</c:when>
+			<c:otherwise>
+				<c:forEach var="post" items="${likeTopList}" varStatus="status">
+					<div
+						class="rank-item ${status.index == 0 ? 'top1' : status.index == 1 ? 'top2' : status.index == 2 ? 'top3' : ''}">
+						<div class="rank-number">${status.index + 1}</div>
+
+						<div class="rank-content">
+							<div class="rank-title-row">
+								<a class="rank-title"
+									href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}">
+									${post.title} </a>
+
+								<c:if test="${post.likeCount >= 3 || post.viewcount >= 50}">
+									<span class="badge-hot">HOT</span>
+								</c:if>
+							</div>
+
+							<div class="meta-row">
+								작성자 ${post.nickname} &nbsp;|&nbsp; 조회수 ${post.viewcount}
+								&nbsp;|&nbsp; 추천 ${post.likeCount} &nbsp;|&nbsp; 댓글
+								${post.commentCount} &nbsp;|&nbsp;
+								<fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" />
+							</div>
+						</div>
+					</div>
+				</c:forEach>
+			</c:otherwise>
+		</c:choose>
+	</div>
+
+	<!-- 조회수 TOP 5 -->
     <div class="popular-section">
-        <span class="material-icons">visibility</span> 조회수 TOP 5
+    	<div class="popular-section-title">
+        	<span class="material-icons section-icon">visibility</span> 조회수 TOP 5
+        </div>
 
         <c:choose>
             <c:when test="${empty viewTopList}">
@@ -210,7 +284,9 @@
 
     <!-- 댓글 TOP 5 -->
     <div class="popular-section">
-        <span class="material-icons">chat_bubble</span> 댓글 TOP 5
+    	<div class="popular-section-title">
+        	<span class="material-icons section-icon">chat_bubble</span> 댓글 TOP 5
+        </div>
 
         <c:choose>
             <c:when test="${empty commentTopList}">

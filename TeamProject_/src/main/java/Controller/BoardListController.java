@@ -92,7 +92,8 @@ public class BoardListController extends HttpServlet {
                 default: boardTitle = "게시판";
             }
 
-            request.setAttribute("category", category);
+            // 수정: JSP에서 문자열 비교로 통일하기 위해 category를 문자열로 저장
+            request.setAttribute("category", String.valueOf(category));
         }
 
         int totalPage = (int) Math.ceil((double) totalCount / pageSize);
