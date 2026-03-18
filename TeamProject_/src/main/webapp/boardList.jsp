@@ -282,6 +282,36 @@
         max-width: 280px;
     }
 }
+
+		.qna-answer-row {
+		    background: #f7faff;
+		}
+		
+		.qna-answer-row:hover {
+		    background: #eef5ff !important;
+		}
+		
+		.qna-answer-title {
+		    padding-left: 0;
+		    position: static;
+		}
+		
+		.qna-answer-badge {
+		    display: inline-block;
+		    margin-right: 8px;
+		    padding: 2px 8px;
+		    font-size: 11px;
+		    font-weight: 700;
+		    color: #fff;
+		    border-radius: 999px;
+		    background: #2563eb;
+		    vertical-align: middle;
+		    line-height: 1.4;
+		}
+		
+		.qna-answer-title {
+   		 padding-left: 10px;
+		}
 </style>
 
 <div class="board-container">
@@ -330,47 +360,56 @@
                 </tr>
             </thead>
             <tbody>
-                <c:forEach var="post" items="${boardList}">
-                    <tr>
-                        <td>${post.postId}</td>
-
-                        <td>
-                            <c:choose>
-                                <c:when test="${post.category == 0}">공지</c:when>
-                                <c:when test="${post.category == 1}">자유</c:when>
-                                <c:when test="${post.category == 2}">질문</c:when>
-                                <c:when test="${post.category == 3}">파티</c:when>
-                                <c:otherwise>기타</c:otherwise>
-                            </c:choose>
-                        </td>
-
-                        <td class="title-cell">
-                            <c:set var="isHot" value="${post.likeCount >= 5 || post.viewcount >= 100}" />
-                            <c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
-
-                            <a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}" class="board-title-link">
-                                ${post.title}
-                            </a>
-
-                            <c:if test="${post.category != 0 && post.commentCount > 0}">
-                                <span class="comment-count">[${post.commentCount}]</span>
-                            </c:if>
-
-                            <c:if test="${isHot}">
-                                <span class="badge-hot">HOT</span>
-                            </c:if>
-
-                            <c:if test="${isNew}">
-                                <span class="badge-new">NEW</span>
-                            </c:if>
-                        </td>
-
-                        <td>${post.nickname}</td>
-                        <td>${post.viewcount}</td>
-                        <td>${post.likeCount}</td>
-                        <td><fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" /></td>
-                    </tr>
-                </c:forEach>
+			<c:forEach var="post" items="${boardList}">
+			    <tr class="${post.answerPost ? 'qna-answer-row' : ''}">
+			        <td>${post.postId}</td>
+			
+			        <td>
+			            <c:choose>
+			                <c:when test="${post.category == 0}">공지</c:when>
+			                <c:when test="${post.category == 1}">자유</c:when>
+			                <c:when test="${post.category == 2}">
+			                    <c:choose>
+			                        <c:when test="${post.answerPost}">답변</c:when>
+			                        <c:otherwise>질문</c:otherwise>
+			                    </c:choose>
+			                </c:when>
+			                <c:when test="${post.category == 3}">파티</c:when>
+			                <c:otherwise>기타</c:otherwise>
+			            </c:choose>
+			        </td>
+			
+					<td class="title-cell ${post.answerPost ? 'qna-answer-title' : ''}">
+					    <c:set var="isHot" value="${post.likeCount >= 5 || post.viewcount >= 100}" />
+					    <c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
+					
+					    <c:if test="${post.answerPost}">
+					        <span class="qna-answer-badge">답변</span>
+					    </c:if>
+					
+					    <a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}" class="board-title-link">
+					        ${post.title}
+					    </a>
+					
+					    <c:if test="${post.category != 0 && post.commentCount > 0}">
+					        <span class="comment-count">[${post.commentCount}]</span>
+					    </c:if>
+					
+					    <c:if test="${isHot}">
+					        <span class="badge-hot">HOT</span>
+					    </c:if>
+					
+					    <c:if test="${isNew}">
+					        <span class="badge-new">NEW</span>
+					    </c:if>
+					</td>
+			
+			        <td>${post.nickname}</td>
+			        <td>${post.viewcount}</td>
+			        <td>${post.likeCount}</td>
+			        <td><fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" /></td>
+			    </tr>
+			</c:forEach>
 
                 <c:if test="${empty boardList}">
                     <tr>

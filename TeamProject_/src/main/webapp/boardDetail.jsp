@@ -101,6 +101,28 @@
 		</c:choose>
 
 	</div>
+	<%-- 질문글에 답변글 작성기능 --%>
+			<c:if test="${post.category == '2' || post.category == 2}">
+		    <c:if test="${post.acceptedCommentId == null}">
+		        <c:if test="${sessionScope.loginMember != null}">
+		            |
+		            <a href="${pageContext.request.contextPath}/board/write?category=2&parentPostId=${post.postId}">
+		                답변달기
+		            </a>
+		        </c:if>
+		    	</c:if>
+			</c:if>
+			
+	<%-- 답변글에 질문글로 가는 링크 --%>
+	<c:if test="${post.category == '2' || post.category == 2}">
+	    <c:if test="${post.acceptedCommentId != null}">
+		        <div style="margin-top:10px;">
+		            <a href="${pageContext.request.contextPath}/board/detail?postId=${post.acceptedCommentId}&category=2&page=1">
+		                원문 질문 보기
+		            </a>
+		        </div>
+		    </c:if>
+		</c:if>
 
 	<!-- 추천하기 및 취소 탭 : 공지사항(category=0)에서는 숨김 -->
 	<c:if test="${post.category != '0' && post.category != 0}">

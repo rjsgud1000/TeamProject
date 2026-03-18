@@ -12,6 +12,8 @@ public class BoardDTO {
     private int viewCount;
     private Timestamp createdAt;
 
+    private Integer acceptedCommentId;
+
     public BoardDTO() {}
 
     public int getPostId() {
@@ -21,7 +23,7 @@ public class BoardDTO {
     public void setPostId(int postId) {
         this.postId = postId;
     }
-    
+
     public String getMemberId() {
         return memberId;
     }
@@ -77,5 +79,16 @@ public class BoardDTO {
     public void setCreatedAt(Timestamp createdAt) {
         this.createdAt = createdAt;
     }
-    
+
+    public Integer getAcceptedCommentId() {
+        return acceptedCommentId;
+    }
+
+    public void setAcceptedCommentId(Integer acceptedCommentId) {
+        this.acceptedCommentId = acceptedCommentId;
+    }
+
+    public boolean isAnswerPost() {
+        return acceptedCommentId != null;
+    }
 }

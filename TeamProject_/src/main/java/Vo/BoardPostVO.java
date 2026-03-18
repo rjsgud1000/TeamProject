@@ -14,10 +14,13 @@ public class BoardPostVO {
     private int likeCount;
     private int commentCount;
 
-	public int getLikeCount() {return likeCount;}
-	public void setLikeCount(int likeCount) {this.likeCount = likeCount;}
-	
-	public int getCommentCount() { return commentCount; }
+    private Integer acceptedCommentId;   // 질문글 post_id
+    private boolean answerPost;          // 답변글 여부
+
+    public int getLikeCount() { return likeCount; }
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
+
+    public int getCommentCount() { return commentCount; }
     public void setCommentCount(int commentCount) { this.commentCount = commentCount; }
 
     public int getPostId() { return postId; }
@@ -43,4 +46,10 @@ public class BoardPostVO {
 
     public Timestamp getCreateAt() { return createAt; }
     public void setCreateAt(Timestamp createAt) { this.createAt = createAt; }
+
+    public Integer getAcceptedCommentId() { return acceptedCommentId; }
+    public void setAcceptedCommentId(Integer acceptedCommentId) { this.acceptedCommentId = acceptedCommentId; }
+
+    public boolean isAnswerPost() { return answerPost; }
+    public void setAnswerPost(boolean answerPost) { this.answerPost = answerPost; }
 }

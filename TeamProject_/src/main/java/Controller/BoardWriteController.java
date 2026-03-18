@@ -19,35 +19,44 @@ public class BoardWriteController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
 
-        // 로그인 안 한 경우 차단
         if (session == null || session.getAttribute("loginId") == null) {
             response.sendRedirect(request.getContextPath() + "/member/login.me");
             return;
         }
 
         String memberId = (String) session.getAttribute("loginId");
-
-        // ★ 관리자 여부 체크 (현재는 admin 아이디 기준으로 처리)
         boolean isAdmin = "admin".equalsIgnoreCase(memberId);
 
         String categoryParam = request.getParameter("category");
-        int category = 1;
+        String parentPostIdParam = request.getParameter("parentPostId");
 
-        if (categoryParam != null && !categoryParam.trim().isEmpty()) {
-            try {
+        int category = 1;
+        Integer parentPostId = null;
+
+        try {
+            if (categoryParam != null && !categoryParam.trim().isEmpty()) {
                 category = Integer.parseInt(categoryParam);
-            } catch (NumberFormatException e) {
-                category = 1;
             }
+        } catch (Exception e) {
+            category = 1;
         }
 
-        // ★ 공지사항(category=0)은 관리자만 작성 가능
+        try {
+            if (parentPostIdParam != null && !parentPostIdParam.trim().isEmpty()) {
+                parentPostId = Integer.parseInt(parentPostIdParam);
+            }
+        } catch (Exception e) {
+            parentPostId = null;
+        }
+
         if (category == 0 && !isAdmin) {
             response.sendRedirect(request.getContextPath() + "/board/list?category=0");
             return;
         }
 
         request.setAttribute("category", category);
+        request.setAttribute("parentPostId", parentPostId);
+        request.setAttribute("isAnswerWrite", category == 2 && parentPostId != null);
         request.setAttribute("center", "boardWrite.jsp");
         request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
     }
@@ -60,7 +69,6 @@ public class BoardWriteController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
 
-        // 로그인 안 한 경우 차단
         if (session == null || session.getAttribute("loginId") == null) {
             response.sendRedirect(request.getContextPath() + "/member/login.me");
             return;
@@ -69,31 +77,42 @@ public class BoardWriteController extends HttpServlet {
         String memberId = (String) session.getAttribute("loginId");
         String nickname = (String) session.getAttribute("loginName");
 
-        // ★ 관리자 여부 체크
         boolean isAdmin = "admin".equalsIgnoreCase(memberId);
 
         String title = request.getParameter("title");
         String content = request.getParameter("content");
         String categoryParam = request.getParameter("category");
+        String parentPostIdParam = request.getParameter("parentPostId");
 
         int category = 1;
+        Integer parentPostId = null;
+
         try {
             category = Integer.parseInt(categoryParam);
         } catch (Exception e) {
             category = 1;
         }
 
-        // ★ 공지사항(category=0)은 관리자만 작성 가능
+        try {
+            if (parentPostIdParam != null && !parentPostIdParam.trim().isEmpty()) {
+                parentPostId = Integer.parseInt(parentPostIdParam);
+            }
+        } catch (Exception e) {
+            parentPostId = null;
+        }
+
         if (category == 0 && !isAdmin) {
             response.sendRedirect(request.getContextPath() + "/board/list?category=0");
             return;
         }
 
-        if (title == null || title.trim().isEmpty() ||
-            content == null || content.trim().isEmpty()) {
+        if (title == null || title.trim().isEmpty()
+                || content == null || content.trim().isEmpty()) {
 
             request.setAttribute("errorMessage", "제목과 내용을 모두 입력해 주세요.");
             request.setAttribute("category", category);
+            request.setAttribute("parentPostId", parentPostId);
+            request.setAttribute("isAnswerWrite", category == 2 && parentPostId != null);
             request.setAttribute("center", "boardWrite.jsp");
             request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
             return;
@@ -106,6 +125,12 @@ public class BoardWriteController extends HttpServlet {
         vo.setTitle(title);
         vo.setContent(content);
 
+        if (category == 2 && parentPostId != null) {
+            vo.setAcceptedCommentId(parentPostId);
+        } else {
+            vo.setAcceptedCommentId(null);
+        }
+
         int result = boardDAO.insertPost(vo);
 
         if (result > 0) {
@@ -113,6 +138,8 @@ public class BoardWriteController extends HttpServlet {
         } else {
             request.setAttribute("errorMessage", "게시글 등록에 실패했습니다.");
             request.setAttribute("category", category);
+            request.setAttribute("parentPostId", parentPostId);
+            request.setAttribute("isAnswerWrite", category == 2 && parentPostId != null);
             request.setAttribute("center", "boardWrite.jsp");
             request.getRequestDispatcher("/GameMain.jsp").forward(request, response);
         }

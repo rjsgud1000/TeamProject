@@ -101,10 +101,10 @@ public class BoardDAO {
 
     // 3. 게시글 상세보기
     public BoardDTO selectPostById(int postId) {
-        // 삭제되지 않았고 블라인드되지 않은 게시글만 상세조회
-        String sql = "SELECT post_id, member_id, category, nickname, title, content, viewcount, create_at " +
-                     "FROM BOARD_POST " +
-                     "WHERE post_id = ? AND is_deleted = 0 AND is_blinded = 0";
+        String sql = "SELECT post_id, member_id, category, nickname, title, content, "
+                   + "viewcount, create_at, accepted_comment_id "
+                   + "FROM BOARD_POST "
+                   + "WHERE post_id = ? AND is_deleted = 0 AND is_blinded = 0";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -122,6 +122,12 @@ public class BoardDAO {
                     dto.setContent(rs.getString("content"));
                     dto.setViewCount(rs.getInt("viewcount"));
                     dto.setCreatedAt(rs.getTimestamp("create_at"));
+
+                    int acceptedCommentId = rs.getInt("accepted_comment_id");
+                    if (!rs.wasNull()) {
+                        dto.setAcceptedCommentId(acceptedCommentId);
+                    }
+
                     return dto;
                 }
             }
@@ -152,9 +158,9 @@ public class BoardDAO {
     public int insertPost(BoardPostVO vo) {
         int result = 0;
 
-        String sql = "INSERT INTO BOARD_POST " +
-                     "(member_id, nickname, category, title, content, viewcount, create_at, is_deleted) " +
-                     "VALUES (?, ?, ?, ?, ?, 0, NOW(), 0)";
+        String sql = "INSERT INTO BOARD_POST "
+                   + "(member_id, nickname, category, title, content, viewcount, create_at, is_deleted, accepted_comment_id) "
+                   + "VALUES (?, ?, ?, ?, ?, 0, NOW(), 0, ?)";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -164,6 +170,12 @@ public class BoardDAO {
             pstmt.setInt(3, vo.getCategory());
             pstmt.setString(4, vo.getTitle());
             pstmt.setString(5, vo.getContent());
+
+            if (vo.getAcceptedCommentId() == null) {
+                pstmt.setNull(6, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(6, vo.getAcceptedCommentId());
+            }
 
             result = pstmt.executeUpdate();
 
@@ -264,6 +276,10 @@ public class BoardDAO {
 
     // 9. 카테고리별 페이징 조회
     public List<BoardPostVO> selectBoardListPaging(int category, int startRow, int pageSize, String sort) {
+        if (category == 2) {
+            return selectQnaListPaging(startRow, pageSize, sort);
+        }
+
         List<BoardPostVO> list = new ArrayList<>();
 
         String orderBy = "ORDER BY bp.post_id DESC";
@@ -279,7 +295,6 @@ public class BoardDAO {
                 "(SELECT COUNT(*) FROM COMMENT c WHERE c.post_id = bp.post_id AND c.is_deleted = 0 AND c.parent_comment_id IS NULL) AS comment_count " +
                 "FROM BOARD_POST bp " +
                 "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
-                // 삭제되지 않았고 블라인드되지 않은 게시글만 페이징 조회
                 "WHERE bp.category = ? AND bp.is_deleted = 0 AND bp.is_blinded = 0 " +
                 "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
                 orderBy + " " +
@@ -316,6 +331,147 @@ public class BoardDAO {
         return list;
     }
 
+    // 9-1 질문과 답변 게시판 한정 조회
+    public int getQnaQuestionCount() {
+        int count = 0;
+
+        String sql = "SELECT COUNT(*) "
+                   + "FROM BOARD_POST "
+                   + "WHERE category = 2 "
+                   + "AND is_deleted = 0 "
+                   + "AND is_blinded = 0 "
+                   + "AND accepted_comment_id IS NULL";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            if (rs.next()) {
+                count = rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return count;
+    }
+    
+    public List<BoardPostVO> selectQnaListPaging(int startRow, int pageSize, String sort) {
+        List<BoardPostVO> list = new ArrayList<>();
+        List<Integer> questionIds = new ArrayList<>();
+
+        String questionOrderBy = "ORDER BY q.post_id DESC";
+        if ("view".equals(sort)) {
+            questionOrderBy = "ORDER BY q.viewcount DESC, q.post_id DESC";
+        } else if ("like".equals(sort)) {
+            questionOrderBy = "ORDER BY like_count DESC, q.post_id DESC";
+        }
+
+        String questionSql =
+                "SELECT q.post_id, COUNT(pl.post_id) AS like_count " +
+                "FROM BOARD_POST q " +
+                "LEFT JOIN POST_LIKE pl ON q.post_id = pl.post_id " +
+                "WHERE q.category = 2 " +
+                "AND q.is_deleted = 0 " +
+                "AND q.is_blinded = 0 " +
+                "AND q.accepted_comment_id IS NULL " +
+                "GROUP BY q.post_id, q.viewcount " +
+                questionOrderBy + " " +
+                "LIMIT ?, ?";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(questionSql)) {
+
+            pstmt.setInt(1, startRow);
+            pstmt.setInt(2, pageSize);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    questionIds.add(rs.getInt("post_id"));
+                }
+            }
+
+            if (questionIds.isEmpty()) {
+                return list;
+            }
+
+            StringBuilder inClause = new StringBuilder();
+            StringBuilder fieldClause = new StringBuilder();
+
+            for (int i = 0; i < questionIds.size(); i++) {
+                if (i > 0) {
+                    inClause.append(",");
+                    fieldClause.append(",");
+                }
+                inClause.append("?");
+                fieldClause.append("?");
+            }
+
+            String sql =
+                    "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+                    "bp.viewcount, bp.create_at, bp.accepted_comment_id, " +
+                    "(SELECT COUNT(*) FROM POST_LIKE pl WHERE pl.post_id = bp.post_id) AS like_count, " +
+                    "(SELECT COUNT(*) FROM COMMENT c " +
+                    " WHERE c.post_id = bp.post_id AND c.is_deleted = 0 AND c.parent_comment_id IS NULL) AS comment_count, " +
+                    "COALESCE(bp.accepted_comment_id, bp.post_id) AS group_post_id, " +
+                    "CASE WHEN bp.accepted_comment_id IS NULL THEN 0 ELSE 1 END AS answer_sort " +
+                    "FROM BOARD_POST bp " +
+                    "WHERE bp.is_deleted = 0 " +
+                    "AND bp.is_blinded = 0 " +
+                    "AND (bp.post_id IN (" + inClause + ") OR bp.accepted_comment_id IN (" + inClause + ")) " +
+                    "ORDER BY FIELD(COALESCE(bp.accepted_comment_id, bp.post_id), " + fieldClause + "), " +
+                    "answer_sort ASC, bp.post_id ASC";
+
+            try (PreparedStatement detailStmt = conn.prepareStatement(sql)) {
+                int idx = 1;
+
+                for (Integer id : questionIds) {
+                    detailStmt.setInt(idx++, id);
+                }
+                for (Integer id : questionIds) {
+                    detailStmt.setInt(idx++, id);
+                }
+                for (Integer id : questionIds) {
+                    detailStmt.setInt(idx++, id);
+                }
+
+                try (ResultSet rs = detailStmt.executeQuery()) {
+                    while (rs.next()) {
+                        BoardPostVO vo = new BoardPostVO();
+                        vo.setPostId(rs.getInt("post_id"));
+                        vo.setMemberId(rs.getString("member_id"));
+                        vo.setNickname(rs.getString("nickname"));
+                        vo.setCategory(rs.getInt("category"));
+                        vo.setTitle(rs.getString("title"));
+                        vo.setContent(rs.getString("content"));
+                        vo.setViewcount(rs.getInt("viewcount"));
+                        vo.setCreateAt(rs.getTimestamp("create_at"));
+                        vo.setLikeCount(rs.getInt("like_count"));
+                        vo.setCommentCount(rs.getInt("comment_count"));
+
+                        int acceptedId = rs.getInt("accepted_comment_id");
+                        if (!rs.wasNull()) {
+                            vo.setAcceptedCommentId(acceptedId);
+                            vo.setAnswerPost(true);
+                        } else {
+                            vo.setAcceptedCommentId(null);
+                            vo.setAnswerPost(false);
+                        }
+
+                        list.add(vo);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    
+    
     // 10. 전체 글수 구하기
     public int getAllBoardCount() {
         int count = 0;
@@ -341,11 +497,14 @@ public class BoardDAO {
 
     // 11. 카테고리별 글수 구하기
     public int getBoardCount(int category) {
+        if (category == 2) {
+            return getQnaQuestionCount();
+        }
+
         int count = 0;
 
-        // 블라인드 처리되지 않은 게시글만 개수에 포함
-        String sql = "SELECT COUNT(*) FROM BOARD_POST " +
-                     "WHERE category = ? AND is_deleted = 0 AND is_blinded = 0";
+        String sql = "SELECT COUNT(*) FROM BOARD_POST "
+                   + "WHERE category = ? AND is_deleted = 0 AND is_blinded = 0";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {

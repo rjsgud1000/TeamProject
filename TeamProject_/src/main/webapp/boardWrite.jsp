@@ -2,7 +2,12 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <div style="max-width:900px; margin:0 auto; padding:20px;">
-    <h2>게시글 작성</h2>
+    <h2>
+        <c:choose>
+            <c:when test="${isAnswerWrite}">답변 작성</c:when>
+            <c:otherwise>게시글 작성</c:otherwise>
+        </c:choose>
+    </h2>
 
     <c:if test="${not empty errorMessage}">
         <div style="color:red; margin-bottom:15px; font-weight:bold;">
@@ -12,6 +17,7 @@
 
     <form action="${pageContext.request.contextPath}/board/write" method="post">
         <input type="hidden" name="category" value="${category}" />
+        <input type="hidden" name="parentPostId" value="${parentPostId}" />
 
         <table style="width:100%; border-collapse:collapse; margin-top:15px;">
             <tr>
@@ -20,7 +26,12 @@
                     <c:choose>
                         <c:when test="${category == 0}">공지사항</c:when>
                         <c:when test="${category == 1}">자유 게시판</c:when>
-                        <c:when test="${category == 2}">질문과 답변</c:when>
+                        <c:when test="${category == 2}">
+                            <c:choose>
+                                <c:when test="${isAnswerWrite}">질문과 답변 - 답변글</c:when>
+                                <c:otherwise>질문과 답변 - 질문글</c:otherwise>
+                            </c:choose>
+                        </c:when>
                         <c:when test="${category == 3}">파티원 모집</c:when>
                         <c:otherwise>게시판</c:otherwise>
                     </c:choose>
