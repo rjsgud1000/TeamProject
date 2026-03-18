@@ -4,42 +4,6 @@
 
 <style>
 
-.board-top-nav {
-    margin: 18px 0 24px;
-}
-
-.board-category-tabs,
-.board-sort-tabs {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 12px;
-}
-
-.board-category-tabs .tab,
-.board-sort-tabs .sort-tab {
-    display: inline-block;
-    padding: 10px 16px;
-    border-radius: 999px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-
-.board-category-tabs .tab {
-    background: #f3f4f6;
-    color: #333;
-}
-
-.board-category-tabs .tab:hover {
-    background: #e5e7eb;
-}
-
-.board-category-tabs .tab.active {
-    background: #1f4fa3;
-    color: #fff;
-}
 .section-icon {
     font-size: 22px;
     vertical-align: middle;
@@ -172,34 +136,6 @@
     <div class="popular-title">인기 게시글</div>
     <div class="popular-desc">추천수, 조회수, 댓글수를 기준으로 인기 게시글을 확인할 수 있습니다.</div>
 
-	<div class="board-top-nav">
-        <div class="board-category-tabs">
-            <a class="tab"
-               href="${pageContext.request.contextPath}/board/list?category=0&sort=latest">
-               공지사항
-            </a>
-
-            <a class="tab"
-               href="${pageContext.request.contextPath}/board/list?category=1&sort=latest">
-               자유게시판
-            </a>
-
-            <a class="tab"
-               href="${pageContext.request.contextPath}/board/list?category=2&sort=latest">
-               질문게시판
-            </a>
-
-            <a class="tab"
-               href="${pageContext.request.contextPath}/board/list?category=3&sort=latest">
-               파티게시판
-            </a>
-
-            <a class="tab active"
-               href="${pageContext.request.contextPath}/popularBoard">
-               인기글
-            </a>
-        </div>
-    </div>
     <!-- 추천 TOP 5 -->
 	<div class="popular-section">
 		<div class="popular-section-title">
