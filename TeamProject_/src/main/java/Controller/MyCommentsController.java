@@ -19,6 +19,8 @@ import Vo.MemberVO;
 @WebServlet("/mypage/comments")
 public class MyCommentsController extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_BLOCK_SIZE = 10;
 
     private final MyCommentsDAO myCommentsDAO = new MyCommentsDAO();
     private final MemberDAO memberDAO = new MemberDAO();
@@ -35,11 +37,22 @@ public class MyCommentsController extends HttpServlet {
         String memberId = loginMember.getMemberId();
         String nickname = memberDetail != null ? memberDetail.getNickname() : null;
 
-        List<CommentDTO> myCommentList = myCommentsDAO.findCommentsByMember(memberId, nickname);
         int myCommentCount = myCommentsDAO.countCommentsByMember(memberId, nickname);
+        int totalPage = Math.max(1, (int) Math.ceil(myCommentCount / (double) PAGE_SIZE));
+        int currentPage = parsePage(request.getParameter("page"), totalPage);
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        List<CommentDTO> myCommentList = myCommentsDAO.findCommentsByMember(memberId, nickname, offset, PAGE_SIZE);
+
+        int startPage = ((currentPage - 1) / PAGE_BLOCK_SIZE) * PAGE_BLOCK_SIZE + 1;
+        int endPage = Math.min(startPage + PAGE_BLOCK_SIZE - 1, totalPage);
 
         request.setAttribute("myCommentList", myCommentList);
         request.setAttribute("myCommentCount", myCommentCount);
+        request.setAttribute("currentPage", currentPage);
+        request.setAttribute("pageSize", PAGE_SIZE);
+        request.setAttribute("totalPage", totalPage);
+        request.setAttribute("startPage", startPage);
+        request.setAttribute("endPage", endPage);
         request.setAttribute("debugMemberId", memberId);
         request.setAttribute("debugNickname", nickname);
         request.setAttribute("debugListSize", myCommentList != null ? myCommentList.size() : -1);
@@ -47,6 +60,21 @@ public class MyCommentsController extends HttpServlet {
         request.setAttribute("pageTitle", "내가 쓴 댓글 전체보기");
         request.setAttribute("center", "members/myComments.jsp");
         forward(request, response, "/main.jsp");
+    }
+
+    private int parsePage(String pageParam, int totalPage) {
+        int page = 1;
+        try {
+            page = Integer.parseInt(pageParam);
+        } catch (Exception ignore) {
+        }
+        if (page < 1) {
+            page = 1;
+        }
+        if (page > totalPage) {
+            page = totalPage;
+        }
+        return page;
     }
 
     private MemberVO getLoginMember(HttpServletRequest request) {

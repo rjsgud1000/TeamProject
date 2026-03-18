@@ -27,10 +27,21 @@ public class ReportService {
 		return "ALL";
 	}
 
-	public boolean processCommentReport(int reportId) {
-		if (reportId <= 0) {
+	public String normalizeAction(String action) {
+		if (action == null) {
+			return null;
+		}
+		String normalized = action.trim().toUpperCase();
+		if ("BLIND".equals(normalized) || "REJECT".equals(normalized)) {
+			return normalized;
+		}
+		return null;
+	}
+
+	public boolean processCommentReport(int reportId, String action) {
+		if (reportId <= 0 || normalizeAction(action) == null) {
 			return false;
 		}
-		return reportDAO.markCommentReportProcessed(reportId) == 1;
+		return reportDAO.processCommentReport(reportId, action) == 1;
 	}
 }

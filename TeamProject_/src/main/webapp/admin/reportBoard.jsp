@@ -1,6 +1,10 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
+<c:set var="flash" value="${sessionScope.adminMemberFlash}" />
+<c:if test="${not empty flash}">
+	<c:remove var="adminMemberFlash" scope="session" />
+</c:if>
 <c:set var="reportCount" value="${empty requestScope.reportCount ? 0 : requestScope.reportCount}" />
 <c:set var="pendingReportCount" value="${empty requestScope.pendingReportCount ? 0 : requestScope.pendingReportCount}" />
 <c:set var="completedReportCount" value="${empty requestScope.completedReportCount ? 0 : requestScope.completedReportCount}" />
@@ -114,6 +118,8 @@
 		justify-content: center;
 		margin: 0;
 		width: 100%;
+		gap: 8px;
+		flex-wrap: wrap;
 	}
 	.report-board .report-table__action-btn.btn{
 		display: inline-flex !important;
@@ -126,6 +132,21 @@
 		font-size: 13px !important;
 		line-height: 1 !important;
 		white-space: nowrap !important;
+	}
+	.report-board .report-table__action-btn--danger.btn{
+		background: #fff1f2 !important;
+		border: 1px solid #fecdd3 !important;
+		color: #be123c !important;
+	}
+	.report-board .report-table__flash{
+		margin-bottom: 18px;
+		padding: 14px 16px;
+		border: 1px solid #bfdbfe;
+		border-radius: 14px;
+		background: #eff6ff;
+		color: #1d4ed8;
+		font-size: 14px;
+		font-weight: 700;
 	}
 	.report-board .report-filter{
 		display: flex;
@@ -279,6 +300,9 @@
 </head>
 <body>
 <div class="member-admin report-board">
+	<c:if test="${not empty flash}">
+		<div class="report-table__flash"><c:out value="${flash}" /></div>
+	</c:if>
 	<div class="member-admin__hero">
 		<div>
 			<h1>신고처리 게시판</h1>
@@ -352,19 +376,21 @@
 								<td data-label="접수일"><c:out value="${report.createdAt}" /></td>
 								<td class="report-table__status-cell" data-label="처리상태">
 									<c:choose>
-										<c:when test="${report.processed}"><span class="badge badge--done">처리됨</span></c:when>
+										<c:when test="${report.status eq 'REJECTED'}"><span class="badge badge--danger">반려</span></c:when>
+										<c:when test="${report.status eq 'RESOLVED'}"><span class="badge badge--done">처리완료</span></c:when>
 										<c:otherwise><span class="badge badge--pending">처리안됨</span></c:otherwise>
 									</c:choose>
 								</td>
 								<td class="report-table__action-cell" data-label="처리">
-									<c:if test="${not report.processed}">
+									<c:if test="${report.status eq 'PENDING'}">
 										<form method="post" action="${contextPath}/member/admin/report/process.me" class="report-table__action-form">
 											<input type="hidden" name="reportId" value="${report.reportId}">
 											<input type="hidden" name="filter" value="${selectedReportFilter}">
-											<button class="btn report-table__action-btn" type="submit">처리완료</button>
+											<button class="btn report-table__action-btn" type="submit" name="action" value="BLIND" onclick="return confirm('이 댓글 신고를 처리완료하고 댓글을 블라인드 처리하시겠습니까?');">처리완료</button>
+											<button class="btn report-table__action-btn report-table__action-btn--danger" type="submit" name="action" value="REJECT" onclick="return confirm('이 댓글 신고를 반려하시겠습니까?');">반려</button>
 										</form>
 									</c:if>
-									<c:if test="${report.processed}"><span class="report-table__dash">-</span></c:if>
+									<c:if test="${report.status ne 'PENDING'}"><span class="report-table__dash">-</span></c:if>
 								</td>
 							</tr>
 						</c:forEach>

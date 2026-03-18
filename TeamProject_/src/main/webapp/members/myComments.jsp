@@ -23,6 +23,9 @@
 .my-comment-title{font-size:18px;font-weight:900;color:#0f172a;line-height:1.4;}
 .my-comment-content{margin-top:8px;font-size:14px;line-height:1.7;color:#475569;white-space:pre-wrap;word-break:break-word;}
 .my-empty{padding:40px 20px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#64748b;text-align:center;}
+.my-pagination{display:flex;justify-content:center;align-items:center;gap:8px;flex-wrap:wrap;margin-top:22px;}
+.my-page-link{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:40px;padding:0 12px;border-radius:12px;border:1px solid #dbe3f0;background:#fff;color:#334155;text-decoration:none;font-size:13px;font-weight:800;}
+.my-page-link.is-active{background:#0f766e;border-color:#0f766e;color:#fff;}
 @media (max-width: 768px){.my-activity-hero h2{font-size:22px;}.my-comment-item{padding:16px;}}
 </style>
 
@@ -66,6 +69,19 @@
               </a>
             </c:forEach>
           </div>
+          <c:if test="${totalPage > 1}">
+            <div class="my-pagination">
+              <c:if test="${startPage > 1}">
+                <a class="my-page-link" href="${contextPath}/mypage/comments?page=${startPage - 1}">이전</a>
+              </c:if>
+              <c:forEach var="pageNo" begin="${startPage}" end="${endPage}">
+                <a class="my-page-link ${pageNo == currentPage ? 'is-active' : ''}" href="${contextPath}/mypage/comments?page=${pageNo}">${pageNo}</a>
+              </c:forEach>
+              <c:if test="${endPage < totalPage}">
+                <a class="my-page-link" href="${contextPath}/mypage/comments?page=${endPage + 1}">다음</a>
+              </c:if>
+            </div>
+          </c:if>
         </c:otherwise>
       </c:choose>
     </div>

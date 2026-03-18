@@ -171,10 +171,11 @@
 						<div class="field">
 							<label class="label" for="id">아이디 <span class="req">*</span></label>
 							<div class="input-row">
-								<input type="text" id="id" name="id" placeholder="아이디를 입력해 주세요">
+								<input type="text" id="id" name="id" placeholder="영문, 숫자 4~20자" pattern="[A-Za-z0-9]{4,20}" maxlength="20" minlength="4" autocomplete="username">
 								<button class="btn btn-outline-primary" type="button" onclick="checkDuplicateId()">중복확인</button>
 							</div>
 							<small id="idDupMsg" class="form-text"></small>
+							<div class="help-hint">아이디는 영문과 숫자만 사용 가능하며 4~20자로 입력해 주세요.</div>
 							<p id="idInput" class="form-text"></p>
 						</div>
 					</div>
@@ -193,11 +194,11 @@
 						<div class="field">
 							<label class="label" for="pass">비밀번호 <span class="req">*</span></label>
 							<div class="pw-wrap">
-								<input type="password" id="pass" name="pass" placeholder="비밀번호를 입력해 주세요">
+								<input type="password" id="pass" name="pass" placeholder="영문+숫자 포함 6자 이상" minlength="6" autocomplete="new-password">
 								<button class="pw-toggle" type="button" id="pwToggle" aria-label="비밀번호 보기/숨기기" title="비밀번호 보기/숨기기">👁</button>
 							</div>
 							<div class="notice" id="capsNotice" role="status">CapsLock이 켜져 있어요</div>
-							<div class="help-hint">영문/숫자 조합을 권장합니다.</div>
+							<div class="help-hint">비밀번호는 영문과 숫자를 포함해 6자 이상 입력해 주세요.</div>
 							<p id="passInput" class="form-text"></p>
 						</div>
 					</div>

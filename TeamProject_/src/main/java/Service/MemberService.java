@@ -14,6 +14,8 @@ public class MemberService {
 	private final MemberDAO memberDAO = new MemberDAO();
 	// 메일 발송 유틸 객체
 	private final NaverMailSend mailSender = new NaverMailSend();
+	private static final String MEMBER_ID_REGEX = "^[A-Za-z0-9]{4,20}$";
+	private static final String PASSWORD_REGEX = "^(?=.*[A-Za-z])(?=.*\\d).{6,}$";
 
 	// 로그인 결과 전달용 내부 클래스
 	public static class LoginResult {
@@ -181,6 +183,13 @@ public class MemberService {
 		String nicknameTrim = vo.getNickname().trim();
 		String email = trimToNull(vo.getEmail());
 		String hp = trimToNull(vo.getPhone());
+		if (!memberIdTrim.matches(MEMBER_ID_REGEX)) {
+			return "아이디는 영문과 숫자만 사용 가능하며 4~20자로 입력해 주세요.";
+		}
+		String rawPassword = vo.getPasswordHash();
+		if (!rawPassword.matches(PASSWORD_REGEX)) {
+			return "비밀번호는 영문과 숫자를 포함해 6자 이상 입력해 주세요.";
+		}
 		vo.setMemberId(memberIdTrim);
 		vo.setUsername(usernameTrim);
 		vo.setNickname(nicknameTrim);
@@ -188,7 +197,6 @@ public class MemberService {
 		vo.setPhone(hp);
 
 		// password_hash 컬럼에는 해시를 저장
-		String rawPassword = vo.getPasswordHash();
 		vo.setPasswordHash(PasswordUtil.hash(rawPassword));
 
 		if (vo.getRole() == null || vo.getRole().isBlank()) {

@@ -13,6 +13,7 @@ public class CommentReportVO {
 	private String postTitle;
 	private LocalDateTime createdAt;
 	private boolean processed;
+	private String status;
 
 	public int getReportId() { return reportId; }
 	public void setReportId(int reportId) { this.reportId = reportId; }
@@ -43,4 +44,7 @@ public class CommentReportVO {
 
 	public boolean isProcessed() { return processed; }
 	public void setProcessed(boolean processed) { this.processed = processed; }
+
+	public String getStatus() { return status; }
+	public void setStatus(String status) { this.status = status; }
 }
