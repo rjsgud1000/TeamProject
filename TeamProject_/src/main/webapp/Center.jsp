@@ -146,58 +146,138 @@
     }
 
     function initFeaturedSlider(slider) {
-      if (!slider || slider.dataset.sliderReady === 'true') return;
+    	  if (!slider) return;
 
-      var track = slider.querySelector('.featured-slider__track');
-      var prevBtn = slider.querySelector('.featured-slider__btn--prev');
-      var nextBtn = slider.querySelector('.featured-slider__btn--next');
+    	  var oldAutoTimer = slider._autoSlideTimer;
+    	  if (oldAutoTimer) {
+    	    clearInterval(oldAutoTimer);
+    	  }
 
-      if (!track || !prevBtn || !nextBtn) return;
+    	  var track = slider.querySelector('.featured-slider__track');
+    	  var prevBtn = slider.querySelector('.featured-slider__btn--prev');
+    	  var nextBtn = slider.querySelector('.featured-slider__btn--next');
 
-      var currentIndex = 0;
+    	  if (!track || !prevBtn || !nextBtn) return;
 
-      function getVisibleCount() {
-        var width = window.innerWidth || document.documentElement.clientWidth;
-        if (width <= 640) return 1;
-        if (width <= 900) return 2;
-        return 3;
-      }
+    	  var currentIndex = 0;
 
-      function updateSlider() {
-        var totalSlides = track.children.length;
-        var visibleCount = getVisibleCount();
-        var maxIndex = Math.max(totalSlides - visibleCount, 0);
+    	  function getVisibleCount() {
+    	    var width = window.innerWidth || document.documentElement.clientWidth;
+    	    if (width <= 640) return 1;
+    	    if (width <= 900) return 2;
+    	    return 3;
+    	  }
 
-        if (currentIndex > maxIndex) {
-          currentIndex = maxIndex;
-        }
+    	  function getTotalSlides() {
+    	    return track.children.length;
+    	  }
 
-        var translatePercent = (100 / visibleCount) * currentIndex;
-        track.style.transform = 'translateX(-' + translatePercent + '%)';
+    	  function getMaxIndex() {
+    	    return Math.max(getTotalSlides() - getVisibleCount(), 0);
+    	  }
 
-        prevBtn.disabled = currentIndex <= 0;
-        nextBtn.disabled = currentIndex >= maxIndex;
-      }
+    	  function updateSlider(animate) {
+    	    var visibleCount = getVisibleCount();
+    	    var totalSlides = getTotalSlides();
 
-      prevBtn.addEventListener('click', function () {
-        if (currentIndex > 0) {
-          currentIndex -= 1;
-          updateSlider();
-        }
-      });
+    	    if (!totalSlides) return;
 
-      nextBtn.addEventListener('click', function () {
-        var maxIndex = Math.max(track.children.length - getVisibleCount(), 0);
-        if (currentIndex < maxIndex) {
-          currentIndex += 1;
-          updateSlider();
-        }
-      });
+    	    var maxIndex = Math.max(totalSlides - visibleCount, 0);
 
-      window.addEventListener('resize', updateSlider);
-      updateSlider();
-      slider.dataset.sliderReady = 'true';
-    }
+    	    if (currentIndex < 0) {
+    	      currentIndex = maxIndex;
+    	    }
+    	    if (currentIndex > maxIndex) {
+    	      currentIndex = 0;
+    	    }
+
+    	    track.style.transition = animate === false ? 'none' : 'transform 0.45s ease';
+    	    var translatePercent = (100 / visibleCount) * currentIndex;
+    	    track.style.transform = 'translateX(-' + translatePercent + '%)';
+
+    	    prevBtn.disabled = false;
+    	    nextBtn.disabled = false;
+    	  }
+
+    	  function goPrev() {
+    	    var maxIndex = getMaxIndex();
+    	    if (maxIndex <= 0) {
+    	      currentIndex = 0;
+    	      updateSlider();
+    	      return;
+    	    }
+
+    	    if (currentIndex <= 0) {
+    	      currentIndex = maxIndex;
+    	    } else {
+    	      currentIndex -= 1;
+    	    }
+
+    	    updateSlider();
+    	  }
+
+    	  function goNext() {
+    	    var maxIndex = getMaxIndex();
+    	    if (maxIndex <= 0) {
+    	      currentIndex = 0;
+    	      updateSlider();
+    	      return;
+    	    }
+
+    	    if (currentIndex >= maxIndex) {
+    	      currentIndex = 0;
+    	    } else {
+    	      currentIndex += 1;
+    	    }
+
+    	    updateSlider();
+    	  }
+
+    	  function restartAutoSlide() {
+    	    if (slider._autoSlideTimer) {
+    	      clearInterval(slider._autoSlideTimer);
+    	    }
+
+    	    slider._autoSlideTimer = setInterval(function () {
+    	      goNext();
+    	    }, 10000);
+    	  }
+
+    	  prevBtn.onclick = null;
+    	  nextBtn.onclick = null;
+
+    	  prevBtn.addEventListener('click', function () {
+    	    goPrev();
+    	    restartAutoSlide();
+    	  });
+
+    	  nextBtn.addEventListener('click', function () {
+    	    goNext();
+    	    restartAutoSlide();
+    	  });
+
+    	  slider.addEventListener('mouseenter', function () {
+    	    if (slider._autoSlideTimer) {
+    	      clearInterval(slider._autoSlideTimer);
+    	    }
+    	  });
+
+    	  slider.addEventListener('mouseleave', function () {
+    	    restartAutoSlide();
+    	  });
+
+    	  window.addEventListener('resize', function () {
+    	    var maxIndex = getMaxIndex();
+    	    if (currentIndex > maxIndex) {
+    	      currentIndex = maxIndex;
+    	    }
+    	    updateSlider(false);
+    	  });
+
+    	  updateSlider(false);
+    	  restartAutoSlide();
+    	  slider.dataset.sliderReady = 'true';
+    	}
 
     function renderSteamChart(items) {
       var top10 = items.slice(0, 10);
@@ -274,80 +354,86 @@
     }
 
     function renderPlayStoreChart(items) {
-      var top10 = items.slice(0, 10);
-      var top11to20 = items.slice(10, 20);
+    	  var top10 = items.slice(0, 10);
+    	  var top11to20 = items.slice(10, 20);
 
-      if (!top10.length) {
-        playstoreSliderContainer.innerHTML =
-          '<div class="featured-empty">플레이스토어 차트를 불러오지 못했습니다.</div>';
-        return;
-      }
+    	  if (!top10.length) {
+    	    playstoreSliderContainer.innerHTML =
+    	      '<div class="featured-empty">플레이스토어 차트를 불러오지 못했습니다.</div>';
+    	    return;
+    	  }
 
-      var sliderHtml = '';
-      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>';
-      sliderHtml += '<div class="featured-slider__viewport">';
-      sliderHtml += '  <div class="featured-slider__track" data-total-slides="' + top10.length + '">';
+    	  var sliderHtml = '';
+    	  sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--prev" aria-label="이전 슬라이드">‹</button>';
+    	  sliderHtml += '<div class="featured-slider__viewport">';
+    	  sliderHtml += '  <div class="featured-slider__track" data-total-slides="' + top10.length + '">';
 
-      top10.forEach(function (item) {
-        var title = escapeHtml(item.title || 'Google Play App');
-        var storeUrl = escapeHtml(item.storeUrl || item.appBrainUrl || '#');
-        var iconUrl = escapeHtml(item.iconUrl || '');
-        var iconHtml = iconUrl
-          ? '<div class="mobile-rank-card__icon"><img src="' + iconUrl + '" alt="' + title + ' 아이콘"></div>'
-          : '<div class="mobile-rank-card__icon mobile-rank-card__icon--empty">GP</div>';
+    	  top10.forEach(function (item) {
+    	    var title = escapeHtml(item.title || 'Google Play App');
+    	    var developer = escapeHtml(item.developer || 'Google Play');
+    	    var storeUrl = escapeHtml(item.storeUrl || '#');
+    	    var heroImageUrl = escapeHtml(item.heroImageUrl || '');
+    	    var screenshotUrl = escapeHtml(item.screenshotUrl || '');
 
-        sliderHtml += ''
-          + '<div class="featured-slide">'
-          + '  <a class="game-card trend-card trend-card--playstore" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">'
-          +       iconHtml
-          + '    <div class="rank-badge">'
-          + '      <span class="rank-circle">' + item.rank + '</span>'
-          + '      ' + item.rank + '위'
-          + '    </div>'
-          + '    <div class="game-card__content game-card__content--playstore">'
-          + '      <div class="game-card__left">'
-          + '        <div class="game-name">' + title + '</div>'
-          + '        <div class="game-submeta">Google Play · KR · 게임</div>'
-          + '      </div>'
-          + '      <div class="game-meta">'
-          + '        <span class="meta-dot"></span>'
-          + '        최고 매출'
-          + '      </div>'
-          + '    </div>'
-          + '  </a>'
-          + '</div>';
-      });
+    	    var bgImage = heroImageUrl || screenshotUrl;
+    	    var bgStyle = bgImage
+    	      ? ' style="background-image:url(\'' + bgImage + '\');"'
+    	      : '';
 
-      sliderHtml += '  </div>';
-      sliderHtml += '</div>';
-      sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>';
+    	    var useImageClass = bgImage ? ' trend-card--playstore-image' : '';
 
-      playstoreSliderContainer.innerHTML = sliderHtml;
-      initFeaturedSlider(playstoreSliderContainer);
+    	    sliderHtml += ''
+    	      + '<div class="featured-slide">'
+    	      + '  <a class="game-card trend-card trend-card--playstore' + useImageClass + '" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer"' + bgStyle + '>'
+    	      + '    <div class="rank-badge">'
+    	      + '      <span class="rank-circle">' + item.rank + '</span>'
+    	      + '      ' + item.rank + '위'
+    	      + '    </div>'
+    	      + '    <div class="game-card__content game-card__content--playstore">'
+    	      + '      <div class="game-card__left">'
+    	      + '        <div class="game-name">' + title + '</div>'
+    	      + '        <div class="game-submeta">' + developer + '</div>'
+    	      + '      </div>'
+    	      + '      <div class="game-meta">'
+    	      + '        <span class="meta-dot"></span>'
+    	      + '        최고 매출'
+    	      + '      </div>'
+    	      + '    </div>'
+    	      + '  </a>'
+    	      + '</div>';
+    	  });
 
-      if (playstorePopupBody) {
-        var popupRows = '';
+    	  sliderHtml += '  </div>';
+    	  sliderHtml += '</div>';
+    	  sliderHtml += '<button type="button" class="featured-slider__btn featured-slider__btn--next" aria-label="다음 슬라이드">›</button>';
 
-        if (top11to20.length) {
-          top11to20.forEach(function (item) {
-            var title = escapeHtml(item.title || 'Google Play App');
-            var storeUrl = escapeHtml(item.storeUrl || item.appBrainUrl || '#');
+    	  playstoreSliderContainer.innerHTML = sliderHtml;
+    	  initFeaturedSlider(playstoreSliderContainer);
 
-            popupRows += ''
-              + '<tr>'
-              + '  <td class="rank-col">' + item.rank + '</td>'
-              + '  <td class="name-col"><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">' + title + '</a></td>'
-              + '  <td>Google Play KR</td>'
-              + '  <td><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">스토어 바로가기</a></td>'
-              + '</tr>';
-          });
-        } else {
-          popupRows = '<tr><td colspan="4">11~20위 차트 데이터가 없습니다.</td></tr>';
-        }
+    	  if (playstorePopupBody) {
+    	    var popupRows = '';
 
-        playstorePopupBody.innerHTML = popupRows;
-      }
-    }
+    	    if (top11to20.length) {
+    	      top11to20.forEach(function (item) {
+    	        var title = escapeHtml(item.title || 'Google Play App');
+    	        var developer = escapeHtml(item.developer || 'Google Play');
+    	        var storeUrl = escapeHtml(item.storeUrl || '#');
+
+    	        popupRows += ''
+    	          + '<tr>'
+    	          + '  <td class="rank-col">' + item.rank + '</td>'
+    	          + '  <td class="name-col"><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">' + title + '</a></td>'
+    	          + '  <td>' + developer + '</td>'
+    	          + '  <td><a href="' + storeUrl + '" target="_blank" rel="noopener noreferrer">스토어 바로가기</a></td>'
+    	          + '</tr>';
+    	      });
+    	    } else {
+    	      popupRows = '<tr><td colspan="4">11~20위 차트 데이터가 없습니다.</td></tr>';
+    	    }
+
+    	    playstorePopupBody.innerHTML = popupRows;
+    	  }
+    	}
 
     function loadSteamChart() {
       if (steamLoaded || steamLoading) return;
@@ -378,11 +464,7 @@
     }
 
     function loadPlayStoreChart() {
-    	  if (!playstoreSliderContainer) {
-    	    console.error('playstoreFeaturedSlider 요소를 찾을 수 없습니다.');
-    	    return;
-    	  }
-
+    	  if (!playstoreSliderContainer) return;
     	  if (playstoreLoaded || playstoreLoading) return;
 
     	  playstoreLoading = true;
@@ -394,13 +476,23 @@
     	    headers: { 'Accept': 'application/json' }
     	  })
     	  .then(function (response) {
-    	    if (!response.ok) throw new Error('HTTP ' + response.status);
-    	    return response.json();
+    	    return response.json().then(function (data) {
+    	      return { ok: response.ok, data: data };
+    	    });
     	  })
-    	  .then(function (items) {
-    	    playstoreLoaded = true;
+    	  .then(function (result) {
     	    playstoreLoading = false;
-    	    renderPlayStoreChart(Array.isArray(items) ? items : []);
+
+    	    if (!result.ok || !result.data.success) {
+    	      playstoreSliderContainer.innerHTML =
+    	        '<div class="featured-empty">' +
+    	        escapeHtml((result.data && result.data.message) || '플레이스토어 차트를 불러오지 못했습니다.') +
+    	        '</div>';
+    	      return;
+    	    }
+
+    	    playstoreLoaded = true;
+    	    renderPlayStoreChart(Array.isArray(result.data.items) ? result.data.items : []);
     	  })
     	  .catch(function (error) {
     	    playstoreLoading = false;

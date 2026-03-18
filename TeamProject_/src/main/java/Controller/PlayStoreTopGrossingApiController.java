@@ -20,7 +20,7 @@ import Vo.PlayStoreTopGrossingVO;
 public class PlayStoreTopGrossingApiController extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    private final PlayStoreTopGrossingService playStoreTopGrossingService =
+    private final PlayStoreTopGrossingService service =
             new PlayStoreTopGrossingService();
 
     @Override
@@ -34,15 +34,16 @@ public class PlayStoreTopGrossingApiController extends HttpServlet {
             if (limitParam != null && !limitParam.trim().isEmpty()) {
                 limit = Integer.parseInt(limitParam);
             }
-        } catch (Exception e) {
+        } catch (Exception ignore) {
             limit = 20;
         }
 
-        if (limit < 1) limit = 1;
-        if (limit > 20) limit = 20;
+        List<PlayStoreTopGrossingVO> items = service.getTopGrossing(limit);
 
-        List<PlayStoreTopGrossingVO> items = playStoreTopGrossingService.getTopGrossing(limit);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json; charset=UTF-8");
 
+        JSONObject result = new JSONObject();
         JSONArray arr = new JSONArray();
 
         for (PlayStoreTopGrossingVO item : items) {
@@ -50,21 +51,25 @@ public class PlayStoreTopGrossingApiController extends HttpServlet {
             obj.put("rank", item.getRank());
             obj.put("title", item.getTitle());
             obj.put("packageName", item.getPackageName());
+            obj.put("developer", item.getDeveloper());
             obj.put("iconUrl", item.getIconUrl());
+            obj.put("heroImageUrl", item.getHeroImageUrl());
+            obj.put("screenshotUrl", item.getScreenshotUrl());
             obj.put("storeUrl", item.getStoreUrl());
-            obj.put("appBrainUrl", item.getAppBrainUrl());
+            obj.put("sourceUrl", item.getSourceUrl());
             arr.add(obj);
         }
 
-        response.setCharacterEncoding("UTF-8");
-        response.setContentType("application/json; charset=UTF-8");
+        result.put("success", !arr.isEmpty());
+        result.put("items", arr);
 
         if (arr.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            result.put("message", "플레이스토어 차트 데이터를 불러오지 못했습니다.");
         }
 
         try (PrintWriter out = response.getWriter()) {
-            out.write(arr.toJSONString());
+            out.write(result.toJSONString());
         }
     }
 }

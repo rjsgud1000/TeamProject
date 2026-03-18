@@ -6,7 +6,10 @@ public class PlayStoreTopGrossingVO {
     private String packageName;
     private String iconUrl;
     private String storeUrl;
-    private String appBrainUrl;
+    private String sourceUrl;
+    private String heroImageUrl;
+    private String screenshotUrl;
+    private String developer;
 
     public int getRank() {
         return rank;
@@ -48,11 +51,35 @@ public class PlayStoreTopGrossingVO {
         this.storeUrl = storeUrl;
     }
 
-    public String getAppBrainUrl() {
-        return appBrainUrl;
+    public String getSourceUrl() {
+        return sourceUrl;
     }
 
-    public void setAppBrainUrl(String appBrainUrl) {
-        this.appBrainUrl = appBrainUrl;
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
+    public String getHeroImageUrl() {
+        return heroImageUrl;
+    }
+
+    public void setHeroImageUrl(String heroImageUrl) {
+        this.heroImageUrl = heroImageUrl;
+    }
+
+    public String getScreenshotUrl() {
+        return screenshotUrl;
+    }
+
+    public void setScreenshotUrl(String screenshotUrl) {
+        this.screenshotUrl = screenshotUrl;
+    }
+
+    public String getDeveloper() {
+        return developer;
+    }
+
+    public void setDeveloper(String developer) {
+        this.developer = developer;
     }
 }

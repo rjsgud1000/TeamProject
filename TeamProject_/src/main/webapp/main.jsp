@@ -329,8 +329,42 @@
   pointer-events:none;
 }
 
+.trend-card--playstore{
+  position:relative;
+  overflow:hidden;
+  border-radius:20px;
+  min-height:210px;
+  display:block;
+  text-decoration:none;
+  background:
+    radial-gradient(circle at top right, rgba(255,255,255,.18), transparent 28%),
+    linear-gradient(135deg, #16a34a 0%, #2563eb 100%);
+  box-shadow:0 18px 40px rgba(37, 99, 235, .18);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+
+.trend-card--playstore-image{
+  background-color:#0f172a;
+}
+
+.trend-card--playstore::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    180deg,
+    rgba(15,23,42,.04) 0%,
+    rgba(15,23,42,.18) 42%,
+    rgba(15,23,42,.68) 100%
+  );
+  pointer-events:none;
+}
+
 .trend-card--playstore .rank-badge,
-.trend-card--playstore .game-card__content{
+.trend-card--playstore .game-card__content,
+.trend-card--playstore .mobile-rank-card__icon{
   position:relative;
   z-index:2;
 }
@@ -389,7 +423,7 @@
   line-height:1.1;
   letter-spacing:-0.02em;
   color:#fff;
-  text-shadow:0 2px 12px rgba(0,0,0,.25);
+  text-shadow:0 2px 12px rgba(0,0,0,.35);
   display:-webkit-box;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
@@ -403,6 +437,10 @@
   font-weight:700;
   color:rgba(255,255,255,.84);
   line-height:1.2;
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
 }
 
 .trend-card--playstore .game-meta{
@@ -430,34 +468,53 @@
   flex:0 0 auto;
 }
 
-.mobile-rank-card__icon{
-  position:absolute;
-  top:18px;
-  right:18px;
-  width:64px;
-  height:64px;
-  border-radius:18px;
-  overflow:hidden;
-  background:rgba(255,255,255,.20);
-  border:1px solid rgba(255,255,255,.24);
-  box-shadow:0 12px 24px rgba(15,23,42,.18);
-  z-index:2;
+@media (max-width: 900px){
+  .trend-card--playstore{
+    min-height:190px;
+  }
+
+  .trend-card--playstore .game-card__content--playstore{
+    padding:16px 16px 14px;
+  }
+
+  .trend-card--playstore .game-name{
+    font-size:20px;
+  }
+
+  .mobile-rank-card__icon{
+    width:58px;
+    height:58px;
+  }
 }
 
-.mobile-rank-card__icon img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
+@media (max-width: 640px){
+  .trend-card--playstore{
+    min-height:180px;
+  }
 
-.mobile-rank-card__icon--empty{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:#fff;
-  font-weight:900;
-  font-size:18px;
+  .trend-card--playstore .game-card__content--playstore{
+    padding:14px 14px 13px;
+    gap:10px;
+  }
+
+  .trend-card--playstore .game-name{
+    font-size:18px;
+  }
+
+  .trend-card--playstore .game-submeta{
+    font-size:11px;
+  }
+
+  .trend-card--playstore .game-meta{
+    font-size:10px;
+    padding:6px 9px;
+  }
+
+  .mobile-rank-card__icon{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+  }
 }
 
 @media (max-width: 900px){
