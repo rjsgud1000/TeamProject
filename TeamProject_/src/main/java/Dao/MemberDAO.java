@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import Vo.LoginHistoryVO;
 import Vo.MemberVO;
 import util.DBCPUtil;
 
@@ -744,5 +745,60 @@ public class MemberDAO {
 		public String reason;
 		public String memberStatus;
 		public LocalDateTime endAt;
+	}
+
+	// 로그인 기록 목록 조회 메소드
+	public List<LoginHistoryVO> findLoginHistoriesByMemberId(String memberId, int offset, int limit) {
+		List<LoginHistoryVO> list = new ArrayList<>();
+		String sql = "SELECT login_history_id, input_member_id, member_id, login_at, login_ip, user_agent, login_result, fail_reason "
+				+ "FROM LOGIN_HISTORY WHERE member_id = ? ORDER BY login_at DESC, login_history_id DESC LIMIT ? OFFSET ?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			pstmt.setInt(2, limit);
+			pstmt.setInt(3, offset);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				while (rs.next()) {
+					list.add(mapLoginHistory(rs));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return list;
+	}
+
+	// 로그인 기록 수 조회 메소드
+	public int countLoginHistoriesByMemberId(String memberId) {
+		String sql = "SELECT COUNT(*) FROM LOGIN_HISTORY WHERE member_id = ?";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setString(1, memberId);
+			try (ResultSet rs = pstmt.executeQuery()) {
+				if (rs.next()) {
+					return rs.getInt(1);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	// ResultSet -> LoginHistoryVO 매핑 메소드
+	private LoginHistoryVO mapLoginHistory(ResultSet rs) throws Exception {
+		LoginHistoryVO vo = new LoginHistoryVO();
+		vo.setLoginHistoryId(rs.getLong("login_history_id"));
+		vo.setInputMemberId(rs.getString("input_member_id"));
+		vo.setMemberId(rs.getString("member_id"));
+		Timestamp loginAt = rs.getTimestamp("login_at");
+		if (loginAt != null) {
+			vo.setLoginAt(loginAt.toLocalDateTime());
+		}
+		vo.setLoginIp(rs.getString("login_ip"));
+		vo.setUserAgent(rs.getString("user_agent"));
+		vo.setLoginResult(rs.getString("login_result"));
+		vo.setFailReason(rs.getString("fail_reason"));
+		return vo;
 	}
 }
