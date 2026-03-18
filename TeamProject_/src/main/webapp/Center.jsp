@@ -117,6 +117,9 @@
 </div>
 
 <script>
+const date = new Date().toISOString().slice(0, 10); // yyyy-MM-dd
+const url = `${ctxPath}/api/playstore/top-grossing?limit=10&date=${date}`;
+
   (function () {
     var contextPath = '<%= request.getContextPath() %>';
     var sourceText = document.getElementById('rankingSourceText');

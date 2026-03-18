@@ -1,11 +1,15 @@
 package Service;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
@@ -17,8 +21,11 @@ import Vo.PlayStoreTopGrossingVO;
 
 public class PlayStoreTopGrossingService {
 
-    private static final String RANKING_URL =
-            "https://42matters.com/top-grossing-mobile-games-south-korea";
+    private static final String CHART_URL_TEMPLATE =
+            "https://42matters.com/top-charts-explorer/android/south-korea/all-games?date=%s";
+
+    private static final String GOOGLE_PLAY_SEARCH_TEMPLATE =
+            "https://play.google.com/store/search?q=%s&c=apps&hl=ko&gl=KR";
 
     private static final int TIMEOUT_MS = 15000;
 
@@ -26,34 +33,62 @@ public class PlayStoreTopGrossingService {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
             + "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
+    private static final DateTimeFormatter QUERY_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+    private static final ZoneId US_ZONE = ZoneId.of("America/New_York");
+
     public List<PlayStoreTopGrossingVO> getTopGrossing(int limit) {
+        return getTopGrossing(limit, null);
+    }
+
+    /**
+     * chartDate:
+     * - null or blank -> 미국 시간 기준 오늘 날짜 사용
+     * - 결과 없으면 미국 시간 기준 전날로 재시도
+     * - yyyy-MM-dd -> dd-MM-yyyy 로 변환
+     * - dd-MM-yyyy -> 그대로 사용
+     */
+    public List<PlayStoreTopGrossingVO> getTopGrossing(int limit, String chartDate) {
         if (limit < 1) limit = 1;
-        if (limit > 20) limit = 20;
+        if (limit > 10) limit = 10;
 
         List<PlayStoreTopGrossingVO> result = new ArrayList<PlayStoreTopGrossingVO>();
 
         try {
-            Document doc = Jsoup.connect(RANKING_URL)
-                    .userAgent(USER_AGENT)
-                    .header("Accept",
-                            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-                    .header("Accept-Language", "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7")
-                    .header("Referer", "https://42matters.com/")
-                    .followRedirects(true)
-                    .timeout(TIMEOUT_MS)
-                    .maxBodySize(0)
-                    .get();
+            List<LocalDate> targetDates = resolveTargetDates(chartDate);
 
-            System.out.println("[PlayStore] ranking title = " + doc.title());
-            System.out.println("[PlayStore] ranking html length = " + doc.outerHtml().length());
+            List<PlayStoreTopGrossingVO> ranked = new ArrayList<PlayStoreTopGrossingVO>();
+            String finalSourceUrl = null;
 
-            List<PlayStoreTopGrossingVO> ranked = parseRankingPage(doc, limit);
+            for (LocalDate targetDate : targetDates) {
+                String dateParam = targetDate.format(QUERY_DATE_FORMAT);
+                String rankingUrl = String.format(CHART_URL_TEMPLATE, dateParam);
+
+                System.out.println("[PlayStore] try rankingUrl");
+
+                Document doc = requestDocument(rankingUrl, "https://42matters.com/");
+                ranked = parseTopGrossingAppsColumn(doc, rankingUrl, limit);
+
+                if (!ranked.isEmpty()) {
+                    finalSourceUrl = rankingUrl;
+                    System.out.println("[PlayStore] ranking parsed count = " + ranked.size());
+                    break;
+                }
+
+                System.out.println("[PlayStore] no items found for date = " + dateParam);
+            }
+
             for (PlayStoreTopGrossingVO item : ranked) {
+                if (isBlank(item.getSourceUrl()) && !isBlank(finalSourceUrl)) {
+                    item.setSourceUrl(finalSourceUrl);
+                }
+
                 enrichFromGooglePlay(item);
                 result.add(item);
             }
 
-            System.out.println("[PlayStore] result count = " + result.size());
+            System.out.println("[PlayStore] final result count = " + result.size());
 
         } catch (Exception e) {
             System.out.println("[PlayStore] getTopGrossing failed");
@@ -63,53 +98,106 @@ public class PlayStoreTopGrossingService {
         return result;
     }
 
-    private List<PlayStoreTopGrossingVO> parseRankingPage(Document doc, int limit) {
+    /**
+     * chartDate가 명시되지 않으면:
+     * 1) 미국 시간 기준 오늘
+     * 2) 결과 없으면 미국 시간 기준 전날
+     */
+    private List<LocalDate> resolveTargetDates(String chartDate) {
+        List<LocalDate> dates = new ArrayList<LocalDate>();
+
+        if (!isBlank(chartDate)) {
+            LocalDate parsed = parseInputDate(chartDate);
+            if (parsed != null) {
+                dates.add(parsed);
+                return dates;
+            }
+        }
+
+        LocalDate usToday = ZonedDateTime.now(US_ZONE).toLocalDate();
+        dates.add(usToday);
+        dates.add(usToday.minusDays(1));
+
+        return dates;
+    }
+
+    private LocalDate parseInputDate(String chartDate) {
+        if (isBlank(chartDate)) {
+            return null;
+        }
+
+        String value = chartDate.trim();
+
+        if (value.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
+            try {
+                return LocalDate.parse(value);
+            } catch (DateTimeParseException ignore) {
+                return null;
+            }
+        }
+
+        if (value.matches("^\\d{2}-\\d{2}-\\d{4}$")) {
+            try {
+                return LocalDate.parse(value, QUERY_DATE_FORMAT);
+            } catch (DateTimeParseException ignore) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Top Charts Explorer 페이지에서 Top Grossing Apps 컬럼만 파싱
+     */
+    private List<PlayStoreTopGrossingVO> parseTopGrossingAppsColumn(
+            Document doc, String sourceUrl, int limit) {
+
         List<PlayStoreTopGrossingVO> result = new ArrayList<PlayStoreTopGrossingVO>();
-        Set<String> seenTitles = new LinkedHashSet<String>();
+        if (doc == null) {
+            return result;
+        }
 
-        Elements candidates = new Elements();
-        candidates.addAll(doc.select("li"));
-        candidates.addAll(doc.select("tr"));
-        candidates.addAll(doc.select("div"));
-        candidates.addAll(doc.select("p"));
+        Elements appHeadings = doc.select("h3");
 
+        List<Element> titles = new ArrayList<Element>();
+        for (Element h3 : appHeadings) {
+            String title = normalizeSpaces(h3.text());
+            if (!isBlank(title)) {
+                titles.add(h3);
+            }
+        }
+
+        // Free / Paid / Grossing 순서로 반복된다고 가정하고 3번째마다 Grossing 추출
         int rank = 1;
+        for (int i = 2; i < titles.size() && rank <= limit; i += 3) {
+            Element h3 = titles.get(i);
 
-        for (Element el : candidates) {
-            if (rank > limit) {
-                break;
-            }
-
-            String text = normalizeSpaces(el.text());
-            if (!looksLikeRankRow(text)) {
+            String title = normalizeSpaces(h3.text());
+            if (isBlank(title)) {
                 continue;
             }
 
-            ParsedRankItem parsed = parseRankItem(text);
-            if (parsed == null || isBlank(parsed.title)) {
-                continue;
-            }
+            String developer = null;
+            String iconUrl = null;
 
-            String dedupeKey = parsed.title.toLowerCase();
-            if (!seenTitles.add(dedupeKey)) {
-                continue;
+            Element block = findCardBlock(h3);
+            if (block != null) {
+                developer = extractDeveloperNearHeading(h3, block);
+                iconUrl = extractNearbyImage(block);
+            } else {
+                Element parent = h3.parent();
+                developer = extractDeveloperNearHeading(h3, parent);
+                iconUrl = extractNearbyImage(h3);
             }
 
             PlayStoreTopGrossingVO item = new PlayStoreTopGrossingVO();
             item.setRank(rank);
-            item.setTitle(parsed.title);
-            item.setDeveloper(parsed.developer);
-            item.setSourceUrl(RANKING_URL);
-
-            // 42matters 공개 텍스트 기준으로는 packageName 확보가 어려워서 null 유지
-            item.setPackageName(null);
-
-            // 검색 링크 우선
-            item.setStoreUrl(buildGooglePlaySearchUrl(parsed.title));
-
-            // 42matters 페이지 내 이미지가 있으면 우선 아이콘으로 사용
-            String iconUrl = extractNearbyImage(el);
+            item.setTitle(title);
+            item.setDeveloper(developer);
             item.setIconUrl(iconUrl);
+            item.setSourceUrl(sourceUrl);
+            item.setStoreUrl(buildGooglePlaySearchUrl(title));
 
             result.add(item);
             rank++;
@@ -118,49 +206,122 @@ public class PlayStoreTopGrossingService {
         return result;
     }
 
+    private Element findCardBlock(Element heading) {
+        if (heading == null) {
+            return null;
+        }
+
+        Element current = heading.parent();
+        for (int i = 0; i < 4 && current != null; i++) {
+            String text = normalizeSpaces(current.text());
+            if (!isBlank(text) && text.length() <= 300) {
+                return current;
+            }
+            current = current.parent();
+        }
+
+        return heading.parent();
+    }
+
+    private String extractDeveloperNearHeading(Element heading, Element scope) {
+        if (heading == null) {
+            return null;
+        }
+
+        Element base = scope != null ? scope : heading.parent();
+        if (base == null) {
+            return null;
+        }
+
+        Elements candidates = base.getAllElements();
+        boolean afterHeading = false;
+
+        for (Element el : candidates) {
+            if (el == heading) {
+                afterHeading = true;
+                continue;
+            }
+            if (!afterHeading) {
+                continue;
+            }
+
+            String text = normalizeSpaces(el.ownText());
+            if (isBlank(text)) {
+                continue;
+            }
+
+            if (looksLikeDeveloper(text)) {
+                return text;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean looksLikeDeveloper(String text) {
+        if (isBlank(text)) {
+            return false;
+        }
+
+        text = normalizeSpaces(text);
+
+        if (text.length() < 2 || text.length() > 60) {
+            return false;
+        }
+
+        if (text.startsWith("(") && text.endsWith(")")) {
+            return false;
+        }
+
+        if ("Free".equalsIgnoreCase(text)) {
+            return false;
+        }
+
+        if (text.startsWith("$")) {
+            return false;
+        }
+
+        if (text.toLowerCase().startsWith("change:")) {
+            return false;
+        }
+
+        if (text.matches("^\\d+$")) {
+            return false;
+        }
+
+        if (text.equals("Top Free Apps")
+                || text.equals("Top Paid Apps")
+                || text.equals("Top Grossing Apps")) {
+            return false;
+        }
+
+        return true;
+    }
+
     private void enrichFromGooglePlay(PlayStoreTopGrossingVO item) {
         if (item == null || isBlank(item.getTitle())) {
             return;
         }
 
         try {
-            // 1차: 검색 페이지에서 상세 링크 추출
             String searchUrl = buildGooglePlaySearchUrl(item.getTitle());
             Document searchDoc = requestDocument(searchUrl, "https://play.google.com/");
 
             String detailUrl = extractDetailUrlFromSearch(searchDoc);
             if (isBlank(detailUrl)) {
-                // 검색에서 못 찾으면 fallback: 검색 링크 유지
                 item.setStoreUrl(searchUrl);
                 return;
             }
 
             item.setStoreUrl(detailUrl);
 
-            // 2차: 상세 페이지 접근
             Document detailDoc = requestDocument(detailUrl, "https://play.google.com/");
 
-            // 아이콘
-            if (isBlank(item.getIconUrl())) {
-                String icon = extractPlayIcon(detailDoc);
-                if (!isBlank(icon)) {
-                    item.setIconUrl(icon);
-                }
+            String realTitle = extractTitleFromDetail(detailDoc);
+            if (!isBlank(realTitle)) {
+                item.setTitle(realTitle);
             }
 
-            // 대표 배경 이미지
-            String hero = extractPlayHeroImage(detailDoc);
-            if (!isBlank(hero)) {
-                item.setHeroImageUrl(hero);
-            }
-
-            // 스크린샷 fallback
-            String screenshot = extractFirstScreenshot(detailDoc);
-            if (!isBlank(screenshot)) {
-                item.setScreenshotUrl(screenshot);
-            }
-
-            // 개발사명 보강
             if (isBlank(item.getDeveloper())) {
                 String developer = extractDeveloperFromPlay(detailDoc);
                 if (!isBlank(developer)) {
@@ -168,12 +329,26 @@ public class PlayStoreTopGrossingService {
                 }
             }
 
-            // 패키지명 추출
-            if (isBlank(item.getPackageName())) {
-                String packageName = extractPackageNameFromDetailUrl(detailUrl);
-                if (!isBlank(packageName)) {
-                    item.setPackageName(packageName);
+            if (isBlank(item.getIconUrl())) {
+                String icon = extractPlayIcon(detailDoc);
+                if (!isBlank(icon)) {
+                    item.setIconUrl(icon);
                 }
+            }
+
+            String hero = extractPlayHeroImage(detailDoc);
+            if (!isBlank(hero)) {
+                item.setHeroImageUrl(hero);
+            }
+
+            String screenshot = extractFirstScreenshot(detailDoc);
+            if (!isBlank(screenshot)) {
+                item.setScreenshotUrl(screenshot);
+            }
+
+            String packageName = extractPackageNameFromDetailUrl(detailUrl);
+            if (!isBlank(packageName)) {
+                item.setPackageName(packageName);
             }
 
         } catch (Exception e) {
@@ -195,50 +370,162 @@ public class PlayStoreTopGrossingService {
         return connection.get();
     }
 
-    private boolean looksLikeRankRow(String text) {
-        if (isBlank(text)) {
-            return false;
+    private String extractDetailUrlFromSearch(Document doc) {
+        if (doc == null) {
+            return null;
         }
 
-        if (!text.matches("^\\d+\\s+.+")) {
-            return false;
+        Elements links = doc.select("a[href*=/store/apps/details]");
+        for (Element link : links) {
+            String href = trimToNull(link.absUrl("href"));
+            if (!isBlank(href) && href.contains("/store/apps/details") && !href.contains("cluster")) {
+                return href;
+            }
         }
 
-        return text.contains(" by ");
+        for (Element link : links) {
+            String href = trimToNull(link.attr("href"));
+            if (!isBlank(href) && href.contains("/store/apps/details")) {
+                if (href.startsWith("http://") || href.startsWith("https://")) {
+                    return href;
+                }
+                return "https://play.google.com" + href;
+            }
+        }
+
+        return null;
     }
 
-    private ParsedRankItem parseRankItem(String text) {
-        if (isBlank(text)) {
-            return null;
+    private String extractTitleFromDetail(Document doc) {
+        if (doc == null) return null;
+
+        Element meta = doc.selectFirst("meta[property=og:title], meta[name=og:title]");
+        if (meta != null) {
+            String content = trimToNull(meta.attr("content"));
+            if (!isBlank(content)) {
+                return content.replace(" - Google Play 앱", "")
+                              .replace(" - Google Play", "")
+                              .trim();
+            }
         }
 
-        String normalized = text.replaceFirst("^\\s*\\d+\\s+", "").trim();
-        int byIndex = normalized.indexOf(" by ");
-        if (byIndex <= 0) {
-            return null;
+        Element h1 = doc.selectFirst("h1");
+        if (h1 != null) {
+            String text = normalizeSpaces(h1.text());
+            if (!isBlank(text)) {
+                return text;
+            }
         }
 
-        String title = normalized.substring(0, byIndex).trim();
-        String rest = normalized.substring(byIndex + 4).trim();
-
-        ParsedRankItem item = new ParsedRankItem();
-        item.title = title;
-        item.developer = extractDeveloper(rest);
-        return item;
+        return null;
     }
 
-    private String extractDeveloper(String rest) {
-        if (isBlank(rest)) {
+    private String extractDeveloperFromPlay(Document doc) {
+        if (doc == null) {
             return null;
         }
 
-        String lower = rest.toLowerCase();
-        int downloadsIdx = lower.indexOf(" downloads");
-        if (downloadsIdx > 0) {
-            return rest.substring(0, downloadsIdx).trim();
+        Element devLink = doc.selectFirst("a[href*=/store/apps/dev?id=], a[href*=/developer?id=]");
+        if (devLink != null) {
+            String text = normalizeSpaces(devLink.text());
+            if (!isBlank(text)) {
+                return text;
+            }
         }
 
-        return rest.trim();
+        Element author = doc.selectFirst("meta[name=author]");
+        if (author != null) {
+            String content = trimToNull(author.attr("content"));
+            if (!isBlank(content)) {
+                return content;
+            }
+        }
+
+        return null;
+    }
+
+    private String extractPlayHeroImage(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+
+        Element og = doc.selectFirst("meta[property=og:image], meta[name=og:image]");
+        if (og != null) {
+            String content = trimToNull(og.attr("content"));
+            if (!isBlank(content)) {
+                return content;
+            }
+        }
+
+        Elements imgs = doc.select("img[src]");
+        for (Element img : imgs) {
+            String src = trimToNull(img.absUrl("src"));
+            if (isBlank(src)) continue;
+
+            if (src.contains("play-lh.googleusercontent.com")) {
+                String width = img.attr("width");
+                String height = img.attr("height");
+                int w = parseInt(width);
+                int h = parseInt(height);
+                if (w >= 500 || h >= 250) {
+                    return src;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String extractFirstScreenshot(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+
+        Elements imgs = doc.select("img[src]");
+        for (Element img : imgs) {
+            String src = trimToNull(img.absUrl("src"));
+            if (isBlank(src)) continue;
+
+            String alt = normalizeSpaces(img.attr("alt"));
+            if (!isBlank(alt)) {
+                String lower = alt.toLowerCase();
+                if (lower.contains("screenshot") || alt.contains("스크린샷")) {
+                    return src;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String extractPlayIcon(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+
+        Elements imgs = doc.select("img[src]");
+        for (Element img : imgs) {
+            String src = trimToNull(img.absUrl("src"));
+            if (isBlank(src)) continue;
+
+            String alt = normalizeSpaces(img.attr("alt"));
+            if (!isBlank(alt)) {
+                String lower = alt.toLowerCase();
+                if (lower.contains("icon") || alt.contains("아이콘")) {
+                    return src;
+                }
+            }
+        }
+
+        Element og = doc.selectFirst("meta[property=og:image], meta[name=og:image]");
+        if (og != null) {
+            String content = trimToNull(og.attr("content"));
+            if (!isBlank(content)) {
+                return content;
+            }
+        }
+
+        return null;
     }
 
     private String extractNearbyImage(Element el) {
@@ -266,163 +553,6 @@ public class PlayStoreTopGrossingService {
         return null;
     }
 
-    private String extractDetailUrlFromSearch(Document doc) {
-        if (doc == null) {
-            return null;
-        }
-
-        Elements links = doc.select("a[href*=/store/apps/details]");
-        for (Element link : links) {
-            String href = trimToNull(link.absUrl("href"));
-            if (!isBlank(href) && href.contains("/store/apps/details")) {
-                if (!href.contains("cluster")) {
-                    return href;
-                }
-            }
-        }
-
-        // 일부 경우 상대 링크만 들어오는 경우 대비
-        for (Element link : links) {
-            String href = trimToNull(link.attr("href"));
-            if (!isBlank(href) && href.contains("/store/apps/details")) {
-                if (href.startsWith("http")) {
-                    return href;
-                }
-                return "https://play.google.com" + href;
-            }
-        }
-
-        return null;
-    }
-
-    private String extractPlayHeroImage(Document doc) {
-        if (doc == null) {
-            return null;
-        }
-
-        // 우선순위 1: og:image
-        Element og = doc.selectFirst("meta[property=og:image], meta[name=og:image]");
-        if (og != null) {
-            String content = trimToNull(og.attr("content"));
-            if (!isBlank(content)) {
-                return content;
-            }
-        }
-
-        // 우선순위 2: 큰 이미지
-        Elements imgs = doc.select("img[src]");
-        for (Element img : imgs) {
-            String src = trimToNull(img.absUrl("src"));
-            if (isBlank(src)) {
-                continue;
-            }
-
-            String alt = normalizeSpaces(img.attr("alt"));
-            if (alt != null && (
-                    alt.contains("feature graphic") ||
-                    alt.contains("대표") ||
-                    alt.contains("배너"))) {
-                return src;
-            }
-
-            if (src.contains("play-lh.googleusercontent.com")) {
-                String width = img.attr("width");
-                String height = img.attr("height");
-
-                int w = parseInt(width);
-                int h = parseInt(height);
-
-                if (w >= 500 || h >= 250) {
-                    return src;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private String extractFirstScreenshot(Document doc) {
-        if (doc == null) {
-            return null;
-        }
-
-        Elements imgs = doc.select("img[src]");
-        for (Element img : imgs) {
-            String src = trimToNull(img.absUrl("src"));
-            if (isBlank(src)) {
-                continue;
-            }
-
-            String alt = normalizeSpaces(img.attr("alt"));
-            if (alt != null && (
-                    alt.contains("스크린샷") ||
-                    alt.toLowerCase().contains("screenshot"))) {
-                return src;
-            }
-
-            if (src.contains("play-lh.googleusercontent.com")) {
-                return src;
-            }
-        }
-
-        return null;
-    }
-
-    private String extractPlayIcon(Document doc) {
-        if (doc == null) {
-            return null;
-        }
-
-        Elements imgs = doc.select("img[src]");
-        for (Element img : imgs) {
-            String src = trimToNull(img.absUrl("src"));
-            if (isBlank(src)) {
-                continue;
-            }
-
-            String alt = normalizeSpaces(img.attr("alt"));
-            if (alt != null && (
-                    alt.contains("아이콘") ||
-                    alt.toLowerCase().contains("icon"))) {
-                return src;
-            }
-        }
-
-        Element og = doc.selectFirst("meta[property=og:image], meta[name=og:image]");
-        if (og != null) {
-            String content = trimToNull(og.attr("content"));
-            if (!isBlank(content)) {
-                return content;
-            }
-        }
-
-        return null;
-    }
-
-    private String extractDeveloperFromPlay(Document doc) {
-        if (doc == null) {
-            return null;
-        }
-
-        // 개발사 링크 텍스트 추출 시도
-        Elements links = doc.select("a, div, span");
-        for (Element el : links) {
-            String text = normalizeSpaces(el.text());
-            if (isBlank(text)) {
-                continue;
-            }
-
-            // 너무 긴 문구 제외
-            if (text.length() <= 40 && !text.contains("설치") && !text.contains("인앱")) {
-                if (el.hasAttr("href") && el.attr("href").contains("/store/apps/dev")) {
-                    return text;
-                }
-            }
-        }
-
-        return null;
-    }
-
     private String extractPackageNameFromDetailUrl(String url) {
         if (isBlank(url)) {
             return null;
@@ -439,14 +569,20 @@ public class PlayStoreTopGrossingService {
             packageName = packageName.substring(0, amp);
         }
 
+        try {
+            packageName = URLDecoder.decode(packageName, "UTF-8");
+        } catch (Exception ignore) {
+        }
+
         return trimToNull(packageName);
     }
 
     private String buildGooglePlaySearchUrl(String title) {
         try {
-            return "https://play.google.com/store/search?q="
-                    + URLEncoder.encode(title, StandardCharsets.UTF_8.name())
-                    + "&c=apps&hl=ko&gl=KR";
+            return String.format(
+                    GOOGLE_PLAY_SEARCH_TEMPLATE,
+                    URLEncoder.encode(title, StandardCharsets.UTF_8.name())
+            );
         } catch (Exception e) {
             return "https://play.google.com/store/search?q=" + title + "&c=apps&hl=ko&gl=KR";
         }
@@ -494,10 +630,5 @@ public class PlayStoreTopGrossingService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private static class ParsedRankItem {
-        String title;
-        String developer;
     }
 }

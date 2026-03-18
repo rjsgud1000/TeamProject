@@ -27,18 +27,23 @@ public class PlayStoreTopGrossingApiController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int limit = 20;
+    	PlayStoreTopGrossingService service = new PlayStoreTopGrossingService();
 
-        try {
-            String limitParam = request.getParameter("limit");
-            if (limitParam != null && !limitParam.trim().isEmpty()) {
-                limit = Integer.parseInt(limitParam);
-            }
-        } catch (Exception ignore) {
-            limit = 20;
-        }
+    	int limit = 10;
+    	try {
+    	    String p = request.getParameter("limit");
+    	    if (p != null && !p.trim().isEmpty()) {
+    	        limit = Integer.parseInt(p);
+    	    }
+    	} catch (Exception ignore) {
+    	    limit = 10;
+    	}
 
-        List<PlayStoreTopGrossingVO> items = service.getTopGrossing(limit);
+    	if (limit < 1) limit = 1;
+    	if (limit > 10) limit = 10;
+
+    	String date = request.getParameter("date"); // optional
+    	List<PlayStoreTopGrossingVO> items = service.getTopGrossing(limit, date);
 
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json; charset=UTF-8");
