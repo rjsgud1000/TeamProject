@@ -989,7 +989,16 @@ public class MemberController extends HttpServlet {
 			reportId = Integer.parseInt(request.getParameter("reportId"));
 		} catch (Exception ignore) {
 		}
-		reportService.processCommentReport(reportId);
+		String action = reportService.normalizeAction(request.getParameter("action"));
+		boolean processed = reportService.processCommentReport(reportId, action);
+		HttpSession session = request.getSession();
+		if (!processed) {
+			session.setAttribute("adminMemberFlash", "댓글 신고 처리에 실패했습니다. 다시 시도해 주세요.");
+		} else if ("BLIND".equals(action)) {
+			session.setAttribute("adminMemberFlash", "댓글 신고를 처리완료하고 댓글을 블라인드 처리했습니다.");
+		} else {
+			session.setAttribute("adminMemberFlash", "댓글 신고를 반려 처리했습니다.");
+		}
 		String filter = reportService.normalizeFilter(request.getParameter("filter"));
 		response.sendRedirect(request.getContextPath() + "/member/admin/reportList.me?filter=" + java.net.URLEncoder.encode(filter, "UTF-8"));
 	}
