@@ -176,6 +176,10 @@ public class MemberController extends HttpServlet {
 			response.getWriter().write("{\"ok\":false,\"message\":\"아이디를 입력해 주세요.\"}");
 			return;
 		}
+		if (!id.matches("^[A-Za-z0-9]{4,20}$")) {
+			response.getWriter().write("{\"ok\":false,\"message\":\"아이디는 영문과 숫자만 사용 가능하며 4~20자로 입력해 주세요.\"}");
+			return;
+		}
 		// join()에서 중복 체크를 하므로 여기선 간단히 DAO 조회만 사용
 		boolean exists = new Dao.MemberDAO().existsMemberId(id);
 		if (exists) {
