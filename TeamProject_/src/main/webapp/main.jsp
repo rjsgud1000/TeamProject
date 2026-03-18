@@ -183,15 +183,30 @@
 .trend-card--steam .game-name{
   font-size:22px;
   font-weight:900;
-  line-height:1.1;
+  line-height:1.15;
   letter-spacing:-0.02em;
   color:#fff;
-  text-shadow:0 2px 12px rgba(0,0,0,.35);
+
+  /* 가시성 강화 */
+  text-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.42),
+    0 1px 1px rgba(0, 0, 0, 0.5);
+
+  /* 줄바꿈 규칙 */
+ white-space:normal;
+		  word-break:keep-all;
+		  overflow-wrap:normal;
+		  word-wrap:normal;
+		  display:-webkit-box;
+		  -webkit-box-orient:vertical;
+		  -webkit-line-clamp:2;
+		  overflow:hidden;
   display:-webkit-box;
-  -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
-  overflow:hidden;
-  word-break:keep-all;
+  -webkit-line-clamp:2;
+
+  max-width:100%;
 }
 
 .trend-card--steam .game-submeta{
@@ -779,13 +794,34 @@
       gap:14px;
       color:#fff;
     }
-    .game-name{
-      font-size:26px;
-      font-weight:1000;
-      letter-spacing:.2px;
-      text-shadow: 0 10px 26px rgba(0,0,0,.35);
-      line-height:1.05;
-    }
+		.game-name{
+		  font-size:22px;
+		  font-weight:900;
+		  line-height:1.15;
+		  letter-spacing:-0.02em;
+		  color:#fff;
+		
+		  /* 가시성 강화 */
+		  text-shadow:
+		    0 2px 6px rgba(0, 0, 0, 0.45),
+		    0 4px 14px rgba(0, 0, 0, 0.42),
+		    0 1px 1px rgba(0, 0, 0, 0.5);
+		
+		  /* 줄바꿈 규칙 */
+		  white-space:normal;
+		  word-break:keep-all;
+		  overflow-wrap:normal;
+		  word-wrap:normal;
+		  display:-webkit-box;
+		  -webkit-box-orient:vertical;
+		  -webkit-line-clamp:2;
+		  overflow:hidden;
+		  display:-webkit-box;
+		  -webkit-box-orient:vertical;
+		  -webkit-line-clamp:2;
+		
+		  max-width:100%;
+		}
     .game-meta{
       display:flex; align-items:center; gap:8px;
       color: rgba(255,255,255,.85);
