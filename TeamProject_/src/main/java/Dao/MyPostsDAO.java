@@ -12,6 +12,10 @@ import util.DBCPUtil;
 public class MyPostsDAO {
 
     public List<BoardPostVO> findPostsByMember(String memberId, String nickname) {
+        return findPostsByMember(memberId, nickname, 0, Integer.MAX_VALUE);
+    }
+
+    public List<BoardPostVO> findPostsByMember(String memberId, String nickname, int offset, int limit) {
         List<BoardPostVO> list = new ArrayList<>();
         String sql =
                 "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at, " +
@@ -21,7 +25,8 @@ public class MyPostsDAO {
                 "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
                 "WHERE bp.is_deleted = 0 AND bp.is_blinded = 0 AND (bp.member_id = ? OR (? IS NOT NULL AND bp.nickname = ?)) " +
                 "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
-                "ORDER BY bp.post_id DESC";
+                "ORDER BY bp.post_id DESC " +
+                "LIMIT ? OFFSET ?";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -29,6 +34,8 @@ public class MyPostsDAO {
             pstmt.setString(1, memberId);
             pstmt.setString(2, nickname);
             pstmt.setString(3, nickname);
+            pstmt.setInt(4, limit);
+            pstmt.setInt(5, offset);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {

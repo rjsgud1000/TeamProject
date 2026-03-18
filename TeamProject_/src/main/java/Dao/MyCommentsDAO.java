@@ -12,6 +12,10 @@ import util.DBCPUtil;
 public class MyCommentsDAO {
 
     public List<CommentDTO> findCommentsByMember(String memberId, String nickname) {
+        return findCommentsByMember(memberId, nickname, 0, Integer.MAX_VALUE);
+    }
+
+    public List<CommentDTO> findCommentsByMember(String memberId, String nickname, int offset, int limit) {
         List<CommentDTO> list = new ArrayList<>();
         String sql = "SELECT c.comment_id, c.post_id, c.member_id, c.content, c.created_at, c.updated_at, c.is_deleted, c.parent_comment_id, " +
                      "       m.nickname AS memberNickname " +
@@ -19,7 +23,8 @@ public class MyCommentsDAO {
                      "LEFT JOIN MEMBER m ON c.member_id = m.member_id " +
                      "INNER JOIN BOARD_POST bp ON c.post_id = bp.post_id " +
                      "WHERE c.is_deleted = 0 AND bp.is_deleted = 0 AND bp.is_blinded = 0 AND (c.member_id = ? OR (? IS NOT NULL AND m.nickname = ?)) " +
-                     "ORDER BY c.comment_id DESC";
+                     "ORDER BY c.comment_id DESC " +
+                     "LIMIT ? OFFSET ?";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -27,6 +32,8 @@ public class MyCommentsDAO {
             ps.setString(1, memberId);
             ps.setString(2, nickname);
             ps.setString(3, nickname);
+            ps.setInt(4, limit);
+            ps.setInt(5, offset);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

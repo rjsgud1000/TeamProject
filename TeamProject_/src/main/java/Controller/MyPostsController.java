@@ -19,6 +19,8 @@ import Vo.MemberVO;
 @WebServlet("/mypage/posts")
 public class MyPostsController extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private static final int PAGE_SIZE = 10;
+    private static final int PAGE_BLOCK_SIZE = 10;
 
     private final MyPostsDAO myPostsDAO = new MyPostsDAO();
     private final MemberDAO memberDAO = new MemberDAO();
@@ -35,11 +37,22 @@ public class MyPostsController extends HttpServlet {
         String memberId = loginMember.getMemberId();
         String nickname = memberDetail != null ? memberDetail.getNickname() : null;
 
-        List<BoardPostVO> myPostList = myPostsDAO.findPostsByMember(memberId, nickname);
         int myPostCount = myPostsDAO.countPostsByMember(memberId, nickname);
+        int totalPage = Math.max(1, (int) Math.ceil(myPostCount / (double) PAGE_SIZE));
+        int currentPage = parsePage(request.getParameter("page"), totalPage);
+        int offset = (currentPage - 1) * PAGE_SIZE;
+        List<BoardPostVO> myPostList = myPostsDAO.findPostsByMember(memberId, nickname, offset, PAGE_SIZE);
+
+        int startPage = ((currentPage - 1) / PAGE_BLOCK_SIZE) * PAGE_BLOCK_SIZE + 1;
+        int endPage = Math.min(startPage + PAGE_BLOCK_SIZE - 1, totalPage);
 
         request.setAttribute("myPostList", myPostList);
         request.setAttribute("myPostCount", myPostCount);
+        request.setAttribute("currentPage", currentPage);
+        request.setAttribute("pageSize", PAGE_SIZE);
+        request.setAttribute("totalPage", totalPage);
+        request.setAttribute("startPage", startPage);
+        request.setAttribute("endPage", endPage);
         request.setAttribute("debugMemberId", memberId);
         request.setAttribute("debugNickname", nickname);
         request.setAttribute("debugListSize", myPostList != null ? myPostList.size() : -1);
@@ -47,6 +60,21 @@ public class MyPostsController extends HttpServlet {
         request.setAttribute("pageTitle", "내가 쓴 글 전체보기");
         request.setAttribute("center", "members/myPosts.jsp");
         forward(request, response, "/main.jsp");
+    }
+
+    private int parsePage(String pageParam, int totalPage) {
+        int page = 1;
+        try {
+            page = Integer.parseInt(pageParam);
+        } catch (Exception ignore) {
+        }
+        if (page < 1) {
+            page = 1;
+        }
+        if (page > totalPage) {
+            page = totalPage;
+        }
+        return page;
     }
 
     private MemberVO getLoginMember(HttpServletRequest request) {
