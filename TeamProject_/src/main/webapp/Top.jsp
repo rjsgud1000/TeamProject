@@ -146,11 +146,12 @@
 
 	<!-- 인기게시글 contextPath-> pageContext로변경 -->
 	<div class="subnav">
-    	<div class="container subnav__inner" aria-label="보조 메뉴">
-	        <a href="${contextPath}/main.jsp">홈</a>
-	        <a href="${contextPath}/board/list?category=all">게시판</a>
-	        <a href="${contextPath}/board/popular">인기글</a>
-	        <a href="${contextPath}/board/list?category=3">파티원 모집</a>
-    	</div>
-</div>
+		<div class="container subnav__inner" aria-label="보조 메뉴">
+			<a href="${contextPath}/board/list?category=0">공지사항</a> 
+			<a href="${contextPath}/board/popular">인기글</a> 
+			<a href="${contextPath}/board/list?category=1">자유 게시판</a> 
+			<a href="${contextPath}/board/list?category=2">질문과 답변</a> 
+			<a href="${contextPath}/board/list?category=3">파티원 모집</a>
+		</div>
+	</div>
 </header>
