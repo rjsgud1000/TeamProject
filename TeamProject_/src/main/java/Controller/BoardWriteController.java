@@ -131,6 +131,36 @@ public class BoardWriteController extends HttpServlet {
             vo.setAcceptedCommentId(null);
         }
 
+        if (category == 3) {
+            String recruitStatusParam = request.getParameter("recruitStatus");
+            String currentMembersParam = request.getParameter("currentMembers");
+            String maxMembersParam = request.getParameter("maxMembers");
+
+            int recruitStatus = 1;
+            int currentMembers = 1;
+            int maxMembers = 4;
+
+            try { recruitStatus = Integer.parseInt(recruitStatusParam); } catch (Exception ignored) {}
+            try { currentMembers = Integer.parseInt(currentMembersParam); } catch (Exception ignored) {}
+            try { maxMembers = Integer.parseInt(maxMembersParam); } catch (Exception ignored) {}
+
+            if (currentMembers < 1) currentMembers = 1;
+            if (maxMembers < 1) maxMembers = 1;
+            if (currentMembers > maxMembers) currentMembers = maxMembers;
+
+            if (currentMembers >= maxMembers) {
+                recruitStatus = 0;
+            }
+
+            vo.setRecruitStatus(recruitStatus);
+            vo.setCurrentMembers(currentMembers);
+            vo.setMaxMembers(maxMembers);
+        } else {
+            vo.setRecruitStatus(null);
+            vo.setCurrentMembers(null);
+            vo.setMaxMembers(null);
+        }
+
         int result = boardDAO.insertPost(vo);
 
         if (result > 0) {

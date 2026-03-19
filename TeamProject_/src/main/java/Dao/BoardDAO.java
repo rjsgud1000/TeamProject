@@ -102,7 +102,8 @@ public class BoardDAO {
     // 3. 게시글 상세보기
     public BoardDTO selectPostById(int postId) {
         String sql = "SELECT post_id, member_id, category, nickname, title, content, "
-                   + "viewcount, create_at, accepted_comment_id "
+                   + "viewcount, create_at, accepted_comment_id, "
+                   + "recruit_status, current_members, max_members "
                    + "FROM BOARD_POST "
                    + "WHERE post_id = ? AND is_deleted = 0 AND is_blinded = 0";
 
@@ -126,6 +127,21 @@ public class BoardDAO {
                     int acceptedCommentId = rs.getInt("accepted_comment_id");
                     if (!rs.wasNull()) {
                         dto.setAcceptedCommentId(acceptedCommentId);
+                    }
+
+                    int recruitStatus = rs.getInt("recruit_status");
+                    if (!rs.wasNull()) {
+                        dto.setRecruitStatus(recruitStatus);
+                    }
+
+                    int currentMembers = rs.getInt("current_members");
+                    if (!rs.wasNull()) {
+                        dto.setCurrentMembers(currentMembers);
+                    }
+
+                    int maxMembers = rs.getInt("max_members");
+                    if (!rs.wasNull()) {
+                        dto.setMaxMembers(maxMembers);
                     }
 
                     return dto;
@@ -159,8 +175,9 @@ public class BoardDAO {
         int result = 0;
 
         String sql = "INSERT INTO BOARD_POST "
-                   + "(member_id, nickname, category, title, content, viewcount, create_at, is_deleted, accepted_comment_id) "
-                   + "VALUES (?, ?, ?, ?, ?, 0, NOW(), 0, ?)";
+                   + "(member_id, nickname, category, title, content, viewcount, create_at, is_deleted, "
+                   + "accepted_comment_id, recruit_status, current_members, max_members) "
+                   + "VALUES (?, ?, ?, ?, ?, 0, NOW(), 0, ?, ?, ?, ?)";
 
         try (Connection conn = DBCPUtil.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -177,6 +194,24 @@ public class BoardDAO {
                 pstmt.setInt(6, vo.getAcceptedCommentId());
             }
 
+            if (vo.getRecruitStatus() == null) {
+                pstmt.setNull(7, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(7, vo.getRecruitStatus());
+            }
+
+            if (vo.getCurrentMembers() == null) {
+                pstmt.setNull(8, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(8, vo.getCurrentMembers());
+            }
+
+            if (vo.getMaxMembers() == null) {
+                pstmt.setNull(9, java.sql.Types.INTEGER);
+            } else {
+                pstmt.setInt(9, vo.getMaxMembers());
+            }
+
             result = pstmt.executeUpdate();
 
         } catch (Exception e) {
@@ -187,23 +222,127 @@ public class BoardDAO {
     }
 
     // 6. 게시글 수정
-    public void updatePost(int postId, String title, String content) {
+    public void updatePost(int postId, String title, String content,
+            Integer recruitStatus, Integer currentMembers, Integer maxMembers) {
 
-        String sql = "UPDATE BOARD_POST SET title=?, content=?, updated_at=NOW() WHERE post_id=?";
+		String sql = "UPDATE BOARD_POST "
+		    + "SET title = ?, content = ?, "
+		    + "    recruit_status = ?, current_members = ?, max_members = ?, "
+		    + "    updated_at = NOW() "
+		    + "WHERE post_id = ?";
+		
+				try (Connection conn = DBCPUtil.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(sql)) {
+				
+				pstmt.setString(1, title);
+				pstmt.setString(2, content);
+				
+				if (recruitStatus == null) pstmt.setNull(3, java.sql.Types.INTEGER);
+				else pstmt.setInt(3, recruitStatus);
+				
+				if (currentMembers == null) pstmt.setNull(4, java.sql.Types.INTEGER);
+				else pstmt.setInt(4, currentMembers);
+				
+				if (maxMembers == null) pstmt.setNull(5, java.sql.Types.INTEGER);
+				else pstmt.setInt(5, maxMembers);
+				
+				pstmt.setInt(6, postId);
+				
+				pstmt.executeUpdate();
+				
+				} catch (Exception e) {
+				e.printStackTrace();
+				}
+		}
+    	//6-1 파티 모집 게시판 전용
+		    public void togglePartyRecruitStatus(int postId) {
+		        String selectSql = "SELECT recruit_status, current_members, max_members "
+		                         + "FROM BOARD_POST "
+		                         + "WHERE post_id = ?";
+		
+		        String updateSql = "UPDATE BOARD_POST "
+		                         + "SET recruit_status = ?, current_members = ?, updated_at = NOW() "
+		                         + "WHERE post_id = ?";
+		
+		        try (Connection conn = DBCPUtil.getConnection();
+		             PreparedStatement selectPstmt = conn.prepareStatement(selectSql)) {
+		
+		            selectPstmt.setInt(1, postId);
+		
+		            try (ResultSet rs = selectPstmt.executeQuery()) {
+		                if (!rs.next()) {
+		                    return;
+		                }
+		
+		                int recruitStatus = rs.getInt("recruit_status");
+		                int currentMembers = rs.getInt("current_members");
+		                int maxMembers = rs.getInt("max_members");
+		
+		                if (maxMembers < 1) {
+		                    maxMembers = 1;
+		                }
+		                if (currentMembers < 1) {
+		                    currentMembers = 1;
+		                }
+		                if (currentMembers > maxMembers) {
+		                    currentMembers = maxMembers;
+		                }
+		
+		                int newRecruitStatus;
+		                int newCurrentMembers;
+		
+		                if (recruitStatus == 1) {
+		                    // 모집중 -> 모집완료
+		                    newRecruitStatus = 0;
+		                    newCurrentMembers = maxMembers;
+		                } else {
+		                    // 모집완료 -> 모집중
+		                    newRecruitStatus = 1;
+		                    newCurrentMembers = maxMembers - 1;
+		
+		                    if (newCurrentMembers < 1) {
+		                        newCurrentMembers = 1;
+		                    }
+		                }
+		
+		                try (PreparedStatement updatePstmt = conn.prepareStatement(updateSql)) {
+		                    updatePstmt.setInt(1, newRecruitStatus);
+		                    updatePstmt.setInt(2, newCurrentMembers);
+		                    updatePstmt.setInt(3, postId);
+		                    updatePstmt.executeUpdate();
+		                }
+		            }
+		
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		        }
+		    }
+		
+		    public void updatePartyMembers(int postId, int currentMembers, int maxMembers) {
+		        if (currentMembers < 1) currentMembers = 1;
+		        if (maxMembers < 1) maxMembers = 1;
+		        if (currentMembers > maxMembers) currentMembers = maxMembers;
 
-        try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+		        int recruitStatus = (currentMembers >= maxMembers) ? 0 : 1;
 
-            pstmt.setString(1, title);
-            pstmt.setString(2, content);
-            pstmt.setInt(3, postId);
+		        String sql = "UPDATE BOARD_POST "
+		                   + "SET current_members = ?, max_members = ?, recruit_status = ?, updated_at = NOW() "
+		                   + "WHERE post_id = ?";
 
-            pstmt.executeUpdate();
+		        try (Connection conn = DBCPUtil.getConnection();
+		             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+		            pstmt.setInt(1, currentMembers);
+		            pstmt.setInt(2, maxMembers);
+		            pstmt.setInt(3, recruitStatus);
+		            pstmt.setInt(4, postId);
+
+		            pstmt.executeUpdate();
+
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		        }
+		    }
 
     // 7. 게시글 삭제
     public void deletePost(int postId) {
@@ -291,12 +430,14 @@ public class BoardDAO {
 
         String sql =
                 "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
-                "bp.viewcount, bp.create_at, COUNT(pl.post_id) AS like_count, " +
+                "bp.viewcount, bp.create_at, bp.recruit_status, bp.current_members, bp.max_members, " +
+                "COUNT(pl.post_id) AS like_count, " +
                 "(SELECT COUNT(*) FROM COMMENT c WHERE c.post_id = bp.post_id AND c.is_deleted = 0 AND c.parent_comment_id IS NULL) AS comment_count " +
                 "FROM BOARD_POST bp " +
                 "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
                 "WHERE bp.category = ? AND bp.is_deleted = 0 AND bp.is_blinded = 0 " +
-                "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+                "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+                "bp.viewcount, bp.create_at, bp.recruit_status, bp.current_members, bp.max_members " +
                 orderBy + " " +
                 "LIMIT ?, ?";
 
@@ -320,6 +461,16 @@ public class BoardDAO {
                     vo.setCreateAt(rs.getTimestamp("create_at"));
                     vo.setLikeCount(rs.getInt("like_count"));
                     vo.setCommentCount(rs.getInt("comment_count"));
+
+                    int recruitStatus = rs.getInt("recruit_status");
+                    if (!rs.wasNull()) vo.setRecruitStatus(recruitStatus);
+
+                    int currentMembers = rs.getInt("current_members");
+                    if (!rs.wasNull()) vo.setCurrentMembers(currentMembers);
+
+                    int maxMembers = rs.getInt("max_members");
+                    if (!rs.wasNull()) vo.setMaxMembers(maxMembers);
+
                     list.add(vo);
                 }
             }
@@ -699,13 +850,13 @@ public class BoardDAO {
 
         String sql =
                 "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at, " +
+                "       bp.recruit_status, bp.current_members, bp.max_members, " +
                 "       (SELECT COUNT(*) " +
                 "        FROM COMMENT c " +
                 "        WHERE c.post_id = bp.post_id " +
                 "          AND c.is_deleted = 0 " +
                 "          AND c.parent_comment_id IS NULL) AS comment_count " +
                 "FROM BOARD_POST bp " +
-                // 삭제되지 않았고 블라인드되지 않은 게시글만 검색
                 "WHERE bp.category = ? AND bp.is_deleted = 0 AND bp.is_blinded = 0 " +
                 "AND bp." + column + " LIKE ? " +
                 orderBy + " " +
@@ -731,6 +882,16 @@ public class BoardDAO {
                     vo.setViewcount(rs.getInt("viewcount"));
                     vo.setCreateAt(rs.getTimestamp("create_at"));
                     vo.setCommentCount(rs.getInt("comment_count"));
+
+                    int recruitStatus = rs.getInt("recruit_status");
+                    if (!rs.wasNull()) vo.setRecruitStatus(recruitStatus);
+
+                    int currentMembers = rs.getInt("current_members");
+                    if (!rs.wasNull()) vo.setCurrentMembers(currentMembers);
+
+                    int maxMembers = rs.getInt("max_members");
+                    if (!rs.wasNull()) vo.setMaxMembers(maxMembers);
+
                     list.add(vo);
                 }
             }

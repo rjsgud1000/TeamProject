@@ -14,8 +14,13 @@ public class BoardPostVO {
     private int likeCount;
     private int commentCount;
 
-    private Integer acceptedCommentId;   // 질문글 post_id
-    private boolean answerPost;          // 답변글 여부
+    private Integer acceptedCommentId;
+    private boolean answerPost;
+
+    // 파티 모집용
+    private Integer recruitStatus;   // 1: 모집중, 0: 모집완료
+    private Integer currentMembers;  // 현재 인원
+    private Integer maxMembers;      // 총 모집 인원
 
     public int getLikeCount() { return likeCount; }
     public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
@@ -52,4 +57,32 @@ public class BoardPostVO {
 
     public boolean isAnswerPost() { return answerPost; }
     public void setAnswerPost(boolean answerPost) { this.answerPost = answerPost; }
+
+    public Integer getRecruitStatus() {
+        return recruitStatus;
+    }
+
+    public void setRecruitStatus(Integer recruitStatus) {
+        this.recruitStatus = recruitStatus;
+    }
+
+    public Integer getCurrentMembers() {
+        return currentMembers;
+    }
+
+    public void setCurrentMembers(Integer currentMembers) {
+        this.currentMembers = currentMembers;
+    }
+
+    public Integer getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(Integer maxMembers) {
+        this.maxMembers = maxMembers;
+    }
+
+    public boolean isPartyPost() {
+        return category == 3;
+    }
 }
