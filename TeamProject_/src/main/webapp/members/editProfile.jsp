@@ -9,95 +9,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원정보 수정</title>
 <link rel="stylesheet" href="${contextPath}/css/auth.css" />
-<style>
-.email-verify-card{
-	margin-top:10px;
-	padding:16px;
-	border:1px solid #dbe7f8;
-	border-radius:16px;
-	background:linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
-	box-shadow:0 10px 24px rgba(37, 99, 235, .06);
-}
-.email-verify-head{
-	display:flex;
-	justify-content:space-between;
-	align-items:center;
-	gap:12px;
-	margin-bottom:10px;
-	flex-wrap:wrap;
-}
-.email-verify-title{
-	display:flex;
-	align-items:center;
-	gap:8px;
-	font-weight:900;
-	font-size:14px;
-	color:#0f172a;
-}
-.email-verify-step{
-	display:inline-flex;
-	align-items:center;
-	justify-content:center;
-	min-width:28px;
-	height:28px;
-	padding:0 8px;
-	border-radius:999px;
-	background:#dbeafe;
-	color:#1d4ed8;
-	font-size:12px;
-	font-weight:900;
-}
-.email-verify-chip{
-	display:inline-flex;
-	align-items:center;
-	gap:6px;
-	padding:7px 10px;
-	border-radius:999px;
-	background:#eef2f7;
-	color:#475569;
-	font-size:12px;
-	font-weight:900;
-}
-.email-verify-chip.is-success{
-	background:#dcfce7;
-	color:#15803d;
-}
-.email-verify-chip.is-pending{
-	background:#dbeafe;
-	color:#1d4ed8;
-}
-.email-verify-copy{
-	font-size:12px;
-	color:#64748b;
-	line-height:1.5;
-	margin-bottom:12px;
-}
-.email-verify-wrap{
-	display:grid;
-	gap:12px;
-}
-.email-verify-row{
-	display:grid;
-	grid-template-columns: 1fr 140px;
-	gap:10px;
-}
-.email-verify-status{
-	font-size:12px;
-	font-weight:700;
-	margin-top:2px;
-}
-@media (max-width: 640px){
-	.email-verify-row{
-		grid-template-columns:1fr;
-	}
-}
-</style>
+<link rel="stylesheet" href="${contextPath}/css/member-pages.css" />
 </head>
 <body>
 <div class="container">
 	<div class="join-card">
 		<div class="join-hero">
-			<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+			<div class="page-flex-head">
 				<div>
 					<span class="step">MY PAGE</span>
 					<h1>회원정보 수정</h1>
@@ -154,20 +72,20 @@
 
 				<div class="field">
 					<label class="label" for="zipcode">주소</label>
-					<div class="grid" style="grid-template-columns: 1fr 140px; align-items: stretch;">
+					<div class="grid address-zip-grid">
 						<input type="text" id="sample4_postcode" name="zipcode" value="${member.zipcode}" placeholder="우편번호" readonly>
-						<input type="button" onclick="sample4_execDaumPostcode()" value="찾기" class="btn btn-outline-primary btn-block" style="height:44px;">
+						<input type="button" onclick="sample4_execDaumPostcode()" value="찾기" class="btn btn-outline-primary btn-block btn-fixed-height">
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_roadAddress" name="addr1" value="${member.addr1}" placeholder="도로명주소" readonly>
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_jibunAddress" name="addr2" value="${member.addr2}" placeholder="지번주소" readonly>
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_detailAddress" name="addr3" value="${member.addr3}" placeholder="상세주소">
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_extraAddress" name="addr4" value="${member.addr4}" placeholder="참고항목" readonly>
 					</div>
 				</div>
