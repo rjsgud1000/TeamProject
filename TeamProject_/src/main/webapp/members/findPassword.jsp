@@ -7,53 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>비밀번호 찾기</title>
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/auth.css" />
-<style>
-.alert{ white-space: pre-line; }
-.success-message{
-	margin-bottom: 10px;
-	padding: 10px 12px;
-	border-radius: 8px;
-	background: rgba(60, 179, 113, 0.18);
-	color: #d7ffe8;
-	white-space: pre-line;
-}
-.find-password-page{
-	max-width: 560px;
-	margin: 0 auto;
-}
-.find-password-card{
-	border-radius: 20px;
-	overflow: hidden;
-}
-.find-password-body{
-	padding: 24px;
-}
-.find-password-form{
-	display: grid;
-	gap: 14px;
-}
-.find-password-actions{
-	display: grid;
-	gap: 10px;
-	margin-top: 8px;
-}
-.btn-secondary{
-	border: 0;
-	border-radius: 10px;
-	padding: 12px 14px;
-	cursor: pointer;
-}
-.find-password-help{
-	font-size: 12px;
-	opacity: 0.85;
-	line-height: 1.5;
-}
-.sub-links{
-	margin-top: 12px;
-	text-align: center;
-	font-size: 13px;
-}
-</style>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/member-pages.css" />
 </head>
 <body>
 <%
@@ -96,7 +50,7 @@
 			</form>
 
 			<% if (passwordCodeSent) { %>
-			<form class="find-password-form" method="post" action="<%=contextPath%>/member/verifyPasswordCode.me" style="margin-top:18px;">
+			<form class="find-password-form form-section-spaced" method="post" action="<%=contextPath%>/member/verifyPasswordCode.me">
 				<input type="hidden" name="findId" value="<%= passwordFindId %>">
 				<input type="hidden" name="findEmail" value="<%= passwordFindEmail %>">
 				<div class="login-form-row">

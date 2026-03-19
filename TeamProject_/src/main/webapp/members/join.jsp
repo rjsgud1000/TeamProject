@@ -19,89 +19,7 @@
 <title>회원가입</title>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/auth.css" />
-<style>
-.email-verify-card{
-	margin-top:10px;
-	padding:16px;
-	border:1px solid #dbe7f8;
-	border-radius:16px;
-	background:linear-gradient(180deg, #f8fbff 0%, #fdfefe 100%);
-	box-shadow:0 10px 24px rgba(37, 99, 235, .06);
-}
-.email-verify-head{
-	display:flex;
-	justify-content:space-between;
-	align-items:center;
-	gap:12px;
-	margin-bottom:10px;
-	flex-wrap:wrap;
-}
-.email-verify-title{
-	display:flex;
-	align-items:center;
-	gap:8px;
-	font-weight:900;
-	font-size:14px;
-	color:#0f172a;
-}
-.email-verify-step{
-	display:inline-flex;
-	align-items:center;
-	justify-content:center;
-	min-width:28px;
-	height:28px;
-	padding:0 8px;
-	border-radius:999px;
-	background:#dbeafe;
-	color:#1d4ed8;
-	font-size:12px;
-	font-weight:900;
-}
-.email-verify-chip{
-	display:inline-flex;
-	align-items:center;
-	gap:6px;
-	padding:7px 10px;
-	border-radius:999px;
-	background:#eef2f7;
-	color:#475569;
-	font-size:12px;
-	font-weight:900;
-}
-.email-verify-chip.is-success{
-	background:#dcfce7;
-	color:#15803d;
-}
-.email-verify-chip.is-pending{
-	background:#dbeafe;
-	color:#1d4ed8;
-}
-.email-verify-copy{
-	font-size:12px;
-	color:#64748b;
-	line-height:1.5;
-	margin-bottom:12px;
-}
-.email-verify-wrap{
-	display:grid;
-	gap:12px;
-}
-.email-verify-row{
-	display:grid;
-	grid-template-columns: 1fr 140px;
-	gap:10px;
-}
-.email-verify-status{
-	font-size:12px;
-	font-weight:700;
-	margin-top:2px;
-}
-@media (max-width: 640px){
-	.email-verify-row{
-		grid-template-columns:1fr;
-	}
-}
-</style>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/member-pages.css" />
 
 </head>
 <body>
@@ -119,7 +37,7 @@
 <div class="container">
 	<div class="join-card">
 		<div class="join-hero">
-			<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+			<div class="page-flex-head">
 				<div>
 					<span class="step">STEP 01</span>
 					<h1>회원가입</h1>
@@ -156,7 +74,7 @@
 
 					<div class="check-row">
 						<input type="checkbox" name="agree" id="agree">
-						<label for="agree" style="font-weight:900;">위의 약관의 내용에 동의합니다.</label>
+						<label for="agree" class="field-label-strong">위의 약관의 내용에 동의합니다.</label>
 					</div>
 					<p id="agreeInput" class="form-text"></p>
 				</div>
@@ -220,22 +138,22 @@
 					<label class="label" for="address">주소</label>
 					<p id="addressInput" class="form-text"></p>
 
-					<div class="grid" style="grid-template-columns: 1fr 140px; align-items: stretch;">
+					<div class="grid address-zip-grid">
 						<input type="text" id="sample4_postcode" name="address1" placeholder="우편번호" readonly>
-						<input type="button" onclick="sample4_execDaumPostcode()" value="찾기" class="btn btn-outline-primary btn-block" style="height:44px;">
+						<input type="button" onclick="sample4_execDaumPostcode()" value="찾기" class="btn btn-outline-primary btn-block btn-fixed-height">
 					</div>
 
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_roadAddress" name="address2" placeholder="도로명주소" readonly>
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_jibunAddress" name="address3" placeholder="지번주소" readonly>
 					</div>
-					<span id="guide" class="help-hint" style="display:none"></span>
-					<div class="field" style="margin-top:10px;">
+					<span id="guide" class="help-hint help-hidden"></span>
+					<div class="field mt-10">
 						<input type="text" id="sample4_detailAddress" name="address4" placeholder="상세주소">
 					</div>
-					<div class="field" style="margin-top:10px;">
+					<div class="field mt-10">
 						<input type="text" id="sample4_extraAddress" name="address5" placeholder="참고항목" readonly>
 					</div>
 				</div>

@@ -19,31 +19,7 @@
 <title>마이페이지</title>
 
 <link rel="stylesheet" href="${contextPath}/css/mypage.css" />
-
-<style>
-	.activity-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;}
-	.activity-card{border:1px solid #e5e7eb;border-radius:16px;background:#fff;padding:20px;box-shadow:0 8px 24px rgba(15,23,42,.05);}
-	.activity-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
-	.activity-head-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-	.activity-title{font-size:18px;font-weight:700;color:#111827;}
-	.activity-more{font-size:13px;font-weight:800;color:#2563eb;text-decoration:none;}
-	.activity-more:hover{text-decoration:underline;}
-	.activity-count{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:32px;padding:0 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:700;font-size:13px;}
-	.activity-list{display:flex;flex-direction:column;gap:12px;}
-	.activity-item{display:block;padding:14px 16px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;color:inherit;text-decoration:none;transition:.2s ease;}
-	.activity-item:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(15,23,42,.06);border-color:#cbd5e1;}
-	.activity-meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;color:#64748b;}
-	.badge{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:#e0f2fe;color:#0f766e;font-weight:700;}
-	.activity-name{font-size:15px;font-weight:700;color:#0f172a;line-height:1.4;}
-	.activity-text{margin-top:6px;font-size:14px;line-height:1.6;color:#475569;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-	.empty-box{padding:24px 16px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;color:#64748b;text-align:center;}
-	.summary-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px;}
-	.summary-tile{padding:18px;border-radius:14px;background:linear-gradient(135deg,#f8fafc,#eef2ff);border:1px solid #dbeafe;}
-	.summary-label{font-size:13px;color:#475569;margin-bottom:8px;}
-	.summary-value{font-size:28px;font-weight:800;color:#111827;}
-	.summary-sub{font-size:12px;color:#64748b;margin-top:4px;}
-	@media (max-width: 900px){.activity-grid{grid-template-columns:1fr;}.summary-strip{grid-template-columns:1fr;}}
-</style>
+<link rel="stylesheet" href="${contextPath}/css/member-pages.css" />
 
 </head>
 <body>
@@ -77,7 +53,7 @@
 						<div class="grid">
 							<div class="profile">
 								<div class="section-title">프로필</div>
-								<div style="display:flex; gap:12px; align-items:center;">
+								<div class="profile-head-inline">
 									<div class="avatar">${avatarText}</div>
 									<div class="kv">
 										<div class="name">${displayName}</div>
@@ -89,7 +65,7 @@
 									<a class="btn" href="${contextPath}/member/logout.me">로그아웃</a>
 									<a class="btn" href="${contextPath}/mypage/login-history">로그인 기록 보기</a>
 									<a class="btn primary" href="${contextPath}/member/editProfileVerify.me">회원정보 수정</a>
-									<a class="btn" href="${contextPath}/member/withdraw.me" style="background:#fff5f5; color:#b91c1c; border:1px solid #fecaca;">회원탈퇴</a>
+									<a class="btn btn-danger-soft" href="${contextPath}/member/withdraw.me">회원탈퇴</a>
 								</div>
 
 								<div class="note">
@@ -179,8 +155,8 @@
 											<c:forEach var="comment" items="${myComments}">
 												<a class="activity-item" href="${contextPath}/board/detail?postId=${comment.postId}&page=1">
 													<div class="activity-meta">
-														<c:if test="${comment.parentCommentId ne null}"><span class="badge" style="background:#ede9fe;color:#6d28d9;">답글</span></c:if>
-														<c:if test="${comment.parentCommentId eq null}"><span class="badge" style="background:#f1f5f9;color:#334155;">댓글</span></c:if>
+														<c:if test="${comment.parentCommentId ne null}"><span class="badge badge--reply">답글</span></c:if>
+														<c:if test="${comment.parentCommentId eq null}"><span class="badge badge--comment">댓글</span></c:if>
 														<span>게시글 #${comment.postId}</span>
 														<span><fmt:formatDate value="${comment.createdAt}" pattern="yyyy-MM-dd HH:mm"/></span>
 													</div>

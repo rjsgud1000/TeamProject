@@ -9,26 +9,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>회원탈퇴</title>
 <link rel="stylesheet" href="${contextPath}/css/auth.css" />
-<style>
-	.alert { white-space: pre-line; }
-	.withdraw-warn {
-		margin: 14px 0 18px;
-		padding: 14px 16px;
-		border-radius: 14px;
-		background: #fff5f5;
-		border: 1px solid #fecaca;
-		color: #991b1b;
-		font-weight: 700;
-		line-height: 1.6;
-	}
-	.check-row { display:flex; gap:10px; align-items:flex-start; margin-top:12px; }
-</style>
+<link rel="stylesheet" href="${contextPath}/css/member-pages.css" />
 </head>
 <body>
 <div class="container">
 	<div class="join-card">
 		<div class="join-hero">
-			<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+			<div class="page-flex-head">
 				<div>
 					<span class="step">MY PAGE</span>
 					<h1>회원탈퇴</h1>
@@ -67,14 +54,14 @@
 
 				<div class="check-row">
 					<input type="checkbox" id="confirmWithdraw" name="confirmWithdraw" value="yes">
-					<label for="confirmWithdraw" style="font-weight:900; line-height:1.5;">
+					<label for="confirmWithdraw" class="field-label-strong field-label-wrap">
 						회원탈퇴 시 계정을 다시 사용할 수 없음을 확인했습니다.
 					</label>
 				</div>
 
 				<div class="actions">
 					<a href="${contextPath}/member/mypage.me" class="btn btn-outline btn-block">아니오</a>
-					<button type="submit" class="btn btn-primary btn-block" style="background:linear-gradient(180deg,#dc2626,#b91c1c); border-color:#b91c1c;">예, 탈퇴합니다</button>
+					<button type="submit" class="btn btn-primary btn-block withdraw-danger-btn">예, 탈퇴합니다</button>
 				</div>
 			</form>
 		</div>

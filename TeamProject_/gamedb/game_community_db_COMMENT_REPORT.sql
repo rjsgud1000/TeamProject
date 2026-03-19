@@ -24,6 +24,14 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 --
+-- Comment report status migration guide
+-- 기존 운영 DB라면 아래 순서로 반영:
+-- 1) UPDATE COMMENT_REPORT
+--       SET status = CASE WHEN is_processed = 1 AND status = 'PENDING' THEN 'RESOLVED' ELSE status END;
+-- 2) ALTER TABLE COMMENT_REPORT DROP COLUMN is_processed;
+--
+
+--
 -- Table structure for table `COMMENT_REPORT`
 --
 
@@ -36,7 +44,6 @@ CREATE TABLE `COMMENT_REPORT` (
   `member_id` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
   `reason` text COLLATE utf8mb4_general_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `is_processed` tinyint(1) NOT NULL DEFAULT '0',
   `status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'PENDING',
   PRIMARY KEY (`report_id`),
   KEY `comment_id` (`comment_id`),
@@ -52,7 +59,7 @@ CREATE TABLE `COMMENT_REPORT` (
 
 LOCK TABLES `COMMENT_REPORT` WRITE;
 /*!40000 ALTER TABLE `COMMENT_REPORT` DISABLE KEYS */;
-INSERT INTO `COMMENT_REPORT` VALUES (1,12,'rjsgud','욕함','2026-03-05 10:30:59',1,'RESOLVED'),(2,13,'admin','바보','2026-03-10 11:37:55',1,'RESOLVED'),(3,26,'admin','바바보','2026-03-10 14:40:47',1,'RESOLVED'),(4,25,'admin1','1234','2026-03-10 14:59:52',1,'RESOLVED'),(5,12,'admin','신고','2026-03-10 15:09:25',1,'RESOLVED'),(6,38,'admin','11','2026-03-10 16:04:59',1,'RESOLVED'),(7,69,'admin','	\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.','2026-03-11 12:07:06',1,'RESOLVED');
+INSERT INTO `COMMENT_REPORT` VALUES (1,12,'rjsgud','욕함','2026-03-05 10:30:59','RESOLVED'),(2,13,'admin','바보','2026-03-10 11:37:55','RESOLVED'),(3,26,'admin','바바보','2026-03-10 14:40:47','RESOLVED'),(4,25,'admin1','1234','2026-03-10 14:59:52','RESOLVED'),(5,12,'admin','신고','2026-03-10 15:09:25','RESOLVED'),(6,38,'admin','11','2026-03-10 16:04:59','RESOLVED'),(7,69,'admin','	\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.','2026-03-11 12:07:06','RESOLVED');
 /*!40000 ALTER TABLE `COMMENT_REPORT` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;

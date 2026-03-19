@@ -965,7 +965,7 @@ public class MemberController extends HttpServlet {
 		int pendingCount = 0;
 		int completedCount = 0;
 		for (CommentReportVO report : allReports) {
-			if (report.isProcessed()) {
+			if (report.isCompleted()) {
 				completedCount++;
 			} else {
 				pendingCount++;
