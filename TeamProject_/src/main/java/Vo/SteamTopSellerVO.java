@@ -3,7 +3,8 @@ package Vo;
 public class SteamTopSellerVO {
     private int rank;
     private Integer appId;
-    private String title;
+    private String title;         // 한글명
+    private String englishTitle;  // 영문명
     private String headerImage;
     private String storeUrl;
 
@@ -29,6 +30,14 @@ public class SteamTopSellerVO {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getEnglishTitle() {
+        return englishTitle;
+    }
+
+    public void setEnglishTitle(String englishTitle) {
+        this.englishTitle = englishTitle;
     }
 
     public String getHeaderImage() {
