@@ -10,6 +10,11 @@
     padding: 28px 20px 50px;
 }
 
+td:last-child, th:last-child {
+    white-space: nowrap;
+    min-width: 90px;
+}
+
 
 .board-panel {
     background: transparent;
