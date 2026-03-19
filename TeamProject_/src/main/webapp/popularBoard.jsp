@@ -4,6 +4,35 @@
 
 <style>
 
+.period-tabs {
+    display: flex;
+    gap: 10px;
+    margin: 18px 0 26px 0;
+}
+
+.period-tab {
+    display: inline-block;
+    padding: 9px 16px;
+    border-radius: 999px;
+    background: #eef3fb;
+    color: #1f4fa3;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid #d7e3f8;
+    transition: all 0.2s ease;
+}
+
+.period-tab:hover {
+    background: #dfeafb;
+}
+
+.period-tab.active {
+    background: #2b67d1;
+    color: #fff;
+    border-color: #2b67d1;
+}
+
 .section-icon {
     font-size: 22px;
     vertical-align: middle;
@@ -135,6 +164,17 @@
 <div class="popular-page">
     <div class="popular-title">인기 게시글</div>
     <div class="popular-desc">추천수, 조회수, 댓글수를 기준으로 인기 게시글을 확인할 수 있습니다.</div>
+    
+    <div class="period-tabs">
+    <a class="period-tab ${period == 'day' ? 'active' : ''}"
+       href="${pageContext.request.contextPath}/board/popular?period=day">일간</a>
+
+    <a class="period-tab ${period == 'week' ? 'active' : ''}"
+       href="${pageContext.request.contextPath}/board/popular?period=week">주간</a>
+
+    <a class="period-tab ${period == 'month' ? 'active' : ''}"
+       href="${pageContext.request.contextPath}/board/popular?period=month">월간</a>
+</div>
 
     <!-- 추천 TOP 5 -->
 	<div class="popular-section">

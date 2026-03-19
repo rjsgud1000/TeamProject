@@ -23,10 +23,26 @@ public class BoardPopularController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<BoardPostVO> likeTopList = boardDAO.selectHotPostsByLike();
-        List<BoardPostVO> viewTopList = boardDAO.selectHotPostsByView();
-        List<BoardPostVO> commentTopList = boardDAO.selectHotPostsByComment(5);
+        String period = request.getParameter("period");
+        if (period == null || period.trim().isEmpty()) {
+            period = "week"; // 기본값
+        }
 
+        int days = 7;
+        if ("day".equals(period)) {
+            days = 1;
+        } else if ("month".equals(period)) {
+            days = 30;
+        } else {
+            period = "week";
+            days = 7;
+        }
+
+        List<BoardPostVO> likeTopList = boardDAO.selectHotPostsByLike(days, 5);
+        List<BoardPostVO> viewTopList = boardDAO.selectHotPostsByView(days, 5);
+        List<BoardPostVO> commentTopList = boardDAO.selectHotPostsByComment(days, 5);
+
+        request.setAttribute("period", period);
         request.setAttribute("likeTopList", likeTopList);
         request.setAttribute("viewTopList", viewTopList);
         request.setAttribute("commentTopList", commentTopList);

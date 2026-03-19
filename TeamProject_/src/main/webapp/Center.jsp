@@ -304,25 +304,28 @@ const url = `${ctxPath}/api/playstore/top-grossing?limit=10&date=${date}`;
           ? ' style="background-image:url(\'' + escapeHtml(item.headerImage) + '\');"'
           : '';
 
-        sliderHtml += ''
-          + '<div class="featured-slide">'
-          + '  <a class="game-card trend-card trend-card--steam" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer"' + bgStyle + '>'
-          + '    <div class="rank-badge">'
-          + '      <span class="rank-circle">' + item.rank + '</span>'
-          + '      ' + item.rank + '위'
-          + '    </div>'
-          + '    <div class="game-card__content game-card__content--steam">'
-          + '      <div class="game-card__left">'
-          + '        <div class="game-name">' + title + '</div>'
-          + '        <div class="game-submeta">Steam Top Sellers · KR</div>'
-          + '      </div>'
-          + '      <div class="game-meta">'
-          + '        <span class="meta-dot"></span>'
-          + '        실시간 매출 순위'
-          + '      </div>'
-          + '    </div>'
-          + '  </a>'
-          + '</div>';
+          var title = item.title || '';
+          var englishTitle = item.englishTitle || item.originalTitle || 'Steam Top Sellers · KR';
+
+          sliderHtml += ''
+            + '<div class="featured-slide">'
+            + '  <a class="game-card trend-card trend-card--steam" href="' + storeUrl + '" target="_blank" rel="noopener noreferrer"' + bgStyle + '>'
+            + '    <div class="rank-badge">'
+            + '      <span class="rank-circle">' + item.rank + '</span>'
+            + '      ' + item.rank + '위'
+            + '    </div>'
+            + '    <div class="game-card__content game-card__content--steam">'
+            + '      <div class="game-card__left">'
+            + '        <div class="game-name">' + title + '</div>'
+            + '        <div class="game-submeta">' + englishTitle + '</div>'
+            + '      </div>'
+            + '      <div class="game-meta">'
+            + '        <span class="meta-dot"></span>'
+            + '        실시간 매출 순위'
+            + '      </div>'
+            + '    </div>'
+            + '  </a>'
+            + '</div>';
       });
 
       sliderHtml += '  </div>';

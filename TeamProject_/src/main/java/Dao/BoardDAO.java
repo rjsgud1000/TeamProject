@@ -961,7 +961,7 @@ public class BoardDAO {
     }
 
     // 22. 인기글 기준 top5 (추천수 기준)
-    public List<BoardPostVO> selectHotPostsByLike() {
+    public List<BoardPostVO> selectHotPostsByLike(int days, int limit) {
         List<BoardPostVO> list = new ArrayList<>();
 
         String sql =
@@ -969,124 +969,145 @@ public class BoardDAO {
                 "       bp.viewcount, bp.create_at, " +
                 "       COUNT(pl.post_id) AS like_count, " +
                 "       (SELECT COUNT(*) " +
-                "        FROM COMMENT c " +
-                "        WHERE c.post_id = bp.post_id " +
-                "          AND c.is_deleted = 0 " +
-                "          AND c.parent_comment_id IS NULL) AS comment_count " +
+                "          FROM COMMENT c " +
+                "         WHERE c.post_id = bp.post_id " +
+                "           AND c.is_deleted = 0 " +
+                "           AND c.parent_comment_id IS NULL) AS comment_count " +
                 "FROM BOARD_POST bp " +
                 "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
-                // 블라인드 처리되지 않은 게시글만 인기글 집계에 포함
                 "WHERE bp.category IN (1, 2, 3) " +
-                "  AND bp.is_deleted = 0 AND bp.is_blinded = 0 " +
+                "  AND bp.is_deleted = 0 " +
+                "  AND bp.is_blinded = 0 " +
+                "  AND bp.create_at >= DATE_SUB(NOW(), INTERVAL ? DAY) " +
                 "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
-                "ORDER BY like_count DESC, bp.post_id DESC " +
-                "LIMIT 5";
-
-        try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                BoardPostVO vo = new BoardPostVO();
-                vo.setPostId(rs.getInt("post_id"));
-                vo.setMemberId(rs.getString("member_id"));
-                vo.setNickname(rs.getString("nickname"));
-                vo.setCategory(rs.getInt("category"));
-                vo.setTitle(rs.getString("title"));
-                vo.setContent(rs.getString("content"));
-                vo.setViewcount(rs.getInt("viewcount"));
-                vo.setCreateAt(rs.getTimestamp("create_at"));
-                vo.setLikeCount(rs.getInt("like_count"));
-                vo.setCommentCount(rs.getInt("comment_count"));
-                list.add(vo);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    // 23. 조회수 기준 top5
-    public List<BoardPostVO> selectHotPostsByView() {
-        List<BoardPostVO> list = new ArrayList<>();
-
-        String sql =
-                "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
-                "       bp.viewcount, bp.create_at, " +
-                "       COUNT(pl.post_id) AS like_count, " +
-                "       (SELECT COUNT(*) " +
-                "        FROM COMMENT c " +
-                "        WHERE c.post_id = bp.post_id " +
-                "          AND c.is_deleted = 0 " +
-                "          AND c.parent_comment_id IS NULL) AS comment_count " +
-                "FROM BOARD_POST bp " +
-                "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
-                // 블라인드 처리되지 않은 게시글만 인기글 집계에 포함
-                "WHERE bp.category IN (1, 2, 3) " +
-                "  AND bp.is_deleted = 0 AND bp.is_blinded = 0 " +
-                "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
-                "ORDER BY bp.viewcount DESC, bp.post_id DESC " +
-                "LIMIT 5";
-
-        try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
-
-            while (rs.next()) {
-                BoardPostVO vo = new BoardPostVO();
-                vo.setPostId(rs.getInt("post_id"));
-                vo.setMemberId(rs.getString("member_id"));
-                vo.setNickname(rs.getString("nickname"));
-                vo.setCategory(rs.getInt("category"));
-                vo.setTitle(rs.getString("title"));
-                vo.setContent(rs.getString("content"));
-                vo.setViewcount(rs.getInt("viewcount"));
-                vo.setCreateAt(rs.getTimestamp("create_at"));
-                vo.setLikeCount(rs.getInt("like_count"));
-                vo.setCommentCount(rs.getInt("comment_count"));
-                list.add(vo);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
-    }
-
-    // 24. 인기게시글 top 조회수, 댓글, 추천
-    public List<BoardPostVO> selectHotPostsByComment(int limit) {
-        List<BoardPostVO> list = new ArrayList<>();
-
-        String sql =
-                "SELECT p.post_id, p.title, p.viewcount, " +
-                "       (SELECT COUNT(*) FROM POST_LIKE pl WHERE pl.post_id = p.post_id) AS likeCount, " +
-                "       (SELECT COUNT(*) FROM COMMENT c WHERE c.post_id = p.post_id AND c.is_deleted = 0) AS commentCount " +
-                "FROM BOARD_POST p " +
-                // 삭제되지 않았고 블라인드되지 않은 게시글만 댓글 인기글 집계에 포함
-                "WHERE p.is_deleted = 0 AND p.is_blinded = 0 " +
-                "ORDER BY commentCount DESC " +
+                "ORDER BY like_count DESC, bp.viewcount DESC, bp.post_id DESC " +
                 "LIMIT ?";
 
         try (Connection conn = DBCPUtil.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, limit);
+            pstmt.setInt(1, days);
+            pstmt.setInt(2, limit);
 
-            ResultSet rs = ps.executeQuery();
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    BoardPostVO vo = new BoardPostVO();
+                    vo.setPostId(rs.getInt("post_id"));
+                    vo.setMemberId(rs.getString("member_id"));
+                    vo.setNickname(rs.getString("nickname"));
+                    vo.setCategory(rs.getInt("category"));
+                    vo.setTitle(rs.getString("title"));
+                    vo.setContent(rs.getString("content"));
+                    vo.setViewcount(rs.getInt("viewcount"));
+                    vo.setCreateAt(rs.getTimestamp("create_at"));
+                    vo.setLikeCount(rs.getInt("like_count"));
+                    vo.setCommentCount(rs.getInt("comment_count"));
+                    list.add(vo);
+                }
+            }
 
-            while (rs.next()) {
-                BoardPostVO post = new BoardPostVO();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-                post.setPostId(rs.getInt("post_id"));
-                post.setTitle(rs.getString("title"));
-                post.setViewcount(rs.getInt("viewcount"));
-                post.setLikeCount(rs.getInt("likeCount"));
-                post.setCommentCount(rs.getInt("commentCount"));
+        return list;
+    }
 
-                list.add(post);
+    // 23. 조회수 기준 topN (기간별)
+    public List<BoardPostVO> selectHotPostsByView(int days, int limit) {
+        List<BoardPostVO> list = new ArrayList<>();
+
+        String sql =
+                "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+                "       bp.viewcount, bp.create_at, " +
+                "       COUNT(pl.post_id) AS like_count, " +
+                "       (SELECT COUNT(*) " +
+                "          FROM COMMENT c " +
+                "         WHERE c.post_id = bp.post_id " +
+                "           AND c.is_deleted = 0 " +
+                "           AND c.parent_comment_id IS NULL) AS comment_count " +
+                "FROM BOARD_POST bp " +
+                "LEFT JOIN POST_LIKE pl ON bp.post_id = pl.post_id " +
+                "WHERE bp.category IN (1, 2, 3) " +
+                "  AND bp.is_deleted = 0 " +
+                "  AND bp.is_blinded = 0 " +
+                "  AND bp.create_at >= DATE_SUB(NOW(), INTERVAL ? DAY) " +
+                "GROUP BY bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, bp.viewcount, bp.create_at " +
+                "ORDER BY bp.viewcount DESC, like_count DESC, bp.post_id DESC " +
+                "LIMIT ?";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, days);
+            pstmt.setInt(2, limit);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    BoardPostVO vo = new BoardPostVO();
+                    vo.setPostId(rs.getInt("post_id"));
+                    vo.setMemberId(rs.getString("member_id"));
+                    vo.setNickname(rs.getString("nickname"));
+                    vo.setCategory(rs.getInt("category"));
+                    vo.setTitle(rs.getString("title"));
+                    vo.setContent(rs.getString("content"));
+                    vo.setViewcount(rs.getInt("viewcount"));
+                    vo.setCreateAt(rs.getTimestamp("create_at"));
+                    vo.setLikeCount(rs.getInt("like_count"));
+                    vo.setCommentCount(rs.getInt("comment_count"));
+                    list.add(vo);
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    // 24. 댓글 기준 topN (기간별)
+    public List<BoardPostVO> selectHotPostsByComment(int days, int limit) {
+        List<BoardPostVO> list = new ArrayList<>();
+
+        String sql =
+                "SELECT bp.post_id, bp.member_id, bp.nickname, bp.category, bp.title, bp.content, " +
+                "       bp.viewcount, bp.create_at, " +
+                "       (SELECT COUNT(*) FROM POST_LIKE pl WHERE pl.post_id = bp.post_id) AS like_count, " +
+                "       (SELECT COUNT(*) " +
+                "          FROM COMMENT c " +
+                "         WHERE c.post_id = bp.post_id " +
+                "           AND c.is_deleted = 0 " +
+                "           AND c.parent_comment_id IS NULL) AS comment_count " +
+                "FROM BOARD_POST bp " +
+                "WHERE bp.category IN (1, 2, 3) " +
+                "  AND bp.is_deleted = 0 " +
+                "  AND bp.is_blinded = 0 " +
+                "  AND bp.create_at >= DATE_SUB(NOW(), INTERVAL ? DAY) " +
+                "ORDER BY comment_count DESC, bp.viewcount DESC, bp.post_id DESC " +
+                "LIMIT ?";
+
+        try (Connection conn = DBCPUtil.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, days);
+            pstmt.setInt(2, limit);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    BoardPostVO vo = new BoardPostVO();
+                    vo.setPostId(rs.getInt("post_id"));
+                    vo.setMemberId(rs.getString("member_id"));
+                    vo.setNickname(rs.getString("nickname"));
+                    vo.setCategory(rs.getInt("category"));
+                    vo.setTitle(rs.getString("title"));
+                    vo.setContent(rs.getString("content"));
+                    vo.setViewcount(rs.getInt("viewcount"));
+                    vo.setCreateAt(rs.getTimestamp("create_at"));
+                    vo.setLikeCount(rs.getInt("like_count"));
+                    vo.setCommentCount(rs.getInt("comment_count"));
+                    list.add(vo);
+                }
             }
 
         } catch (Exception e) {
