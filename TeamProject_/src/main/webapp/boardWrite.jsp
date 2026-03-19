@@ -38,6 +38,30 @@
                 </td>
             </tr>
 
+            <c:if test="${category == 3}">
+                <tr>
+                    <th style="padding:10px; border:1px solid #ddd; background:#f8f8f8;">모집 상태</th>
+                    <td style="padding:10px; border:1px solid #ddd;">
+                        <select name="recruitStatus" style="padding:8px;">
+                            <option value="1" selected>모집중</option>
+                            <option value="0">모집완료</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <th style="padding:10px; border:1px solid #ddd; background:#f8f8f8;">현재 인원</th>
+                    <td style="padding:10px; border:1px solid #ddd;">
+                        <input type="number" name="currentMembers" min="1" value="1" style="width:120px; padding:8px;" />
+                    </td>
+                </tr>
+                <tr>
+                    <th style="padding:10px; border:1px solid #ddd; background:#f8f8f8;">총 모집 인원</th>
+                    <td style="padding:10px; border:1px solid #ddd;">
+                        <input type="number" name="maxMembers" min="1" value="4" style="width:120px; padding:8px;" />
+                    </td>
+                </tr>
+            </c:if>
+
             <tr>
                 <th style="padding:10px; border:1px solid #ddd; background:#f8f8f8;">제목</th>
                 <td style="padding:10px; border:1px solid #ddd;">
