@@ -14,6 +14,11 @@ public class BoardDTO {
 
     private Integer acceptedCommentId;
 
+    // 파티 모집용
+    private Integer recruitStatus;   // 1: 모집중, 0: 모집완료
+    private Integer currentMembers;  // 현재 인원
+    private Integer maxMembers;      // 총 모집 인원
+
     public BoardDTO() {}
 
     public int getPostId() {
@@ -90,5 +95,33 @@ public class BoardDTO {
 
     public boolean isAnswerPost() {
         return acceptedCommentId != null;
+    }
+
+    public Integer getRecruitStatus() {
+        return recruitStatus;
+    }
+
+    public void setRecruitStatus(Integer recruitStatus) {
+        this.recruitStatus = recruitStatus;
+    }
+
+    public Integer getCurrentMembers() {
+        return currentMembers;
+    }
+
+    public void setCurrentMembers(Integer currentMembers) {
+        this.currentMembers = currentMembers;
+    }
+
+    public Integer getMaxMembers() {
+        return maxMembers;
+    }
+
+    public void setMaxMembers(Integer maxMembers) {
+        this.maxMembers = maxMembers;
+    }
+
+    public boolean isPartyPost() {
+        return "3".equals(category);
     }
 }

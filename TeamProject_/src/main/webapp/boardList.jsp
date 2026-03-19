@@ -349,71 +349,102 @@
 
         <table class="board-table">
             <thead>
-                <tr>
-                    <th style="width: 8%;">번호</th>
-                    <th style="width: 10%;">카테고리</th>
-                    <th class="title-col" style="width: 36%;">제목</th>
-                    <th style="width: 12%;">작성자</th>
-                    <th style="width: 10%;">조회수</th>
-                    <th style="width: 10%;">추천수</th>
-                    <th style="width: 14%;">작성일</th>
-                </tr>
+				<tr>
+				    <th style="width: 8%;">번호</th>
+				    <th style="width: 10%;">카테고리</th>
+				
+				    <c:if test="${category eq '3'}">
+				        <th style="width: 12%;">모집상태</th>
+				        <th style="width: 12%;">인원</th>
+				        <th class="title-col" style="width: 24%;">제목</th>
+				    </c:if>
+				    <c:if test="${category ne '3'}">
+				        <th class="title-col" style="width: 36%;">제목</th>
+				    </c:if>
+				
+				    <th style="width: 12%;">작성자</th>
+				    <th style="width: 10%;">조회수</th>
+				    <th style="width: 10%;">추천수</th>
+				    <th style="width: 14%;">작성일</th>
+				</tr>
             </thead>
             <tbody>
-			<c:forEach var="post" items="${boardList}">
-			    <tr class="${post.answerPost ? 'qna-answer-row' : ''}">
-			        <td>${post.postId}</td>
-			
-			        <td>
-			            <c:choose>
-			                <c:when test="${post.category == 0}">공지</c:when>
-			                <c:when test="${post.category == 1}">자유</c:when>
-			                <c:when test="${post.category == 2}">
-			                    <c:choose>
-			                        <c:when test="${post.answerPost}">답변</c:when>
-			                        <c:otherwise>질문</c:otherwise>
-			                    </c:choose>
-			                </c:when>
-			                <c:when test="${post.category == 3}">파티</c:when>
-			                <c:otherwise>기타</c:otherwise>
-			            </c:choose>
-			        </td>
-			
-					<td class="title-cell ${post.answerPost ? 'qna-answer-title' : ''}">
-					    <c:set var="isHot" value="${post.likeCount >= 5 || post.viewcount >= 100}" />
-					    <c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
-					
-					    <c:if test="${post.answerPost}">
-					        <span class="qna-answer-badge">답변</span>
-					    </c:if>
-					
-					    <a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}" class="board-title-link">
-					        ${post.title}
-					    </a>
-					
-					    <c:if test="${post.category != 0 && post.commentCount > 0}">
-					        <span class="comment-count">[${post.commentCount}]</span>
-					    </c:if>
-					
-					    <c:if test="${isHot}">
-					        <span class="badge-hot">HOT</span>
-					    </c:if>
-					
-					    <c:if test="${isNew}">
-					        <span class="badge-new">NEW</span>
-					    </c:if>
-					</td>
-			
-			        <td>${post.nickname}</td>
-			        <td>${post.viewcount}</td>
-			        <td>${post.likeCount}</td>
-			        <td><fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" /></td>
-			    </tr>
-			</c:forEach>
+				<c:forEach var="post" items="${boardList}">
+				    <tr class="${post.answerPost ? 'qna-answer-row' : ''}">
+				        <td>${post.postId}</td>
+				
+				        <td>
+				            <c:choose>
+				                <c:when test="${post.category == 0}">공지</c:when>
+				                <c:when test="${post.category == 1}">자유</c:when>
+				                <c:when test="${post.category == 2}">
+				                    <c:choose>
+				                        <c:when test="${post.answerPost}">답변</c:when>
+				                        <c:otherwise>질문</c:otherwise>
+				                    </c:choose>
+				                </c:when>
+				                <c:when test="${post.category == 3}">파티</c:when>
+				                <c:otherwise>기타</c:otherwise>
+				            </c:choose>
+				        </td>
+				
+				        <c:if test="${category eq '3'}">
+				            <td>
+				                <c:choose>
+				                    <c:when test="${post.recruitStatus == 1}">
+				                        <span style="color:#2563eb; font-weight:700;">모집중</span>
+				                    </c:when>
+				                    <c:when test="${post.recruitStatus == 0}">
+				                        <span style="color:#ef4444; font-weight:700;">모집완료</span>
+				                    </c:when>
+				                    <c:otherwise>-</c:otherwise>
+				                </c:choose>
+				            </td>
+				            <td>
+				                <c:choose>
+				                    <c:when test="${post.currentMembers != null && post.maxMembers != null}">
+				                        ${post.currentMembers} / ${post.maxMembers}
+				                    </c:when>
+				                    <c:otherwise>-</c:otherwise>
+				                </c:choose>
+				            </td>
+				        </c:if>
+				
+				        <td class="title-cell ${post.answerPost ? 'qna-answer-title' : ''}">
+				            <c:set var="isHot" value="${post.likeCount >= 5 || post.viewcount >= 100}" />
+				            <c:set var="isNew" value="${(now.time - post.createAt.time) < 86400000}" />
+				
+				            <c:if test="${post.answerPost}">
+				                <span class="qna-answer-badge">답변</span>
+				            </c:if>
+				
+				            <a href="${pageContext.request.contextPath}/board/detail?postId=${post.postId}&category=${category}&page=${currentPage}" class="board-title-link">
+				                ${post.title}
+				            </a>
+				
+				            <c:if test="${post.category != 0 && post.commentCount > 0}">
+				                <span class="comment-count">[${post.commentCount}]</span>
+				            </c:if>
+				
+				            <c:if test="${isHot}">
+				                <span class="badge-hot">HOT</span>
+				            </c:if>
+				
+				            <c:if test="${isNew}">
+				                <span class="badge-new">NEW</span>
+				            </c:if>
+				        </td>
+				
+				        <td>${post.nickname}</td>
+				        <td>${post.viewcount}</td>
+				        <td>${post.likeCount}</td>
+				        <td><fmt:formatDate value="${post.createAt}" pattern="yyyy-MM-dd" /></td>
+				    </tr>
+				</c:forEach>
 
                 <c:if test="${empty boardList}">
                     <tr>
-                        <td colspan="7" class="empty-row">게시글이 없습니다.</td>
+                        <td colspan="${category eq '3' ? 9 : 7}" class="empty-row">게시글이 없습니다.</td>
                     </tr>
                 </c:if>
             </tbody>

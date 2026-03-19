@@ -56,6 +56,32 @@
                 <fmt:formatDate value="${post.createdAt}" pattern="yyyy-MM-dd HH:mm:ss"/>
             </td>
         </tr>
+        
+        <c:if test="${post.category == '3' || post.category == 3}">
+			    <tr>
+			        <th>모집 상태</th>
+			        <td>
+			            <c:choose>
+			                <c:when test="${post.recruitStatus == 1}">
+			                    <span style="color:#2563eb; font-weight:700;">모집중</span>
+			                </c:when>
+			                <c:when test="${post.recruitStatus == 0}">
+			                    <span style="color:#ef4444; font-weight:700;">모집완료</span>
+			                </c:when>
+			                <c:otherwise>-</c:otherwise>
+			            </c:choose>
+			        </td>
+			        <th>인원</th>
+			        <td>
+			            <c:choose>
+			                <c:when test="${post.currentMembers != null && post.maxMembers != null}">
+			                    ${post.currentMembers} / ${post.maxMembers}
+			                </c:when>
+			                <c:otherwise>-</c:otherwise>
+			            </c:choose>
+			        </td>
+			    </tr>
+			</c:if>
         <tr>
             <th>내용</th>
             <td colspan="3" style="height:250px; vertical-align:top;">
@@ -101,6 +127,64 @@
 		</c:choose>
 
 	</div>
+	
+		<%-- 파티원 모집 글 작성자는 상태 수정 가능 --%>
+	
+			<c:if test="${post.category == '3' || post.category == 3}">
+			    <c:if test="${sessionScope.loginId eq post.memberId || sessionScope.loginId eq 'admin'}">
+			        <div style="margin-top: 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+			            <form action="${pageContext.request.contextPath}/board/party/toggle" method="post" style="display:inline;">
+			                <input type="hidden" name="postId" value="${post.postId}">
+			                <input type="hidden" name="category" value="${category}">
+			                <input type="hidden" name="page" value="${page}">
+			                <button type="submit">
+			                    <c:choose>
+			                        <c:when test="${post.recruitStatus == 1}">모집완료로 변경</c:when>
+			                        <c:otherwise>모집중으로 변경</c:otherwise>
+			                    </c:choose>
+			                </button>
+			            </form>
+			        </div>
+			
+			        <div style="margin-top:12px; padding:16px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">
+			            <form action="${pageContext.request.contextPath}/board/party/update" method="post"
+			                  style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+			
+			                <input type="hidden" name="postId" value="${post.postId}">
+			                <input type="hidden" name="category" value="${category}">
+			                <input type="hidden" name="page" value="${page}">
+			
+			                <label style="display:flex; align-items:center; gap:8px;">
+			                    <span style="font-weight:600;">현재 인원</span>
+			                    <input type="number"
+			                           name="currentMembers"
+			                           min="1"
+			                           value="${post.currentMembers != null ? post.currentMembers : 1}"
+			                           style="width:90px; padding:6px 8px;">
+			                </label>
+			
+			                <label style="display:flex; align-items:center; gap:8px;">
+			                    <span style="font-weight:600;">총 모집 인원</span>
+			                    <input type="number"
+			                           name="maxMembers"
+			                           min="1"
+			                           value="${post.maxMembers != null ? post.maxMembers : 4}"
+			                           style="width:90px; padding:6px 8px;">
+			                </label>
+			
+			                <button type="submit"
+			                        style="padding:8px 14px; border:none; border-radius:6px; background:#2d6cdf; color:#fff; cursor:pointer;">
+			                    인원 수정
+			                </button>
+			            </form>
+			
+			            <div style="margin-top:8px; font-size:13px; color:#666;">
+			                현재 인원이 총 모집 인원과 같아지면 자동으로 모집완료로 변경됩니다.
+			            </div>
+			        </div>
+			    </c:if>
+			</c:if>
+	
 	<%-- 질문글에 답변글 작성기능 --%>
 			<c:if test="${post.category == '2' || post.category == 2}">
 		    <c:if test="${post.acceptedCommentId == null}">
