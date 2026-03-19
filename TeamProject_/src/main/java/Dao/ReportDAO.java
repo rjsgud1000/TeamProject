@@ -1,7 +1,6 @@
 package Dao;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
@@ -19,46 +18,34 @@ public class ReportDAO {
 	public List<CommentReportVO> findCommentReports(String filter) {
 		List<CommentReportVO> reports = new ArrayList<>();
 		String normalizedFilter = normalizeFilter(filter);
-		try (Connection con = DBCPUtil.getConnection()) {
-			boolean hasStatusColumn = hasStatusColumn(con);
-			StringBuilder sql = new StringBuilder(
-					"SELECT cr.report_id, cr.comment_id, c.post_id, cr.member_id AS report_member_id, "
-					+ "c.member_id AS target_member_id, cr.reason, c.content AS comment_content, bp.title AS post_title, cr.created_at, cr.is_processed");
-			if (hasStatusColumn) {
-				sql.append(", cr.status AS status ");
-			} else {
-				sql.append(", CASE WHEN cr.is_processed = 1 THEN 'RESOLVED' ELSE 'PENDING' END AS status ");
-			}
-			sql.append("FROM COMMENT_REPORT cr ")
-			   .append("JOIN COMMENT c ON cr.comment_id = c.comment_id ")
-			   .append("JOIN BOARD_POST bp ON c.post_id = bp.post_id ");
-			if ("PENDING".equals(normalizedFilter)) {
-				sql.append("WHERE cr.is_processed = 0 ");
-			} else if ("COMPLETED".equals(normalizedFilter)) {
-				sql.append("WHERE cr.is_processed = 1 ");
-			}
-			sql.append("ORDER BY cr.created_at DESC, cr.report_id DESC");
+		StringBuilder sql = new StringBuilder(
+				"SELECT cr.report_id, cr.comment_id, c.post_id, cr.member_id AS report_member_id, "
+				+ "c.member_id AS target_member_id, cr.reason, c.content AS comment_content, bp.title AS post_title, cr.created_at, cr.status "
+				+ "FROM COMMENT_REPORT cr "
+				+ "JOIN COMMENT c ON cr.comment_id = c.comment_id "
+				+ "JOIN BOARD_POST bp ON c.post_id = bp.post_id ");
+		appendFilterCondition(sql, normalizedFilter);
+		sql.append("ORDER BY cr.created_at DESC, cr.report_id DESC");
 
-			try (PreparedStatement pstmt = con.prepareStatement(sql.toString());
-				 ResultSet rs = pstmt.executeQuery()) {
-				while (rs.next()) {
-					CommentReportVO vo = new CommentReportVO();
-					vo.setReportId(rs.getInt("report_id"));
-					vo.setCommentId(rs.getInt("comment_id"));
-					vo.setPostId(rs.getInt("post_id"));
-					vo.setReportMemberId(rs.getString("report_member_id"));
-					vo.setTargetMemberId(rs.getString("target_member_id"));
-					vo.setReason(rs.getString("reason"));
-					vo.setCommentContent(rs.getString("comment_content"));
-					vo.setPostTitle(rs.getString("post_title"));
-					vo.setProcessed(rs.getBoolean("is_processed"));
-					vo.setStatus(normalizeStatus(rs.getString("status"), rs.getBoolean("is_processed")));
-					Timestamp ts = rs.getTimestamp("created_at");
-					if (ts != null) {
-						vo.setCreatedAt(ts.toLocalDateTime());
-					}
-					reports.add(vo);
+		try (Connection con = DBCPUtil.getConnection();
+			 PreparedStatement pstmt = con.prepareStatement(sql.toString());
+			 ResultSet rs = pstmt.executeQuery()) {
+			while (rs.next()) {
+				CommentReportVO vo = new CommentReportVO();
+				vo.setReportId(rs.getInt("report_id"));
+				vo.setCommentId(rs.getInt("comment_id"));
+				vo.setPostId(rs.getInt("post_id"));
+				vo.setReportMemberId(rs.getString("report_member_id"));
+				vo.setTargetMemberId(rs.getString("target_member_id"));
+				vo.setReason(rs.getString("reason"));
+				vo.setCommentContent(rs.getString("comment_content"));
+				vo.setPostTitle(rs.getString("post_title"));
+				vo.setStatus(normalizeStatus(rs.getString("status")));
+				Timestamp ts = rs.getTimestamp("created_at");
+				if (ts != null) {
+					vo.setCreatedAt(ts.toLocalDateTime());
 				}
+				reports.add(vo);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -72,17 +59,12 @@ public class ReportDAO {
 			return 0;
 		}
 
-		String selectSql = "SELECT comment_id FROM COMMENT_REPORT WHERE report_id=? AND is_processed=0";
+		String selectSql = "SELECT comment_id FROM COMMENT_REPORT WHERE report_id=? AND status='PENDING'";
 		String blindSql = "UPDATE COMMENT SET is_deleted=1, updated_at=NOW() WHERE comment_id=? AND is_deleted=0";
+		String reportSql = "UPDATE COMMENT_REPORT SET status=? WHERE report_id=? AND status='PENDING'";
+		String nextStatus = "BLIND".equals(normalizedAction) ? "RESOLVED" : "REJECTED";
 
 		try (Connection con = DBCPUtil.getConnection()) {
-			boolean hasStatusColumn = hasStatusColumn(con);
-			String reportSql = hasStatusColumn
-					? "UPDATE COMMENT_REPORT SET is_processed=1, status=? WHERE report_id=? AND is_processed=0"
-					: "UPDATE COMMENT_REPORT SET is_processed=1 WHERE report_id=? AND is_processed=0";
-			String rejectedStatus = "REJECTED";
-			String resolvedStatus = "RESOLVED";
-
 			con.setAutoCommit(false);
 			try (
 				PreparedStatement selectPstmt = con.prepareStatement(selectSql);
@@ -105,12 +87,8 @@ public class ReportDAO {
 					blindPstmt.executeUpdate();
 				}
 
-				if (hasStatusColumn) {
-					reportPstmt.setString(1, "BLIND".equals(normalizedAction) ? resolvedStatus : rejectedStatus);
-					reportPstmt.setInt(2, reportId);
-				} else {
-					reportPstmt.setInt(1, reportId);
-				}
+				reportPstmt.setString(1, nextStatus);
+				reportPstmt.setInt(2, reportId);
 
 				int updated = reportPstmt.executeUpdate();
 				if (updated == 1) {
@@ -131,20 +109,11 @@ public class ReportDAO {
 		}
 	}
 
-	private boolean hasStatusColumn(Connection con) {
-		try {
-			DatabaseMetaData metaData = con.getMetaData();
-			try (ResultSet rs = metaData.getColumns(con.getCatalog(), null, "COMMENT_REPORT", "status")) {
-				if (rs.next()) {
-					return true;
-				}
-			}
-			try (ResultSet rs = metaData.getColumns(con.getCatalog(), null, "COMMENT_REPORT", "STATUS")) {
-				return rs.next();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
+	private void appendFilterCondition(StringBuilder sql, String filter) {
+		if ("PENDING".equals(filter)) {
+			sql.append("WHERE cr.status = 'PENDING' ");
+		} else if ("COMPLETED".equals(filter)) {
+			sql.append("WHERE cr.status IN ('RESOLVED', 'REJECTED') ");
 		}
 	}
 
@@ -170,14 +139,14 @@ public class ReportDAO {
 		return null;
 	}
 
-	private String normalizeStatus(String status, boolean processed) {
+	private String normalizeStatus(String status) {
 		if (status == null || status.trim().isEmpty()) {
-			return processed ? "RESOLVED" : "PENDING";
+			return "PENDING";
 		}
 		String normalized = status.trim().toUpperCase();
 		if ("REJECTED".equals(normalized) || "RESOLVED".equals(normalized) || "PENDING".equals(normalized)) {
 			return normalized;
 		}
-		return processed ? "RESOLVED" : "PENDING";
+		return "PENDING";
 	}
 }

@@ -378,7 +378,7 @@
 									<c:choose>
 										<c:when test="${report.status eq 'REJECTED'}"><span class="badge badge--danger">반려</span></c:when>
 										<c:when test="${report.status eq 'RESOLVED'}"><span class="badge badge--done">처리완료</span></c:when>
-										<c:otherwise><span class="badge badge--pending">처리안됨</span></c:otherwise>
+										<c:otherwise><span class="badge badge--pending">처리대기</span></c:otherwise>
 									</c:choose>
 								</td>
 								<td class="report-table__action-cell" data-label="처리">
