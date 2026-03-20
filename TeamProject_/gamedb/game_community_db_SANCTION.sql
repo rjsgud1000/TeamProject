@@ -45,7 +45,7 @@ CREATE TABLE `SANCTION` (
   KEY `admin_member_id` (`admin_member_id`),
   CONSTRAINT `SANCTION_ibfk_1` FOREIGN KEY (`target_member_id`) REFERENCES `MEMBER` (`member_id`),
   CONSTRAINT `SANCTION_ibfk_2` FOREIGN KEY (`admin_member_id`) REFERENCES `MEMBER` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -54,7 +54,7 @@ CREATE TABLE `SANCTION` (
 
 LOCK TABLES `SANCTION` WRITE;
 /*!40000 ALTER TABLE `SANCTION` DISABLE KEYS */;
-INSERT INTO `SANCTION` VALUES (1,'banned','admin','BAN','규정 위반','2026-03-06 00:00:00','2026-03-10 05:42:57','2026-03-06 04:58:02','END'),(2,'banned','admin','BAN','욕함','2026-03-10 14:43:44','2026-04-09 14:43:44','2026-03-10 05:43:44','BANNED'),(3,'rjsgud','admin','WARN','규정위반','2026-03-10 14:44:39','2026-04-09 14:44:39','2026-03-10 05:44:39','END'),(5,'rjsgud','admin','WARN','경고','2026-03-10 15:26:26','2026-03-10 15:26:26','2026-03-10 06:26:26','END'),(6,'rjsgud','admin','BAN','1234','2026-03-10 15:27:04','2026-03-10 06:27:12','2026-03-10 06:27:04','END'),(7,'rjsgud','admin','BAN','1234','2026-03-10 15:27:35','2026-03-10 06:27:45','2026-03-10 06:27:35','END'),(8,'rjsgud','admin','BAN','1234','2026-03-10 15:28:34','2026-03-10 07:11:57','2026-03-10 06:28:34','END'),(9,'rjsgud','admin','BAN','맘에안듬','2026-03-10 16:12:30','2026-03-10 07:49:17','2026-03-10 07:12:29','END'),(10,'rjsgud','admin','BAN','그냥 마음에 안듦','2026-03-11 17:27:52','2026-03-13 05:19:57','2026-03-11 08:27:51','END'),(11,'rjsgud','admin','BAN','11','2026-03-13 14:20:34','2026-03-13 05:20:50','2026-03-13 05:20:34','END'),(12,'rjsgud','admin','BAN','1','2026-03-13 14:29:45','2026-03-13 14:29:49','2026-03-13 14:29:44','END'),(13,'test1','admin','WARN','1','2026-03-13 15:57:22','2026-03-13 15:57:22','2026-03-13 15:57:21','WARNING'),(14,'rjsgud','admin','WARN','1','2026-03-13 15:57:36','2026-03-13 15:57:36','2026-03-13 15:57:36','END'),(15,'rjsgud','admin','WARN','dddd','2026-03-13 17:38:20','2026-03-13 17:38:20','2026-03-13 17:38:20','END');
+INSERT INTO `SANCTION` VALUES (1,'banned','admin','BAN','규정 위반','2026-03-06 00:00:00','2026-03-10 05:42:57','2026-03-06 04:58:02','END'),(2,'banned','admin','BAN','욕함','2026-03-10 14:43:44','2026-04-09 14:43:44','2026-03-10 05:43:44','BANNED'),(3,'rjsgud','admin','WARN','규정위반','2026-03-10 14:44:39','2026-04-09 14:44:39','2026-03-10 05:44:39','END'),(5,'rjsgud','admin','WARN','경고','2026-03-10 15:26:26','2026-03-10 15:26:26','2026-03-10 06:26:26','END'),(6,'rjsgud','admin','BAN','1234','2026-03-10 15:27:04','2026-03-10 06:27:12','2026-03-10 06:27:04','END'),(7,'rjsgud','admin','BAN','1234','2026-03-10 15:27:35','2026-03-10 06:27:45','2026-03-10 06:27:35','END'),(8,'rjsgud','admin','BAN','1234','2026-03-10 15:28:34','2026-03-10 07:11:57','2026-03-10 06:28:34','END'),(9,'rjsgud','admin','BAN','맘에안듬','2026-03-10 16:12:30','2026-03-10 07:49:17','2026-03-10 07:12:29','END'),(10,'rjsgud','admin','BAN','그냥 마음에 안듦','2026-03-11 17:27:52','2026-03-13 05:19:57','2026-03-11 08:27:51','END'),(11,'rjsgud','admin','BAN','11','2026-03-13 14:20:34','2026-03-13 05:20:50','2026-03-13 05:20:34','END'),(12,'rjsgud','admin','BAN','1','2026-03-13 14:29:45','2026-03-13 14:29:49','2026-03-13 14:29:44','END'),(13,'test1','admin','WARN','1','2026-03-13 15:57:22','2026-03-13 15:57:22','2026-03-13 15:57:21','WARNING'),(14,'rjsgud','admin','WARN','1','2026-03-13 15:57:36','2026-03-13 15:57:36','2026-03-13 15:57:36','END'),(15,'rjsgud','admin','WARN','dddd','2026-03-13 17:38:20','2026-03-13 17:38:20','2026-03-13 17:38:20','END'),(17,'bb','admin','BAN','ㅇㅁㄴ','2026-03-19 18:56:00','2026-03-28 20:55:00','2026-03-19 18:56:00','BANNED');
 /*!40000 ALTER TABLE `SANCTION` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -68,4 +68,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-16 17:38:23
+-- Dump completed on 2026-03-20 14:00:56
