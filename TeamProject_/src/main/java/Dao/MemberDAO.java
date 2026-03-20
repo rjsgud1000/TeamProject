@@ -672,18 +672,42 @@ public class MemberDAO {
 		return 0;
 	}
 
+	// 기본 활성 관리자 아이디 조회 메소드
+	public String findDefaultAdminMemberId() {
+		String sql = "SELECT member_id FROM MEMBER WHERE role='ADMIN' AND status='ACTIVE' ORDER BY CASE WHEN member_id='admin' THEN 0 ELSE 1 END, member_id ASC LIMIT 1";
+		try (Connection con = DBCPUtil.getConnection();
+				 PreparedStatement pstmt = con.prepareStatement(sql);
+				 ResultSet rs = pstmt.executeQuery()) {
+			if (rs.next()) {
+				return trimToNull(rs.getString("member_id"));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 	// 회원 제재 추가 (SANCTION 테이블 연계)
 	public int insertSanction(String targetId, String adminId, String type, String reason, int durationMinutes) {
-		// 프로젝트 내 다른 제재 INSERT와 컬럼명을 통일(admin_member_id)
-		String sql = "INSERT INTO SANCTION (target_member_id, admin_member_id, TYPE, REASON, start_at, end_at, member_status) " +
+		String adminMemberId = trimToNull(adminId);
+		String sql;
+		if (adminMemberId == null) {
+			sql = "INSERT INTO SANCTION (target_member_id, admin_member_id, TYPE, REASON, start_at, end_at, member_status) " +
+					 "VALUES (?, NULL, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MINUTE), 'BANNED')";
+		} else {
+			sql = "INSERT INTO SANCTION (target_member_id, admin_member_id, TYPE, REASON, start_at, end_at, member_status) " +
 					 "VALUES (?, ?, ?, ?, NOW(), DATE_ADD(NOW(), INTERVAL ? MINUTE), 'BANNED')";
+		}
 		try (Connection con = DBCPUtil.getConnection();
 				 PreparedStatement pstmt = con.prepareStatement(sql)) {
-			pstmt.setString(1, targetId);
-			pstmt.setString(2, adminId);
-			pstmt.setString(3, type);
-			pstmt.setString(4, reason);
-			pstmt.setInt(5, durationMinutes);
+			int i = 1;
+			pstmt.setString(i++, targetId);
+			if (adminMemberId != null) {
+				pstmt.setString(i++, adminMemberId);
+			}
+			pstmt.setString(i++, type);
+			pstmt.setString(i++, reason);
+			pstmt.setInt(i++, durationMinutes);
 			return pstmt.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -802,3 +826,5 @@ public class MemberDAO {
 		return vo;
 	}
 }
+
+

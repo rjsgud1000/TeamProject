@@ -132,9 +132,16 @@ public class MemberService {
 					// 5회 실패 시 10분 차단 (SANCTION 연계)
 					final int lockMinutes = 10;
 					final String sanctionReason = "비밀번호 5번 연속 틀림";
+					String autoAdminMemberId = memberDAO.findDefaultAdminMemberId();
+					if (autoAdminMemberId == null) {
+						return new LoginResult(null, "자동 제재를 처리할 관리자 계정을 찾을 수 없습니다. 관리자에게 문의해 주세요.", null);
+					}
 
-					memberDAO.insertSanction(member.getMemberId(), "SYSTEM", "BAN", sanctionReason, lockMinutes);
-					memberDAO.updateMemberStatus(member.getMemberId(), "BANNED");
+					int sanctionInserted = memberDAO.insertSanction(member.getMemberId(), autoAdminMemberId, "BAN", sanctionReason, lockMinutes);
+					int statusUpdated = memberDAO.updateMemberStatus(member.getMemberId(), "BANNED");
+					if (sanctionInserted < 1 || statusUpdated < 1) {
+						return new LoginResult(null, "로그인 실패 누적 제재 처리에 실패했습니다. 관리자에게 문의해 주세요.", null);
+					}
 
 					// 제재 종료 시각을 함께 안내
 					MemberDAO.SanctionInfo info = memberDAO.findLatestBannedSanction(id);
@@ -288,8 +295,8 @@ public class MemberService {
 
 		String password = trimToNull(newPassword);
 		if (password != null) {
-			if (password.length() < 4) {
-				return "새 비밀번호는 4자 이상 입력해 주세요.";
+			if (!password.matches("^(?=.*[A-Za-z])(?=.*\\d).{6,}$")) {
+				return "새 비밀번호는 영문과 숫자를 포함해 6자 이상 입력해 주세요.";
 			}
 			int pwUpdated = memberDAO.updatePasswordHash(memberId, PasswordUtil.hash(password));
 			if (pwUpdated != 1) {

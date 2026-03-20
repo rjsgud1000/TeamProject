@@ -64,8 +64,8 @@
 					<div>
 						<div class="field">
 							<label class="label" for="newPassword">새 비밀번호</label>
-							<input type="password" id="newPassword" name="newPassword" placeholder="변경할 때만 입력하세요">
-							<div class="help-hint">입력한 경우에만 비밀번호가 변경됩니다. 4자 이상 입력해 주세요.</div>
+							<input type="password" id="newPassword" name="newPassword" placeholder="변경할 때만 입력하세요" minlength="6" autocomplete="new-password">
+							<div class="help-hint">입력한 경우에만 비밀번호가 변경됩니다. 영문과 숫자를 포함해 6자 이상 입력해 주세요.</div>
 						</div>
 					</div>
 				</div>
@@ -174,6 +174,7 @@
 	}
 
 	(function() {
+		var PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 		var contextPath = '${contextPath}';
 		var originalNickname = '${member.nickname}';
 		var originalEmail = '${member.email}';
@@ -235,6 +236,10 @@
 
 		function isValidPhone(phone) {
 			return !phone || /^\d{10,11}$/.test(phone);
+		}
+
+		function isValidPassword(password) {
+			return !password || PASSWORD_REGEX.test(password);
 		}
 
 		function resetEmailVerificationState(silent) {
@@ -417,6 +422,7 @@
 				var email = trimmedEmail();
 				var phone = document.getElementById('phone');
 				var newPassword = document.getElementById('newPassword');
+				var newPasswordValue = newPassword ? newPassword.value.trim() : '';
 
 				if (!nick) {
 					alert('닉네임을 입력해 주세요.');
@@ -448,8 +454,8 @@
 					e.preventDefault();
 					return;
 				}
-				if (newPassword && newPassword.value.trim() !== '' && newPassword.value.trim().length < 4) {
-					alert('새 비밀번호는 4자 이상 입력해 주세요.');
+				if (newPasswordValue !== '' && !isValidPassword(newPasswordValue)) {
+					alert('새 비밀번호는 영문과 숫자를 포함해 6자 이상 입력해 주세요.');
 					newPassword.focus();
 					e.preventDefault();
 				}
