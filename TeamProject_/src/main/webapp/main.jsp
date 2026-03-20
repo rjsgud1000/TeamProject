@@ -24,7 +24,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>G-UNIVERSE - 홈</title>
 
-  <style>
+<style>
   .chart-popup__more-wrap{
   display:flex;
   justify-content:center;
@@ -1357,6 +1357,587 @@
         font-size:18px;
       }
     }
+    
+/* ===== 게시판 상세 페이지 전용 ===== */
+.board-detail-page .detail-container {
+    max-width: 900px;
+    margin: 30px auto 60px;
+    padding: 0 20px;
+}
+
+.board-detail-page .detail-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.board-detail-page .detail-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.board-detail-page .detail-table th {
+    width: 140px;
+    background: #eef4ff;
+    color: #334155;
+    font-weight: 700;
+    text-align: center;
+    padding: 14px 12px;
+    border-bottom: 1px solid #dbe4f0;
+}
+
+.board-detail-page .detail-table td {
+    background: #ffffff;
+    color: #222;
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf1f5;
+}
+
+.board-detail-page .detail-table .content-th {
+    vertical-align: middle;
+}
+
+.board-detail-page .detail-content-cell {
+    height: 250px;
+    vertical-align: top;
+    background: #fcfdff;
+}
+
+.board-detail-page .detail-content {
+    min-height: 220px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    margin: 0;
+    font-family: inherit;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.board-detail-page .detail-title-text {
+    font-size: 20px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.board-detail-page .detail-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 12px 0 24px;
+}
+
+.board-detail-page .detail-left-actions,
+.board-detail-page .detail-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.board-detail-page .action-btn,
+.board-detail-page .small-btn {
+    border: none;
+    background: #f1f5f9;
+    color: #334155;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.board-detail-page .action-btn {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 14px;
+}
+
+.board-detail-page .small-btn {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.board-detail-page .primary-btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+}
+
+.board-detail-page .danger-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.board-detail-page .pill-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.board-detail-page .select-box {
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: white;
+}
+
+.board-detail-page .comment-section {
+    max-width: 900px;
+    margin: 40px auto 0;
+}
+
+.board-detail-page .comment-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: #111827;
+    margin-bottom: 16px;
+}
+
+.board-detail-page .comment-list {
+    background: #f8fafc;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.board-detail-page .comment-item {
+    padding: 18px 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+.board-detail-page .comment-item:last-child {
+    border-bottom: none;
+}
+
+.board-detail-page .comment-reply {
+    margin-left: 36px;
+    background: #f9fbff;
+    border-left: 3px solid #bfdbfe;
+}
+
+.board-detail-page .comment-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.board-detail-page .comment-writer {
+    font-weight: 700;
+    color: #111827;
+}
+
+.board-detail-page .comment-date {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.board-detail-page .comment-content {
+    font-size: 15px;
+    color: #222;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.board-detail-page .comment-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.board-detail-page .comment-inline-form {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.board-detail-page .comment-form-box {
+    margin-top: 10px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+}
+
+.board-detail-page .comment-textarea {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 12px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.board-detail-page .comment-submit-wrap {
+    margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.board-detail-page .comment-pagination {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.board-detail-page .comment-pagination a,
+.board-detail-page .comment-pagination span {
+    display: inline-block;
+    margin: 0 4px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.board-detail-page .comment-pagination a {
+    color: #334155;
+}
+
+.board-detail-page .comment-pagination a:hover {
+    background: #eef4ff;
+    color: #2563eb;
+}
+
+.board-detail-page .comment-pagination .current {
+    background: #2563eb;
+    color: white;
+}
+
+.board-detail-page .comment-write-box {
+    margin-top: 20px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    padding: 18px;
+}
+
+@media (max-width: 768px) {
+    .board-detail-page .detail-container {
+        padding: 0 12px;
+    }
+
+    .board-detail-page .detail-table th,
+    .board-detail-page .detail-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .board-detail-page .detail-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .board-detail-page .comment-reply {
+        margin-left: 18px;
+    }
+}
+
+.board-detail-page .secondary-btn {
+    background: #334155;
+    color: #fff;
+}
+
+.board-detail-page .party-manage-wrap {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.board-detail-page .party-toggle-form {
+    display: inline-flex;
+}
+
+.board-detail-page .party-update-box {
+    margin-top: 12px;
+    padding: 16px;
+    border: 1px solid #dbe4f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.board-detail-page .party-update-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.board-detail-page .party-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.board-detail-page .party-number-input {
+    width: 90px;
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 14px;
+    color: #0f172a;
+    box-sizing: border-box;
+}
+
+.board-detail-page .party-update-help {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ===== 게시글 작성 / 수정 공통 ===== */
+.board-form-page .form-container {
+    max-width: 920px;
+    margin: 28px auto 64px;
+    padding: 0 20px;
+}
+
+.board-form-page .form-title {
+    font-size: 36px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0 0 16px;
+    letter-spacing: -0.5px;
+}
+
+.board-form-page .form-error {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.board-form-page .form-card {
+    background: #f8fafc;
+    border-radius: 20px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.65);
+}
+
+.board-form-page .form-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.board-form-page .form-table th {
+    width: 130px;
+    background: #f1f5ff;
+    color: #334155;
+    font-weight: 700;
+    text-align: center;
+    padding: 18px 14px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.board-form-page .form-table td {
+    background: #ffffff;
+    color: #222;
+    padding: 18px 18px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.board-form-page .form-table tr:last-child th,
+.board-form-page .form-table tr:last-child td {
+    border-bottom: none;
+}
+
+.board-form-page .form-input,
+.board-form-page .form-select,
+.board-form-page .form-textarea,
+.board-form-page .form-number {
+    width: 100%;
+    border: 1px solid #d7e0ec;
+    border-radius: 14px;
+    background: #fff;
+    font-size: 14px;
+    color: #0f172a;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.board-form-page .form-input,
+.board-form-page .form-select,
+.board-form-page .form-number {
+    height: 44px;
+    padding: 0 14px;
+}
+
+.board-form-page .form-textarea {
+    min-height: 280px;
+    padding: 14px;
+    resize: vertical;
+    line-height: 1.75;
+    font-family: inherit;
+}
+
+.board-form-page .form-input:focus,
+.board-form-page .form-select:focus,
+.board-form-page .form-textarea:focus,
+.board-form-page .form-number:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.16);
+    background: #ffffff;
+}
+
+.board-form-page .form-actions {
+    max-width: 920px;
+    margin: 18px auto 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.board-form-page .form-inline-fields {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.board-form-page .form-inline-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #334155;
+    font-weight: 600;
+}
+
+.board-form-page .form-inline-field .form-number {
+    width: 120px;
+}
+
+.board-form-page .form-help {
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .board-form-page .form-container {
+        padding: 0 12px;
+    }
+
+    .board-form-page .form-title {
+        font-size: 30px;
+    }
+
+    .board-form-page .form-table th,
+    .board-form-page .form-table td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .board-form-page .form-actions {
+        justify-content: stretch;
+    }
+
+    .board-form-page .form-actions .action-btn {
+        width: 100%;
+    }
+}
+
+/* ===== 폼 버튼 개선 ===== */
+.board-form-page .form-actions .action-btn {
+    height: 44px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 92px;
+}
+
+.board-form-page .form-actions .btn-cancel {
+    background: #64748b;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(100, 116, 139, 0.22);
+}
+
+.board-form-page .form-actions .btn-cancel:hover {
+    background: #475569;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(71, 85, 105, 0.28);
+}
+
+.board-form-page .form-actions .btn-submit {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.30);
+}
+
+.board-form-page .form-actions .btn-submit:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.38);
+}
+
+/* 취소 버튼 */
+.board-form-page .form-actions .btn-cancel {
+    background: #64748b;
+    color: #fff;
+}
+
+.board-form-page .form-actions .btn-cancel:hover {
+    background: #475569;
+    transform: translateY(-1px);
+}
+
+/* 등록 / 수정 버튼 */
+.board-form-page .form-actions .btn-submit {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+}
+
+.board-form-page .form-actions .btn-submit:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4);
+}
 
   </style>
 </head>
