@@ -68,12 +68,21 @@ public class BoardDetailController extends HttpServlet {
 
         // [추가] 댓글 페이지당 부모댓글 5개
         int commentPageSize = 5;
-        int commentStart = (commentPage - 1) * commentPageSize;
 
         // [추가] 부모댓글 총 개수 / 총 페이지 수 계산
         int parentCommentCount = commentDAO.getParentCommentCountByPostId(postId);
-        int commentTotalPages = (int) Math.ceil((double) parentCommentCount / commentPageSize);
-
+        int commentTotalPages = Math.max(1, (int) Math.ceil((double) parentCommentCount / commentPageSize));
+        
+        if (commentPage < 1) {
+            commentPage = 1;
+        }
+        if (commentPage > commentTotalPages) {
+            commentPage = commentTotalPages;
+        }
+        
+        // 시작 row 계산
+        int commentStart = (commentPage - 1) * commentPageSize;
+        
         List<CommentDTO> comments;
         try {
             // [수정] 전체 조회 -> 페이징 조회로 변경
@@ -261,9 +270,15 @@ public class BoardDetailController extends HttpServlet {
 
             case "report":
                 if (commentId > 0) {
-                    String reason = request.getParameter("reason");
-                    if (reason != null && !reason.isBlank()) {
-                        commentDAO.reportComment(commentId, loginMember.getMemberId(), reason);
+                    CommentDTO target = commentDAO.getCommentById(commentId);
+                    if (target != null) {
+                        boolean isAuthor = target.getMemberId().equals(loginMember.getMemberId());
+                        if (!isAuthor) {
+                            String reason = request.getParameter("reason");
+                            if (reason != null && !reason.isBlank()) {
+                                commentDAO.reportComment(commentId, loginMember.getMemberId(), reason.trim());
+                            }
+                        }
                     }
                 }
                 break;

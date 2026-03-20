@@ -251,8 +251,36 @@ td:last-child, th:last-child {
     font-size: 14px;
 }
 
+.board-pagination {
+    text-align: center;
+    margin-top: 12px;
+}
+
+.board-pagination a,
+.board-pagination strong {
+    display: inline-block;
+    min-width: 34px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    margin: 0 4px;
+}
+
 .board-pagination a {
-    color: #eaf1ff;
+    color: #334155;          /* 글자색 진하게 */
+    background: transparent;
+}
+
+.board-pagination a:hover {
+    background: #eef4ff;
+    color: #2563eb;
+}
+
+.board-pagination strong {
+    color: #fff;
+    background: #2563eb;
 }
 
 .board-pagination a:hover {
