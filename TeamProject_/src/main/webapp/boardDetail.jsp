@@ -4,6 +4,7 @@
 
 <div class="board-detail-page">
 	<div class="detail-container">
+
 		<!-- 게시글 신고 접수판 -->
 		<c:if test="${param.reportSuccess == '1'}">
 			<script>
@@ -70,12 +71,13 @@
 						<td><c:choose>
 								<c:when
 									test="${post.currentMembers != null && post.maxMembers != null}">
-				                    ${post.currentMembers} / ${post.maxMembers}
-				                </c:when>
+                                    ${post.currentMembers} / ${post.maxMembers}
+                                </c:when>
 								<c:otherwise>-</c:otherwise>
 							</c:choose></td>
 					</tr>
 				</c:if>
+
 				<tr>
 					<th class="content-th">내용</th>
 					<td colspan="3" class="detail-content-cell"><pre
@@ -83,26 +85,37 @@
 				</tr>
 			</table>
 		</div>
-		<!-- 게시판 글쓰기 수정 삭제 목록(관리자권한추가) -->
+
+		<!-- 게시글 액션 버튼 -->
 		<div class="detail-actions">
 			<div class="detail-left-actions">
 				<a
 					href="${pageContext.request.contextPath}/board/list?category=${category}&page=${page}"
-					class="action-btn primary-btn">목록으로</a>
+					class="action-btn primary-btn">목록</a>
 			</div>
 
 			<div class="detail-right-actions">
+				<c:if test="${post.category == '2' || post.category == 2}">
+					<c:if test="${post.acceptedCommentId == null}">
+						<c:if test="${sessionScope.loginMember != null}">
+							<a
+								href="${pageContext.request.contextPath}/board/write?category=2&parentPostId=${post.postId}"
+								class="action-btn secondary-btn">답변</a>
+						</c:if>
+					</c:if>
+				</c:if>
+
 				<c:choose>
 					<c:when test="${post.category == '0' || post.category == 0}">
 						<c:if
 							test="${sessionScope.loginMember != null && sessionScope.loginMember.role eq 'ADMIN'}">
 							<a
 								href="${pageContext.request.contextPath}/board/edit?postId=${post.postId}&category=${category}&page=${page}"
-								class="action-btn"> 수정 </a>
+								class="action-btn">수정</a>
 							<a
 								href="${pageContext.request.contextPath}/board/delete?postId=${post.postId}&category=${category}&page=${page}"
 								class="action-btn danger-btn"
-								onclick="return confirm('정말 삭제하시겠습니까?');"> 삭제 </a>
+								onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
 						</c:if>
 					</c:when>
 					<c:otherwise>
@@ -110,11 +123,11 @@
 							test="${sessionScope.loginMember != null && sessionScope.loginMember.memberId == post.memberId}">
 							<a
 								href="${pageContext.request.contextPath}/board/edit?postId=${post.postId}&category=${category}&page=${page}"
-								class="action-btn"> 수정 </a>
+								class="action-btn">수정</a>
 							<a
 								href="${pageContext.request.contextPath}/board/delete?postId=${post.postId}&category=${category}&page=${page}"
 								class="action-btn danger-btn"
-								onclick="return confirm('정말 삭제하시겠습니까?');"> 삭제 </a>
+								onclick="return confirm('정말 삭제하시겠습니까?');">삭제</a>
 						</c:if>
 					</c:otherwise>
 				</c:choose>
@@ -147,7 +160,6 @@
 					<form
 						action="${pageContext.request.contextPath}/board/party/update"
 						method="post" class="party-update-form">
-
 						<input type="hidden" name="postId" value="${post.postId}">
 						<input type="hidden" name="category" value="${category}">
 						<input type="hidden" name="page" value="${page}"> <label
@@ -172,33 +184,9 @@
 			</c:if>
 		</c:if>
 
-		<%-- 질문글에 답변글 작성기능 --%>
-		<c:if test="${post.category == '2' || post.category == 2}">
-			<c:if test="${post.acceptedCommentId == null}">
-				<c:if test="${sessionScope.loginMember != null}">
-			            |
-			            <a
-						href="${pageContext.request.contextPath}/board/write?category=2&parentPostId=${post.postId}">
-						답변달기 </a>
-				</c:if>
-			</c:if>
-		</c:if>
-
-		<%-- 답변글에 질문글로 가는 링크 --%>
-		<c:if test="${post.category == '2' || post.category == 2}">
-			<c:if test="${post.acceptedCommentId != null}">
-				<div style="margin-top: 10px;">
-					<a
-						href="${pageContext.request.contextPath}/board/detail?postId=${post.acceptedCommentId}&category=2&page=1">
-						원문 질문 보기 </a>
-				</div>
-			</c:if>
-		</c:if>
-
 		<!-- 추천하기 및 취소 탭 : 공지사항(category=0)에서는 숨김 -->
 		<c:if test="${post.category != '0' && post.category != 0}">
-			<div style="margin-top: 20px; text-align: center;">
-
+			<div class="detail-reaction-wrap">
 				<c:choose>
 					<c:when test="${sessionScope.loginMember == null}">
 						<div class="pill-box">
@@ -206,13 +194,12 @@
 								${likeCount}</span>
 						</div>
 
-						<div style="margin-top: 8px; color: gray; font-size: 14px;">
-							로그인 후 추천 가능합니다.</div>
+						<div class="detail-guide-text">로그인 후 추천 가능합니다.</div>
 					</c:when>
 
 					<c:otherwise>
 						<form action="${pageContext.request.contextPath}/board/like"
-							method="post" style="display: inline-block; margin: 0;">
+							method="post" class="detail-inline-form">
 							<input type="hidden" name="postId" value="${post.postId}">
 							<input type="hidden" name="category" value="${category}">
 							<input type="hidden" name="page" value="${page}"> <input
@@ -229,18 +216,16 @@
 						</form>
 					</c:otherwise>
 				</c:choose>
-
 			</div>
 		</c:if>
 
 		<!-- 게시글 신고버튼 -->
 		<c:if test="${post.category != '0' && post.category != 0}">
-			<div style="margin-top: 12px; text-align: center;">
+			<div class="detail-report-wrap">
 
 				<c:if test="${sessionScope.loginMember != null}">
 					<form action="${pageContext.request.contextPath}/board/report"
-						method="post"
-						style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+						method="post" class="detail-report-form">
 						<input type="hidden" name="postId" value="${post.postId}">
 						<input type="hidden" name="category" value="${category}">
 						<input type="hidden" name="page" value="${page}"> <input
@@ -259,13 +244,12 @@
 				</c:if>
 
 				<c:if test="${sessionScope.loginMember == null}">
-					<div style="margin-top: 8px; color: gray; font-size: 14px;">
-						신고는 로그인 후 가능합니다.</div>
+					<div class="detail-guide-text">신고는 로그인 후 가능합니다.</div>
 				</c:if>
 			</div>
 		</c:if>
-	</div>
 
+	</div>
 
 	<!-- 댓글 영역 : 공지사항(category=0)에서는 숨김 -->
 	<c:if test="${post.category != '0' && post.category != 0}">
@@ -287,7 +271,6 @@
 						<div class="comment-content">${c.content}</div>
 
 						<div class="comment-actions">
-							<!-- 좋아요 / 싫어요 -->
 							<c:choose>
 								<c:when test="${sessionScope.loginMember != null}">
 									<form action="${pageContext.request.contextPath}/board/detail"
@@ -324,11 +307,10 @@
 								</c:otherwise>
 							</c:choose>
 
-							<!-- 수정 / 삭제 : 본인 또는 관리자만 -->
 							<c:if
 								test="${sessionScope.loginMember != null 
-	                                  && (sessionScope.loginMember.role eq 'ADMIN' 
-	                                  || sessionScope.loginMember.memberId eq c.memberId)}">
+                                      && (sessionScope.loginMember.role eq 'ADMIN' 
+                                      || sessionScope.loginMember.memberId eq c.memberId)}">
 
 								<button type="button" class="small-btn"
 									onclick="toggleEdit(${c.commentId})">수정</button>
@@ -346,7 +328,6 @@
 								</form>
 							</c:if>
 
-							<!-- 답글 / 신고 : 회원만 -->
 							<c:if test="${sessionScope.loginMember != null}">
 								<button type="button" class="small-btn"
 									onclick="toggleReply(${c.commentId})">답글</button>
@@ -355,11 +336,10 @@
 							</c:if>
 						</div>
 
-						<!-- 수정 폼 : 본인 또는 관리자만 -->
 						<c:if
 							test="${sessionScope.loginMember != null 
-	                              && (sessionScope.loginMember.role eq 'ADMIN' 
-	                              || sessionScope.loginMember.memberId eq c.memberId)}">
+                                  && (sessionScope.loginMember.role eq 'ADMIN' 
+                                  || sessionScope.loginMember.memberId eq c.memberId)}">
 							<div id="editForm-${c.commentId}" class="comment-form-box"
 								style="display: none;">
 								<form action="${pageContext.request.contextPath}/board/detail"
@@ -382,7 +362,6 @@
 							</div>
 						</c:if>
 
-						<!-- 답글 폼 : 회원만 -->
 						<c:if test="${sessionScope.loginMember != null}">
 							<div id="replyForm-${c.commentId}" class="comment-form-box"
 								style="display: none;">
@@ -406,7 +385,6 @@
 							</div>
 						</c:if>
 
-						<!-- 신고 폼 : 회원만 -->
 						<c:if test="${sessionScope.loginMember != null}">
 							<div id="reportForm-${c.commentId}" class="comment-form-box"
 								style="display: none;">
@@ -433,7 +411,6 @@
 					</div>
 				</c:forEach>
 
-				<!-- 댓글 페이지 번호 -->
 				<c:if test="${commentTotalPages > 1}">
 					<div class="comment-pagination">
 						<c:forEach var="i" begin="1" end="${commentTotalPages}">
@@ -451,7 +428,6 @@
 					</div>
 				</c:if>
 
-				<!-- 일반 댓글 작성 폼 -->
 				<c:if test="${sessionScope.loginMember != null}">
 					<div class="comment-write-box">
 						<form action="${pageContext.request.contextPath}/board/detail"
@@ -472,12 +448,12 @@
 						</form>
 					</div>
 				</c:if>
+
 			</div>
 		</div>
 	</c:if>
+</div>
 
-</div>
-</div>
 <script>
 function toggleReply(id){
     let f = document.getElementById("replyForm-" + id);
