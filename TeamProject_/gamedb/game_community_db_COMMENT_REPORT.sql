@@ -24,14 +24,6 @@ SET @@SESSION.SQL_LOG_BIN= 0;
 SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ '';
 
 --
--- Comment report status migration guide
--- 기존 운영 DB라면 아래 순서로 반영:
--- 1) UPDATE COMMENT_REPORT
---       SET status = CASE WHEN is_processed = 1 AND status = 'PENDING' THEN 'RESOLVED' ELSE status END;
--- 2) ALTER TABLE COMMENT_REPORT DROP COLUMN is_processed;
---
-
---
 -- Table structure for table `COMMENT_REPORT`
 --
 
@@ -44,13 +36,13 @@ CREATE TABLE `COMMENT_REPORT` (
   `member_id` varchar(20) COLLATE utf8mb4_general_ci NOT NULL,
   `reason` text COLLATE utf8mb4_general_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'PENDING',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'PENDING',
   PRIMARY KEY (`report_id`),
   KEY `comment_id` (`comment_id`),
   KEY `member_id` (`member_id`),
   CONSTRAINT `COMMENT_REPORT_ibfk_1` FOREIGN KEY (`comment_id`) REFERENCES `COMMENT` (`comment_id`),
   CONSTRAINT `COMMENT_REPORT_ibfk_2` FOREIGN KEY (`member_id`) REFERENCES `MEMBER` (`member_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -59,7 +51,7 @@ CREATE TABLE `COMMENT_REPORT` (
 
 LOCK TABLES `COMMENT_REPORT` WRITE;
 /*!40000 ALTER TABLE `COMMENT_REPORT` DISABLE KEYS */;
-INSERT INTO `COMMENT_REPORT` VALUES (1,12,'rjsgud','욕함','2026-03-05 10:30:59','RESOLVED'),(2,13,'admin','바보','2026-03-10 11:37:55','RESOLVED'),(3,26,'admin','바바보','2026-03-10 14:40:47','RESOLVED'),(4,25,'admin1','1234','2026-03-10 14:59:52','RESOLVED'),(5,12,'admin','신고','2026-03-10 15:09:25','RESOLVED'),(6,38,'admin','11','2026-03-10 16:04:59','RESOLVED'),(7,69,'admin','	\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.','2026-03-11 12:07:06','RESOLVED');
+INSERT INTO `COMMENT_REPORT` VALUES (1,12,'rjsgud','욕함','2026-03-05 10:30:59','REJECTED'),(2,13,'admin','바보','2026-03-10 11:37:55','REJECTED'),(3,26,'admin','바바보','2026-03-10 14:40:47','REJECTED'),(4,25,'admin1','1234','2026-03-10 14:59:52','REJECTED'),(5,12,'admin','신고','2026-03-10 15:09:25','REJECTED'),(6,38,'admin','11','2026-03-10 16:04:59','REJECTED'),(7,69,'admin','	\r\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.','2026-03-11 12:07:06','REJECTED'),(9,89,'admin','맘에안듬','2026-03-18 06:58:52','RESOLVED'),(10,96,'admin','1이뭐야','2026-03-18 07:18:15','RESOLVED');
 /*!40000 ALTER TABLE `COMMENT_REPORT` ENABLE KEYS */;
 UNLOCK TABLES;
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
@@ -73,4 +65,4 @@ SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-16 17:38:23
+-- Dump completed on 2026-03-20 14:00:58

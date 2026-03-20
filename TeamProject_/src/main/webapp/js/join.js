@@ -2,14 +2,124 @@
 // join.jsp에서 joinContextPath 전역변수를 주입함
 
 // join.jsp에서 선언한 플래그 사용
-// var idDupOk = false;
-// var nickDupOk = false;
+var idDupOk = false;
+var nickDupOk = false;
 var joinEmailVerified = false;
 var joinEmailCodeSent = false;
+var joinEmailSendInFlight = false;
+var joinEmailVerifyInFlight = false;
 var MEMBER_ID_REGEX = /^[A-Za-z0-9]{4,20}$/;
 var PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
-// ...생략된 기존 코드...
+function setMsg(el, message, isOk) {
+	if (!el) return;
+	el.textContent = message || '';
+	if (typeof isOk === 'boolean') {
+		el.style.color = isOk ? '#198754' : '#dc3545';
+	}
+}
+
+function isValidEmail(email) {
+	if (!email) return false;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidHp(hp) {
+	if (!hp) return false;
+	return /^\d{10,11}$/.test(hp);
+}
+
+function parseJsonResponse(res) {
+	var contentType = (res && res.headers && res.headers.get('content-type')) || '';
+	return res.text().then(function (text) {
+		var data = null;
+		if (text && contentType.indexOf('application/json') !== -1) {
+			try {
+				data = JSON.parse(text);
+			} catch (e) {
+				data = null;
+			}
+		}
+		if (!res.ok) {
+			throw new Error((data && data.message) || text || ('HTTP ' + res.status));
+		}
+		if (data) {
+			return data;
+		}
+		throw new Error(text || '서버 응답을 확인할 수 없습니다.');
+	});
+}
+
+function setButtonBusy(btn, busyText, idleText, disabled) {
+	if (!btn) return;
+	if (!btn.dataset.defaultText) {
+		btn.dataset.defaultText = idleText || btn.textContent;
+	}
+	if (busyText) {
+		btn.textContent = busyText;
+	}
+	btn.disabled = typeof disabled === 'boolean' ? disabled : true;
+}
+
+function restoreButton(btn, fallbackText) {
+	if (!btn) return;
+	btn.textContent = btn.dataset.defaultText || fallbackText || btn.textContent;
+	btn.disabled = false;
+}
+
+function syncEmailVerifyControls() {
+	var email = document.getElementById('email');
+	var code = document.getElementById('emailVerificationCode');
+	var sendBtn = document.getElementById('sendEmailCodeBtn');
+	var verifyBtn = document.getElementById('verifyEmailCodeBtn');
+	if (email) {
+		email.readOnly = !!joinEmailVerified;
+	}
+	if (code) {
+		code.disabled = !joinEmailCodeSent || joinEmailVerified || joinEmailSendInFlight || joinEmailVerifyInFlight;
+	}
+	if (sendBtn && !joinEmailSendInFlight) {
+		sendBtn.disabled = !!joinEmailVerified || joinEmailVerifyInFlight;
+	}
+	if (verifyBtn && !joinEmailVerifyInFlight) {
+		verifyBtn.disabled = !joinEmailCodeSent || joinEmailVerified || joinEmailSendInFlight;
+	}
+}
+
+function setEmailVerifiedState(verified, message, isOk) {
+	joinEmailVerified = !!verified;
+	var hidden = document.getElementById('emailVerified');
+	var chip = document.getElementById('emailVerifyChip');
+	if (hidden) {
+		hidden.value = joinEmailVerified ? 'true' : 'false';
+	}
+	if (chip) {
+		chip.textContent = joinEmailVerified ? '인증 완료' : '인증 전';
+		chip.style.color = joinEmailVerified ? '#198754' : '';
+	}
+	setMsg(document.getElementById('emailVerifyStatus'), message || '', isOk);
+	syncEmailVerifyControls();
+}
+
+function resetEmailVerificationState(message) {
+	joinEmailVerified = false;
+	joinEmailCodeSent = false;
+	var code = document.getElementById('emailVerificationCode');
+	if (code) {
+		code.value = '';
+	}
+	var hidden = document.getElementById('emailVerified');
+	if (hidden) {
+		hidden.value = 'false';
+	}
+	setMsg(document.getElementById('emailVerifyStatus'), message || '', false);
+	var chip = document.getElementById('emailVerifyChip');
+	if (chip) {
+		chip.textContent = '인증 전';
+		chip.style.color = '';
+	}
+	syncEmailVerifyControls();
+}
 
 function isValidMemberId(id) {
 	if (!id) return false;
@@ -21,7 +131,6 @@ function isValidPassword(password) {
 	return PASSWORD_REGEX.test(password);
 }
 
-// ...생략된 기존 코드...
 
 function checkDuplicateId() {
 	var id = document.getElementById('id');
@@ -43,7 +152,12 @@ function checkDuplicateId() {
 		method: 'GET',
 		headers: { 'Accept': 'application/json' }
 	})
-	.then(function (res) { return res.json(); })
+	.then(function (res) {
+		if (!res.ok) {
+			throw new Error('HTTP ' + res.status);
+		}
+		return res.json();
+	})
 	.then(function (data) {
 		if (data && data.ok) {
 			idDupOk = true;
@@ -74,7 +188,12 @@ function checkDuplicateNickname() {
 		method: 'GET',
 		headers: { 'Accept': 'application/json' }
 	})
-	.then(function (res) { return res.json(); })
+	.then(function (res) {
+		if (!res.ok) {
+			throw new Error('HTTP ' + res.status);
+		}
+		return res.json();
+	})
 	.then(function (data) {
 		if (data && data.ok) {
 			nickDupOk = true;
@@ -93,6 +212,9 @@ function checkDuplicateNickname() {
 function sendJoinEmailCode() {
 	var email = document.getElementById('email');
 	var emailVal = email ? email.value.trim() : '';
+	if (joinEmailSendInFlight) {
+		return;
+	}
 	if (!isValidEmail(emailVal) || emailVal === '') {
 		setMsg(document.getElementById('emailInput'), '올바른 이메일을 입력해 주세요.', false);
 		setEmailVerifiedState(false, '이메일을 정확히 입력한 뒤 인증번호를 요청해 주세요.', false);
@@ -105,10 +227,10 @@ function sendJoinEmailCode() {
 		email.readOnly = false;
 	}
 	var btn = document.getElementById('sendEmailCodeBtn');
-	if (btn) {
-		btn.disabled = true;
-		btn.textContent = '발송 중...';
-	}
+	joinEmailSendInFlight = true;
+	setButtonBusy(btn, '발송 중...', '인증번호 받기', true);
+	setMsg(document.getElementById('emailInput'), '', true);
+	setMsg(document.getElementById('emailVerifyStatus'), '인증번호를 보내는 중입니다...', true);
 	fetch(joinContextPath + '/member/sendJoinEmailCode.me', {
 		method: 'POST',
 		headers: {
@@ -117,23 +239,26 @@ function sendJoinEmailCode() {
 		},
 		body: 'email=' + encodeURIComponent(emailVal)
 	})
-	.then(function (res) { return res.json(); })
+	.then(parseJsonResponse)
 	.then(function (data) {
 		if (data && data.ok) {
 			joinEmailCodeSent = true;
 			setMsg(document.getElementById('emailInput'), '', true);
 			setEmailVerifiedState(false, data.message || '인증번호를 발송했습니다.', true);
+			var codeInput = document.getElementById('emailVerificationCode');
+			codeInput && codeInput.focus();
 		} else {
 			joinEmailCodeSent = false;
 			setEmailVerifiedState(false, (data && data.message) ? data.message : '인증번호 받기에 실패했습니다.', false);
 		}
 	})
-	.catch(function () {
+	.catch(function (err) {
 		joinEmailCodeSent = false;
-		setEmailVerifiedState(false, '인증번호 받기 요청 중 오류가 발생했습니다.', false);
+		setEmailVerifiedState(false, err && err.message ? err.message : '인증번호 받기 요청 중 오류가 발생했습니다.', false);
 	})
 	.finally(function () {
-		if (btn) btn.disabled = false;
+		joinEmailSendInFlight = false;
+		restoreButton(btn, '인증번호 받기');
 		syncEmailVerifyControls();
 	});
 }
@@ -143,6 +268,9 @@ function verifyJoinEmailCode() {
 	var code = document.getElementById('emailVerificationCode');
 	var emailVal = email ? email.value.trim() : '';
 	var codeVal = code ? code.value.trim() : '';
+	if (joinEmailVerifyInFlight) {
+		return;
+	}
 	if (!joinEmailCodeSent) {
 		setEmailVerifiedState(false, '먼저 인증번호 받기를 눌러 주세요.', false);
 		return;
@@ -159,10 +287,9 @@ function verifyJoinEmailCode() {
 	}
 
 	var btn = document.getElementById('verifyEmailCodeBtn');
-	if (btn) {
-		btn.disabled = true;
-		btn.textContent = '확인 중...';
-	}
+	joinEmailVerifyInFlight = true;
+	setButtonBusy(btn, '확인 중...', '이메일 인증', true);
+	setMsg(document.getElementById('emailVerifyStatus'), '인증번호를 확인하는 중입니다...', true);
 	fetch(joinContextPath + '/member/verifyJoinEmailCode.me', {
 		method: 'POST',
 		headers: {
@@ -171,7 +298,7 @@ function verifyJoinEmailCode() {
 		},
 		body: 'email=' + encodeURIComponent(emailVal) + '&verificationCode=' + encodeURIComponent(codeVal)
 	})
-	.then(function (res) { return res.json(); })
+	.then(parseJsonResponse)
 	.then(function (data) {
 		if (data && data.ok) {
 			setEmailVerifiedState(true, data.message || '이메일 인증이 완료되었습니다.', true);
@@ -179,10 +306,12 @@ function verifyJoinEmailCode() {
 			setEmailVerifiedState(false, (data && data.message) ? data.message : '이메일 인증에 실패했습니다.', false);
 		}
 	})
-	.catch(function () {
-		setEmailVerifiedState(false, '이메일 인증 중 오류가 발생했습니다.', false);
+	.catch(function (err) {
+		setEmailVerifiedState(false, err && err.message ? err.message : '이메일 인증 중 오류가 발생했습니다.', false);
 	})
 	.finally(function () {
+		joinEmailVerifyInFlight = false;
+		restoreButton(btn, '이메일 인증');
 		syncEmailVerifyControls();
 	});
 }
