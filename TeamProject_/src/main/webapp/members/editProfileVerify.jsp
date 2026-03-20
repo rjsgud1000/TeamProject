@@ -8,36 +8,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>비밀번호 확인</title>
 <link rel="stylesheet" href="${contextPath}/css/auth.css" />
-<style>
-.verify-card-note{
-	margin-top:10px;
-	padding:14px 16px;
-	border-radius:14px;
-	background:#f8fafc;
-	border:1px solid #dbeafe;
-	color:#475569;
-	line-height:1.6;
-}
-.verify-lock{
-	width:58px;
-	height:58px;
-	border-radius:18px;
-	background:linear-gradient(135deg,#dbeafe,#bfdbfe);
-	color:#1d4ed8;
-	display:flex;
-	align-items:center;
-	justify-content:center;
-	font-size:28px;
-	box-shadow:0 12px 24px rgba(37,99,235,.14);
-	margin-bottom:14px;
-}
-</style>
+<link rel="stylesheet" href="${contextPath}/css/member-pages.css" />
 </head>
 <body>
 <div class="container">
 	<div class="join-card">
 		<div class="join-hero">
-			<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+			<div class="page-flex-head">
 				<div>
 					<span class="step">SECURITY CHECK</span>
 					<h1>비밀번호 확인</h1>

@@ -22,13 +22,14 @@ import Vo.SteamTopSellerVO;
 
 public class SteamTopSellerService {
 
-    // 기존 charts/topselling/KR HTML 직접 파싱 방식은 현재 구조상 잘 깨짐
-    // 그래서 Steam 검색 결과 AJAX 엔드포인트를 사용
     private static final String SEARCH_RESULTS_API =
             "https://store.steampowered.com/search/results/";
 
-    private static final String APPDETAILS_API =
+    private static final String APPDETAILS_API_KO =
             "https://store.steampowered.com/api/appdetails?cc=KR&l=koreana&appids=";
+
+    private static final String APPDETAILS_API_EN =
+            "https://store.steampowered.com/api/appdetails?cc=KR&l=english&appids=";
 
     private static final int TIMEOUT_MS = 12000;
 
@@ -42,8 +43,8 @@ public class SteamTopSellerService {
 
         List<SteamTopSellerVO> items = fetchTopSellersFromSearch(limit);
 
-        // 검색 결과에서 제목/이미지가 빠지는 경우를 대비한 보정
-        enrichMissingAppDetails(items);
+        // 제목/영문명/이미지 보정
+        enrichAppDetails(items);
 
         return items;
     }
@@ -53,7 +54,10 @@ public class SteamTopSellerService {
 
         try {
             String url = buildSearchResultsUrl(limit);
-            String body = httpGet(url, "https://store.steampowered.com/search/?filter=topsellers&cc=KR&l=koreana");
+            String body = httpGet(
+                    url,
+                    "https://store.steampowered.com/search/?filter=topsellers&cc=KR&l=koreana"
+            );
 
             if (body == null || body.isBlank()) {
                 return result;
@@ -86,6 +90,9 @@ public class SteamTopSellerService {
                 if (title == null) {
                     title = textOrNull(row.selectFirst(".title"));
                 }
+
+                // search/results + supportedlang=koreana 기준이라
+                // 여기서 잡히는 값은 우선 한글명으로 간주
                 item.setTitle(title);
 
                 String imageUrl = null;
@@ -146,10 +153,9 @@ public class SteamTopSellerService {
                 }
             }
         } catch (Exception ignore) {
-            // JSON이 아니면 HTML일 수도 있으니 아래 fallback
+            // JSON 아니면 fallback
         }
 
-        // fallback: 혹시 전체 HTML이 통으로 내려오면 그대로 사용
         if (responseBody.contains("search_result_row")) {
             return responseBody;
         }
@@ -161,7 +167,6 @@ public class SteamTopSellerService {
         try {
             String dataDsAppid = attrOrNull(row, "data-ds-appid");
             if (dataDsAppid != null && !dataDsAppid.isBlank()) {
-                // 종종 "12345" 또는 "12345,67890" 형태일 수 있음
                 String[] parts = dataDsAppid.split(",");
                 for (String part : parts) {
                     Integer parsed = safeParseInt(part.trim());
@@ -185,7 +190,7 @@ public class SteamTopSellerService {
         return null;
     }
 
-    private void enrichMissingAppDetails(List<SteamTopSellerVO> items) {
+    private void enrichAppDetails(List<SteamTopSellerVO> items) {
         if (items == null || items.isEmpty()) {
             return;
         }
@@ -195,49 +200,34 @@ public class SteamTopSellerService {
                 continue;
             }
 
-            boolean needsTitle = isBlank(item.getTitle());
-            boolean needsImage = isBlank(item.getHeaderImage());
-
             try {
-                String json = httpGet(
-                        APPDETAILS_API + item.getAppId(),
-                        "https://store.steampowered.com/app/" + item.getAppId() + "/"
-                );
+                AppDetail koDetail = fetchAppDetail(item.getAppId(), true);
+                AppDetail enDetail = fetchAppDetail(item.getAppId(), false);
 
-                if (json == null || json.isBlank()) {
-                    continue;
-                }
-
-                JSONObject root = (JSONObject) new JSONParser().parse(json);
-                JSONObject appObj = (JSONObject) root.get(String.valueOf(item.getAppId()));
-                if (appObj == null) {
-                    continue;
-                }
-
-                Object successObj = appObj.get("success");
-                if (!(successObj instanceof Boolean) || !((Boolean) successObj)) {
-                    continue;
-                }
-
-                JSONObject dataObj = (JSONObject) appObj.get("data");
-                if (dataObj == null) {
-                    continue;
-                }
-
-                Object nameObj = dataObj.get("name");
-                Object headerImageObj = dataObj.get("header_image");
-
-                if (nameObj != null) {
-                    String apiTitle = String.valueOf(nameObj).trim();
-
-                    // 제목이 비어 있거나, 검색 결과보다 앱 상세 제목이 더 적합할 때 덮어쓰기
-                    if (needsTitle || !isLikelyKorean(item.getTitle())) {
-                        item.setTitle(apiTitle);
+                // 한글명 보정
+                if (koDetail != null && !isBlank(koDetail.name)) {
+                    if (isBlank(item.getTitle()) || !isLikelyKorean(item.getTitle())) {
+                        item.setTitle(koDetail.name);
                     }
                 }
 
-                if (needsImage && headerImageObj != null) {
-                    item.setHeaderImage(String.valueOf(headerImageObj));
+                // 영문명 세팅
+                if (enDetail != null && !isBlank(enDetail.name)) {
+                    item.setEnglishTitle(enDetail.name);
+                }
+
+                // 만약 영문명 못 가져오면 fallback
+                if (isBlank(item.getEnglishTitle())) {
+                    item.setEnglishTitle(item.getTitle());
+                }
+
+                // 이미지 보정
+                if (isBlank(item.getHeaderImage())) {
+                    if (koDetail != null && !isBlank(koDetail.headerImage)) {
+                        item.setHeaderImage(koDetail.headerImage);
+                    } else if (enDetail != null && !isBlank(enDetail.headerImage)) {
+                        item.setHeaderImage(enDetail.headerImage);
+                    }
                 }
 
                 if (isBlank(item.getStoreUrl())) {
@@ -246,6 +236,96 @@ public class SteamTopSellerService {
 
             } catch (Exception e) {
                 e.printStackTrace();
+
+                // 에러나도 최소 fallback 유지
+                if (isBlank(item.getEnglishTitle())) {
+                    item.setEnglishTitle(item.getTitle());
+                }
+            }
+        }
+    }
+
+    private AppDetail fetchAppDetail(Integer appId, boolean korean) {
+        HttpURLConnection conn = null;
+
+        try {
+            String apiUrl = (korean ? APPDETAILS_API_KO : APPDETAILS_API_EN) + appId;
+            URL url = new URL(apiUrl);
+
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(TIMEOUT_MS);
+            conn.setReadTimeout(TIMEOUT_MS);
+
+            conn.setRequestProperty("User-Agent", USER_AGENT);
+            conn.setRequestProperty("Accept-Language",
+                    korean ? "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7"
+                           : "en-US,en;q=0.9,ko-KR;q=0.8,ko;q=0.7");
+            conn.setRequestProperty("Accept", "application/json, text/html, */*;q=0.9");
+            conn.setRequestProperty("Accept-Encoding", "gzip");
+            conn.setRequestProperty("Referer", "https://store.steampowered.com/app/" + appId + "/");
+            conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+
+            int status = conn.getResponseCode();
+            if (status < 200 || status >= 300) {
+                return null;
+            }
+
+            InputStream in = conn.getInputStream();
+            String encoding = conn.getContentEncoding();
+            if (encoding != null && encoding.toLowerCase().contains("gzip")) {
+                in = new GZIPInputStream(in);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(in, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line).append('\n');
+                }
+            }
+
+            String json = sb.toString();
+            if (json == null || json.isBlank()) {
+                return null;
+            }
+
+            JSONObject root = (JSONObject) new JSONParser().parse(json);
+            JSONObject appObj = (JSONObject) root.get(String.valueOf(appId));
+            if (appObj == null) {
+                return null;
+            }
+
+            Object successObj = appObj.get("success");
+            if (!(successObj instanceof Boolean) || !((Boolean) successObj)) {
+                return null;
+            }
+
+            JSONObject dataObj = (JSONObject) appObj.get("data");
+            if (dataObj == null) {
+                return null;
+            }
+
+            AppDetail detail = new AppDetail();
+            Object nameObj = dataObj.get("name");
+            Object headerImageObj = dataObj.get("header_image");
+
+            if (nameObj != null) {
+                detail.name = String.valueOf(nameObj).trim();
+            }
+            if (headerImageObj != null) {
+                detail.headerImage = String.valueOf(headerImageObj).trim();
+            }
+
+            return detail;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
             }
         }
     }
@@ -335,5 +415,10 @@ public class SteamTopSellerService {
                 conn.disconnect();
             }
         }
+    }
+
+    private static class AppDetail {
+        private String name;
+        private String headerImage;
     }
 }

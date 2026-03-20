@@ -11,32 +11,7 @@
 <title>로그인</title>
 
 <link rel="stylesheet" href="<%=request.getContextPath()%>/css/auth.css" />
-
-<style>
-.alert{
-	white-space: pre-line;
-}
-.login-links{
-	margin-top: 14px;
-	text-align: right;
-}
-.login-links a{
-	font-size: 13px;
-	text-decoration: underline;
-}
-.recaptcha-wrap{
-	margin-top: 18px;
-	display:flex;
-	justify-content:center;
-}
-.recaptcha-help{
-	margin-top:10px;
-	font-size:12px;
-	color:#b91c1c;
-	text-align:center;
-	line-height:1.5;
-}
-</style>
+<link rel="stylesheet" href="<%=request.getContextPath()%>/css/member-pages.css" />
 
 <%
 	String recaptchaSiteKey = (String) request.getAttribute("recaptchaSiteKey");

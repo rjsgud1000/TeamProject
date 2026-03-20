@@ -46,7 +46,9 @@ public class SteamTopSellerApiController extends HttpServlet {
             JSONObject obj = new JSONObject();
             obj.put("rank", item.getRank());
             obj.put("appId", item.getAppId());
-            obj.put("title", item.getTitle());
+            obj.put("title", item.getTitle()); // 한글명
+            obj.put("englishTitle", item.getEnglishTitle()); // 영문명
+            obj.put("originalTitle", item.getEnglishTitle()); // 프론트 호환용 alias
             obj.put("headerImage", item.getHeaderImage());
             obj.put("storeUrl", item.getStoreUrl());
             arr.add(obj);
@@ -55,7 +57,6 @@ public class SteamTopSellerApiController extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json; charset=UTF-8");
 
-        // 아예 비어 있으면 프론트에서 디버깅하기 쉽게 상태코드도 구분
         if (arr.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
