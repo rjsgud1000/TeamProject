@@ -4,7 +4,6 @@
 
 <div class="popular-page">
     <div class="popular-title">인기 게시글</div>
-    <div class="popular-desc">추천수, 조회수, 댓글수를 기준으로 인기 게시글을 확인할 수 있습니다.</div>
     
     <div class="period-tabs">
     <a class="period-tab ${period == 'day' ? 'active' : ''}"

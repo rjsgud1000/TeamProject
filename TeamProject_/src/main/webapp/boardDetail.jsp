@@ -194,7 +194,7 @@
 								${likeCount}</span>
 						</div>
 
-						<div class="detail-guide-text">로그인 후 추천 가능합니다.</div>
+						<div class="detail-guide-text">신고와 추천은 로그인 후 가능합니다.</div>
 					</c:when>
 
 					<c:otherwise>
@@ -244,7 +244,7 @@
 				</c:if>
 
 				<c:if test="${sessionScope.loginMember == null}">
-					<div class="detail-guide-text">신고는 로그인 후 가능합니다.</div>
+					<!--  <div class="detail-guide-text">신고는 로그인 후 가능합니다.</div>-->
 				</c:if>
 			</div>
 		</c:if>
