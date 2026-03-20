@@ -93,7 +93,6 @@
 								<button class="btn btn-outline-primary" type="button" onclick="checkDuplicateId()">중복확인</button>
 							</div>
 							<small id="idDupMsg" class="form-text"></small>
-							<div class="help-hint">아이디는 영문과 숫자만 사용 가능하며 4~20자로 입력해 주세요.</div>
 							<p id="idInput" class="form-text"></p>
 						</div>
 					</div>
@@ -190,11 +189,11 @@
 								<div class="email-verify-copy">가입할 이메일로 인증번호를 발송합니다. 이메일을 변경하면 인증 상태가 초기화됩니다.</div>
 								<div class="email-verify-wrap">
 									<div class="input-row">
-										<input type="email" id="email" name="email" placeholder="example@domain.com">
+										<input type="email" id="email" name="email" placeholder="example@domain.com" autocomplete="email">
 										<button class="btn btn-outline-primary" type="button" id="sendEmailCodeBtn" onclick="sendJoinEmailCode()">인증번호 받기</button>
 									</div>
 									<div class="email-verify-row">
-										<input type="text" id="emailVerificationCode" placeholder="메일로 받은 인증번호를 입력해 주세요">
+										<input type="text" id="emailVerificationCode" placeholder="메일로 받은 인증번호를 입력해 주세요" inputmode="numeric" autocomplete="one-time-code">
 										<button class="btn btn-outline-primary" type="button" id="verifyEmailCodeBtn" onclick="verifyJoinEmailCode()">이메일 인증</button>
 									</div>
 								</div>

@@ -2,14 +2,80 @@
 // join.jsp에서 joinContextPath 전역변수를 주입함
 
 // join.jsp에서 선언한 플래그 사용
-// var idDupOk = false;
-// var nickDupOk = false;
+var idDupOk = false;
+var nickDupOk = false;
 var joinEmailVerified = false;
 var joinEmailCodeSent = false;
 var MEMBER_ID_REGEX = /^[A-Za-z0-9]{4,20}$/;
 var PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{6,}$/;
 
-// ...생략된 기존 코드...
+function setMsg(el, message, isOk) {
+	if (!el) return;
+	el.textContent = message || '';
+	if (typeof isOk === 'boolean') {
+		el.style.color = isOk ? '#198754' : '#dc3545';
+	}
+}
+
+function isValidEmail(email) {
+	if (!email) return false;
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidHp(hp) {
+	if (!hp) return false;
+	return /^\d{10,11}$/.test(hp);
+}
+
+function syncEmailVerifyControls() {
+	var email = document.getElementById('email');
+	var code = document.getElementById('emailVerificationCode');
+	var verifyBtn = document.getElementById('verifyEmailCodeBtn');
+	if (email) {
+		email.readOnly = !!joinEmailVerified;
+	}
+	if (code) {
+		code.disabled = !joinEmailCodeSent || joinEmailVerified;
+	}
+	if (verifyBtn) {
+		verifyBtn.disabled = !joinEmailCodeSent || joinEmailVerified;
+	}
+}
+
+function setEmailVerifiedState(verified, message, isOk) {
+	joinEmailVerified = !!verified;
+	var hidden = document.getElementById('emailVerified');
+	var chip = document.getElementById('emailVerifyChip');
+	if (hidden) {
+		hidden.value = joinEmailVerified ? 'true' : 'false';
+	}
+	if (chip) {
+		chip.textContent = joinEmailVerified ? '인증 완료' : '인증 전';
+		chip.style.color = joinEmailVerified ? '#198754' : '';
+	}
+	setMsg(document.getElementById('emailVerifyStatus'), message || '', isOk);
+	syncEmailVerifyControls();
+}
+
+function resetEmailVerificationState(message) {
+	joinEmailVerified = false;
+	joinEmailCodeSent = false;
+	var code = document.getElementById('emailVerificationCode');
+	if (code) {
+		code.value = '';
+	}
+	var hidden = document.getElementById('emailVerified');
+	if (hidden) {
+		hidden.value = 'false';
+	}
+	setMsg(document.getElementById('emailVerifyStatus'), message || '', false);
+	var chip = document.getElementById('emailVerifyChip');
+	if (chip) {
+		chip.textContent = '인증 전';
+		chip.style.color = '';
+	}
+	syncEmailVerifyControls();
+}
 
 function isValidMemberId(id) {
 	if (!id) return false;
@@ -21,7 +87,6 @@ function isValidPassword(password) {
 	return PASSWORD_REGEX.test(password);
 }
 
-// ...생략된 기존 코드...
 
 function checkDuplicateId() {
 	var id = document.getElementById('id');
@@ -43,7 +108,12 @@ function checkDuplicateId() {
 		method: 'GET',
 		headers: { 'Accept': 'application/json' }
 	})
-	.then(function (res) { return res.json(); })
+	.then(function (res) {
+		if (!res.ok) {
+			throw new Error('HTTP ' + res.status);
+		}
+		return res.json();
+	})
 	.then(function (data) {
 		if (data && data.ok) {
 			idDupOk = true;
@@ -74,7 +144,12 @@ function checkDuplicateNickname() {
 		method: 'GET',
 		headers: { 'Accept': 'application/json' }
 	})
-	.then(function (res) { return res.json(); })
+	.then(function (res) {
+		if (!res.ok) {
+			throw new Error('HTTP ' + res.status);
+		}
+		return res.json();
+	})
 	.then(function (data) {
 		if (data && data.ok) {
 			nickDupOk = true;
