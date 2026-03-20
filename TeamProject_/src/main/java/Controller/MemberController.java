@@ -346,7 +346,6 @@ public class MemberController extends HttpServlet {
 
 	// 회원가입 이메일 인증번호 발송 메소드
 	private void sendJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json; charset=UTF-8");
 		String email = emptyToNull(request.getParameter("email"));
 		try {
 			String code = memberService.sendJoinEmailVerificationCode(email);
@@ -355,31 +354,30 @@ public class MemberController extends HttpServlet {
 			session.setAttribute(JOIN_EMAIL_CODE_SESSION_KEY, code);
 			session.setAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY, System.currentTimeMillis() + JOIN_EMAIL_CODE_EXPIRE_MILLIS);
 			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
-			response.getWriter().write("{\"ok\":true,\"message\":\"인증번호를 메일로 발송했습니다.\"}");
+			writeJson(response, "{\"ok\":true,\"message\":\"인증번호를 메일로 발송했습니다.\"}");
 		} catch (IllegalArgumentException e) {
-			response.getWriter().write(toJsonError(e.getMessage()));
+			writeJson(response, toJsonError(e.getMessage()));
 		} catch (Exception e) {
 			e.printStackTrace();
-			response.getWriter().write(toJsonError(e.getMessage() != null ? e.getMessage() : "인증번호 발송에 실패했습니다."));
+			writeJson(response, toJsonError(e.getMessage() != null ? e.getMessage() : "인증번호 발송에 실패했습니다."));
 		}
 	}
 
 	// 회원가입 이메일 인증번호 확인 메소드
 	private void verifyJoinEmailCode(HttpServletRequest request, HttpServletResponse response) throws IOException {
-		response.setContentType("application/json; charset=UTF-8");
 		HttpSession session = request.getSession(false);
 		String email = emptyToNull(request.getParameter("email"));
 		String code = emptyToNull(request.getParameter("verificationCode"));
 		if (email == null) {
-			response.getWriter().write(toJsonError("이메일을 입력해 주세요."));
+			writeJson(response, toJsonError("이메일을 입력해 주세요."));
 			return;
 		}
 		if (code == null) {
-			response.getWriter().write(toJsonError("인증번호를 입력해 주세요."));
+			writeJson(response, toJsonError("인증번호를 입력해 주세요."));
 			return;
 		}
 		if (session == null) {
-			response.getWriter().write(toJsonError("인증 세션이 만료되었습니다. 다시 요청해 주세요."));
+			writeJson(response, toJsonError("인증 세션이 만료되었습니다. 다시 요청해 주세요."));
 			return;
 		}
 
@@ -387,27 +385,27 @@ public class MemberController extends HttpServlet {
 		String sessionCode = (String) session.getAttribute(JOIN_EMAIL_CODE_SESSION_KEY);
 		Long expireAt = (Long) session.getAttribute(JOIN_EMAIL_EXPIRE_AT_SESSION_KEY);
 		if (sessionEmail == null || sessionCode == null || expireAt == null) {
-			response.getWriter().write(toJsonError("인증번호를 먼저 요청해 주세요."));
+			writeJson(response, toJsonError("인증번호를 먼저 요청해 주세요."));
 			return;
 		}
 		if (!sessionEmail.equals(email)) {
 			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
-			response.getWriter().write(toJsonError("인증 요청한 이메일과 현재 이메일이 다릅니다."));
+			writeJson(response, toJsonError("인증 요청한 이메일과 현재 이메일이 다릅니다."));
 			return;
 		}
 		if (System.currentTimeMillis() > expireAt.longValue()) {
 			clearJoinEmailVerificationSession(session);
-			response.getWriter().write(toJsonError("인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요."));
+			writeJson(response, toJsonError("인증번호 유효시간이 만료되었습니다. 다시 요청해 주세요."));
 			return;
 		}
 		if (!sessionCode.equals(code)) {
 			session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.FALSE);
-			response.getWriter().write(toJsonError("인증번호가 올바르지 않습니다."));
+			writeJson(response, toJsonError("인증번호가 올바르지 않습니다."));
 			return;
 		}
 
 		session.setAttribute(JOIN_EMAIL_VERIFIED_SESSION_KEY, Boolean.TRUE);
-		response.getWriter().write("{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
+		writeJson(response, "{\"ok\":true,\"message\":\"이메일 인증이 완료되었습니다.\"}");
 	}
 
 	// 회원정보 수정 이메일 인증번호 발송 메소드
@@ -1187,5 +1185,13 @@ public class MemberController extends HttpServlet {
 		int comma = v.indexOf(',');
 		String ip = (comma >= 0) ? v.substring(0, comma).trim() : v;
 		return (ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) ? null : ip;
+	}
+
+	private void writeJson(HttpServletResponse response, String json) throws IOException {
+		response.setCharacterEncoding("UTF-8");
+		response.setContentType("application/json; charset=UTF-8");
+		response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+		response.setHeader("Pragma", "no-cache");
+		response.getWriter().write(json);
 	}
 }
