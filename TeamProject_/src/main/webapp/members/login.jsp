@@ -77,13 +77,6 @@
 					<div class="notice" id="capsNotice" role="status">CapsLock이 켜져 있어요</div>
 				</div>
 
-				<div class="recaptcha-wrap">
-					<% if (captchaReady) { %>
-						<div class="g-recaptcha" data-sitekey="<%= recaptchaSiteKey %>"></div>
-					<% } else { %>
-						<div class="recaptcha-help">reCAPTCHA가 아직 설정되지 않았습니다.<br>application.properties의 <strong>recaptcha.site.key</strong>, <strong>recaptcha.secret.key</strong> 값을 입력해 주세요.</div>
-					<% } %>
-				</div>
 
 				<div class="login-links">
 					<a href="<%=contextPath%>/member/findPasswordForm.me">비밀번호를 잊으셨나요?</a>
